@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'LinkedIn Clone',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: MainPage(), // Start with Home Page
+      home: MainPage(),
     );
   }
 }
