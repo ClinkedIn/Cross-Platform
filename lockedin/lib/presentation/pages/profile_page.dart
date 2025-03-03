@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/core/widgets/bottom_navbar.dart';
 import 'package:lockedin/core/widgets/upper_navbar.dart';
+import 'package:lockedin/presentation/pages/main_page.dart';
 import 'package:lockedin/presentation/shared/profile_buttons.dart';
+import 'package:lockedin/presentation/viewmodels/nav_viewmodel.dart';
 import 'package:lockedin/presentation/viewmodels/profile_viewmodel.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -10,7 +13,16 @@ class ProfilePage extends ConsumerWidget {
     final profileState = ref.watch(profileViewModelProvider);
 
     return Scaffold(
-      appBar: UpperNavbar(),
+      appBar: UpperNavbar(
+        leftIcon: Icon(Icons.arrow_back, color: Colors.grey[700]),
+        leftOnPress: () {
+          ref.read(navProvider.notifier).changeTab(0);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => MainPage()),
+          );
+        },
+      ),
 
       body: profileState.when(
         data:
@@ -156,6 +168,16 @@ class ProfilePage extends ConsumerWidget {
             ),
         loading: () => Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text("Error loading profile")),
+      ),
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: -1,
+        onTap: (index) {
+          ref.read(navProvider.notifier).changeTab(index);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => MainPage()),
+          );
+        },
       ),
     );
   }

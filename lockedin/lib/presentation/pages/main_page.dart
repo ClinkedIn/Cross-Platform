@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/core/widgets/upper_navbar.dart';
+import 'package:lockedin/presentation/pages/profile_page.dart';
 import '../viewmodels/nav_viewmodel.dart';
 import '../pages/home_page.dart';
 import '../pages/network_page.dart';
@@ -22,6 +24,24 @@ class MainPage extends ConsumerWidget {
     ];
 
     return Scaffold(
+      appBar: UpperNavbar(
+        leftIcon: CircleAvatar(
+          radius: 20, // Adjust size to match LinkedIn's profile picture
+          backgroundColor:
+              Colors.transparent, // Ensure no background color interferes
+          backgroundImage: AssetImage(
+            'assets/images/download.png',
+          ), // Your profile image
+        ),
+        leftOnPress: () {
+          (index) => ref.read(navProvider.notifier).changeTab(index);
+          ref.read(navProvider.notifier).changeTab(0);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => ProfilePage()),
+          );
+        },
+      ),
       body: pages[currentIndex],
       bottomNavigationBar: BottomNavBar(
         currentIndex: currentIndex,
