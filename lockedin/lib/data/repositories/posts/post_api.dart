@@ -1,6 +1,6 @@
-import 'dart:convert';
+import 'package:lockedin/data/models/post_model.dart';
+
 import 'post_repository.dart';
-import '../../models/post_model.dart';
 
 class PostApi implements PostRepository {
   final String apiUrl = "https://example.com/api/posts";

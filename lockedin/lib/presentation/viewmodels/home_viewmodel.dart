@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/data/models/post_model.dart';
-import 'package:lockedin/data/repositories/posts/post_api.dart';
 import 'package:lockedin/data/repositories/posts/post_test.dart';
 import '../../data/repositories/posts/post_repository.dart';
 

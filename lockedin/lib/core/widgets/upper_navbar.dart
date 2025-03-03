@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 
 class UpperNavbar extends StatelessWidget implements PreferredSizeWidget {
-  const UpperNavbar({super.key});
+  final leftIcon;
+  final leftOnPress;
+  const UpperNavbar({
+    super.key,
+    required Widget this.leftIcon,
+    required this.leftOnPress,
+  });
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: Colors.white,
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back, color: Colors.grey[700]),
-        onPressed: () {},
-      ),
+      leading: IconButton(icon: leftIcon, onPressed: leftOnPress),
       title: Container(
         height: 40,
         decoration: BoxDecoration(
