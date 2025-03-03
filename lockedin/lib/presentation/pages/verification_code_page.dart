@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/presentation/pages/forgot_password_page.dart';
+import 'package:lockedin/presentation/pages/new_password_page.dart';
 
 class VerificationCodeScreen extends StatelessWidget {
   @override
@@ -68,7 +69,14 @@ class VerificationCodeScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NewPasswordScreen(),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color.fromARGB(255, 1, 95, 171),
                   padding: EdgeInsets.symmetric(vertical: 15),
