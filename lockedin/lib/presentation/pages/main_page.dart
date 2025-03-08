@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/core/widgets/side_bar.dart';
 import 'package:lockedin/core/widgets/upper_navbar.dart';
-import 'package:lockedin/presentation/pages/profile_page.dart';
+//import 'package:lockedin/presentation/pages/profile_page.dart';
 import 'package:lockedin/presentation/viewmodels/profile_viewmodel.dart';
 import '../viewmodels/nav_viewmodel.dart';
 import '../pages/home_page.dart';
@@ -39,7 +39,7 @@ class MainPage extends ConsumerWidget {
               (currentUser) => CircleAvatar(
                 radius: 20,
                 backgroundColor: Colors.transparent,
-                backgroundImage: AssetImage(currentUser.profilePicture!),
+                backgroundImage: AssetImage(currentUser.profilePicture),
               ),
           loading:
               () => CircleAvatar(
