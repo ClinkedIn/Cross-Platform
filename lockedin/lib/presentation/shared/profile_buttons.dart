@@ -39,7 +39,7 @@ class ProfileButtons extends StatelessWidget {
           ),
           StyledButton(
             onPressed: () {},
-            text: "Enhanse Profile",
+            text: "Enhance Profile",
             backgroundColor: Colors.white,
             textColor: Colors.blue[600]!,
           ),
