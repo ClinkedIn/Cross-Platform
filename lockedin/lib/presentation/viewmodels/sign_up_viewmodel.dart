@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lockedin/data/repositories/posts/fake_sign_up_api.dart';
+import 'package:lockedin/data/repositories/posts/sign_up_api.dart';
 
 class SignupViewModel extends Notifier<SignupState> {
-  final FakeSignUpApi _api = FakeSignUpApi(); // Fake API instance
+  final SignUpApi _api = SignUpApi(); // Fake API instance
   final _secureStorage = FlutterSecureStorage(); // Secure storage instance
 
   @override
