@@ -5,6 +5,7 @@ import 'package:lockedin/core/widgets/upper_navbar.dart';
 import 'package:lockedin/presentation/pages/edit_profile_photo.dart';
 import 'package:lockedin/presentation/pages/home_page.dart';
 import 'package:lockedin/presentation/pages/main_page.dart';
+import 'package:lockedin/presentation/pages/update_page.dart';
 import 'package:lockedin/presentation/shared/profile_buttons.dart';
 import 'package:lockedin/presentation/viewmodels/nav_viewmodel.dart';
 import 'package:lockedin/presentation/viewmodels/profile_viewmodel.dart';
@@ -119,12 +120,28 @@ class ProfilePage extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          user.name,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              user.name,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Spacer(),
+                            IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => UpdatePage(),
+                                  ),
+                                );
+                              },
+                              icon: Icon(Icons.edit),
+                            ),
+                          ],
                         ),
                         Text(
                           user.headline,
