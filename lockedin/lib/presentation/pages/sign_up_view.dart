@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/presentation/pages/verification_email_view.dart';
 import 'package:lockedin/presentation/viewmodels/sign_up_viewmodel.dart';
 
 class SignUpView extends ConsumerStatefulWidget {
@@ -69,6 +70,23 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
   Widget build(BuildContext context) {
     final viewModel = ref.watch(signupProvider);
     final notifier = ref.read(signupProvider.notifier);
+    ref.listen(signupProvider, (previous, next) async {
+      if (next.success) {
+        print("✅ Navigation Triggered with Email: ${next.email}");
+
+        if (context.mounted) {
+          final shouldEditEmail = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => VerificationEmailView(
+                    email: next.email,
+                  ), // ✅ Use 'next.email' instead
+            ),
+          );
+        }
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -186,12 +204,12 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
               curve: Curves.easeOut,
               builder: (context, double value, child) {
                 return Transform.translate(
-                  offset: Offset(value, 0), // Animate the horizontal position
+                  offset: Offset(value, 0),
                   child: TextField(
                     controller: _emailController,
                     decoration: InputDecoration(
                       labelText: 'Email or Phone*',
-                      labelStyle: TextStyle(
+                      labelStyle: const TextStyle(
                         fontSize: 20,
                         color: Color.fromARGB(255, 116, 114, 114),
                       ),
@@ -217,6 +235,7 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
                       final validationMessage = notifier.validateEmailOrPhone(
                         _emailController.text,
                       );
+
                       if (validationMessage != null) {
                         setState(() {
                           errorText = validationMessage;
@@ -225,6 +244,10 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
                         setState(() {
                           errorText = null;
                         });
+
+                        // ✅ Update the ViewModel before proceeding
+                        notifier.setEmail(_emailController.text);
+
                         _goToNextStep(notifier);
                       }
                     },
@@ -269,7 +292,6 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
             ),
             const SizedBox(height: 15),
 
-            // 🔥 Animated Password TextField (Right to Left)
             TweenAnimationBuilder(
               tween: Tween<double>(
                 begin: 200,
@@ -374,6 +396,7 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
 
                 print("🚀 Submit button clicked");
                 notifier.setPassword(_passwordController.text);
+
                 await notifier.submitForm();
               },
             ),
@@ -419,3 +442,21 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
     );
   }
 }
+// ref.listen(signupProvider, (previous, next) async {
+//       if (next.success) {
+//         print("✅ Navigation Triggered");
+
+//         if (context.mounted) {
+//           final shouldEditEmail = await Navigator.push(
+//             context,
+//             MaterialPageRoute(builder: (context) => VerificationEmailView()),
+//           );
+
+//           if (shouldEditEmail == true) {
+//             setState(() {
+//               _emailController.text = "";
+//             });
+//           }
+//         }
+//       }
+//     }); this is how i navigate fix it with to update when email is edited
