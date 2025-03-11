@@ -23,6 +23,11 @@ class SignupViewModel extends Notifier<SignupState> {
     state = state.copyWith(email: value);
   }
 
+  void updateEmailInSignup(String newEmail) {
+    state = state.copyWith(email: newEmail);
+    print("📧 Updated email: ${state.email}");
+  }
+
   void setPassword(String value) {
     state = state.copyWith(password: value);
   }
