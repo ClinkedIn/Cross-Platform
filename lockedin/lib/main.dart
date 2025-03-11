@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/presentation/pages/edit_profile_photo.dart';
-import 'package:lockedin/presentation/pages/main_page.dart';
-
+import 'package:lockedin/shared/theme/theme_provider.dart';
+import 'package:lockedin/features/auth/view/main_page.dart';
 
 void main() {
   runApp(ProviderScope(child: MyApp())); // Enable Riverpod
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = ref.watch(themeProvider); // Watch theme changes
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'LinkedIn Clone',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      title: 'LockedIn',
+      theme: theme,
       home: MainPage(),
     );
   }
