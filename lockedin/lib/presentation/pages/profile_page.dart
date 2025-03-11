@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/core/widgets/bottom_navbar.dart';
 import 'package:lockedin/core/widgets/upper_navbar.dart';
+import 'package:lockedin/presentation/pages/edit_profile_photo.dart';
+import 'package:lockedin/presentation/pages/home_page.dart';
 import 'package:lockedin/presentation/pages/main_page.dart';
+import 'package:lockedin/presentation/pages/update_page.dart';
 import 'package:lockedin/presentation/shared/profile_buttons.dart';
 import 'package:lockedin/presentation/viewmodels/nav_viewmodel.dart';
 import 'package:lockedin/presentation/viewmodels/profile_viewmodel.dart';
@@ -34,57 +37,111 @@ class ProfilePage extends ConsumerWidget {
                   Stack(
                     clipBehavior: Clip.none, // Allows avatar to overflow
                     children: [
-                      Container(
-                        height: 120,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: AssetImage(user.coverPicture),
-                            fit: BoxFit.cover,
+                      Stack(
+                        clipBehavior: Clip.none, // Allows avatar to overflow
+                        children: [
+                          // Cover Photo
+                          Container(
+                            height: 120,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage(user.coverPicture),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
                           ),
-                        ),
+
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap: () {
+                                // Handle edit cover photo action here
+                                print("Edit cover photo tapped!");
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(
+                                    0.6,
+                                  ), // Semi-transparent background
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.edit,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+
                       // Profile Picture (In Front)
                       Positioned(
-                        bottom:
-                            -40, // Moves it downwards, overlapping the cover
+                        bottom: -40,
                         left: 16,
                         child: Material(
-                          elevation:
-                              5, // Adds a shadow effect to lift it above the cover
+                          elevation: 5, // Adds shadow effect
                           shape: CircleBorder(),
-                          child: Container(
-                            padding: EdgeInsets.all(
-                              3,
-                            ), // White border around avatar
-                            decoration: BoxDecoration(
-                              color:
-                                  Colors
-                                      .white, // White background to separate from cover
-                              shape: BoxShape.circle,
-                            ),
-                            child: CircleAvatar(
-                              radius: 48,
-                              backgroundImage: AssetImage(user.profilePicture),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditProfilePhoto(),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(3), // White border
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: CircleAvatar(
+                                radius: 40,
+                                backgroundImage: AssetImage(
+                                  user.profilePicture,
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 50), // Space for profile image
-                  // User Info
+                  SizedBox(height: 50),
+
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          user.name,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              user.name,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Spacer(),
+                            IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => UpdatePage(),
+                                  ),
+                                );
+                              },
+                              icon: Icon(Icons.edit),
+                            ),
+                          ],
                         ),
                         Text(
                           user.headline,

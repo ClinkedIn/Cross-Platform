@@ -12,7 +12,7 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
   int _currentStep = 1;
   double _progress = 0.3;
   bool _isPasswordVisible = false;
-  bool _rememberMe = false;
+  //bool _rememberMe = false;
 
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
