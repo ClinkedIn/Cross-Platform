@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
-import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:lockedin/features/profile/view/edit_profile_photo.dart';
 import 'package:lockedin/features/auth/view/main_page.dart';
 import 'package:lockedin/features/profile/view/update_page.dart';
@@ -54,12 +54,12 @@ class ProfilePage extends ConsumerWidget {
                           child: Container(
                             padding: EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: theme.primaryColor.withOpacity(0.6),
+                              color: AppColors.white,
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.edit,
-                              color: theme.iconTheme.color,
+                              color: AppColors.gray,
                               size: 20,
                             ),
                           ),
@@ -99,7 +99,7 @@ class ProfilePage extends ConsumerWidget {
                           children: [
                             Text(
                               user.name,
-                              style: theme.textTheme.headlineSmall,
+                              style: theme.textTheme.headlineLarge,
                             ),
                             Spacer(),
                             IconButton(
@@ -111,20 +111,17 @@ class ProfilePage extends ConsumerWidget {
                                   ),
                                 );
                               },
-                              icon: Icon(
-                                Icons.edit,
-                                color: theme.iconTheme.color,
-                              ),
+                              icon: Icon(Icons.edit, color: AppColors.gray),
                             ),
                           ],
                         ),
-                        Text(user.headline, style: theme.textTheme.titleSmall),
+                        Text(user.headline, style: theme.textTheme.bodyLarge),
                         Text(user.location, style: theme.textTheme.bodyLarge),
                         SizedBox(height: 10),
                         Text(
                           "${user.connections}+ connections",
                           style: TextStyle(
-                            color: theme.primaryColor,
+                            color: AppColors.secondary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -161,14 +158,20 @@ class ProfilePage extends ConsumerWidget {
                             Icons.remove_red_eye,
                             color: theme.iconTheme.color,
                           ),
-                          title: Text("Private to you"),
+                          title: Text(
+                            "Private to you",
+                            style: theme.textTheme.bodyLarge,
+                          ),
                         ),
                         ListTile(
                           leading: Icon(
                             Icons.question_answer,
                             color: theme.iconTheme.color,
                           ),
-                          title: Text("Are you still working at Microsoft?"),
+                          title: Text(
+                            "Are you still working at Microsoft?",
+                            style: theme.textTheme.bodyLarge,
+                          ),
                         ),
                       ],
                     ),
@@ -188,7 +191,7 @@ class ProfilePage extends ConsumerWidget {
       bottomNavigationBar: BottomNavBar(
         currentIndex: -1,
         onTap: (index) {
-          ref.read(navProvider.notifier).changeTab(index);
+          // ref.read(navProvider.notifier).changeTab(index);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => MainPage()),

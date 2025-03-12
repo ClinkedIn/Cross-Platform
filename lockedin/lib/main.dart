@@ -12,7 +12,7 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = ref.watch(themeProvider); // Watch theme changes
+    final theme = ref.watch(themeProvider);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,

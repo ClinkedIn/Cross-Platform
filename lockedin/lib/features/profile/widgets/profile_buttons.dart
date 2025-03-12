@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 
 class ProfileButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = AppColors();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),

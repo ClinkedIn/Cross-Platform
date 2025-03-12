@@ -21,23 +21,25 @@ class AppButtonStyles {
   static final ButtonStyle iconButton = IconButton.styleFrom(
     padding: const EdgeInsets.all(8),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(90)),
-    side: const BorderSide(color: AppColors.primary),
   );
   static Widget outlinedIconButton({
     required VoidCallback onPressed,
     required IconData icon,
   }) {
     return Container(
+      padding: const EdgeInsets.all(0), // Reduced padding
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
           color: AppColors.primary,
-          width: 2,
-        ), // Border added here
+          width: 2, // Reduced border width
+        ),
       ),
       child: IconButton(
         onPressed: onPressed,
         icon: Icon(icon, color: AppColors.primary),
+        iconSize: 20, // Reduced icon size
+        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
       ),
     );
   }
