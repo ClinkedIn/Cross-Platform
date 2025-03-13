@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+//import 'package:lockedin/shared/theme/app_theme.dart';
+import 'package:lockedin/shared/theme/styled_buttons.dart';
+import 'package:lockedin/shared/theme/text_styles.dart';
+//import 'package:lockedin/shared/theme/colors.dart';
 
 final passwordVisibilityProvider = StateNotifierProvider<PasswordVisibilityNotifier, PasswordVisibilityState>(
   (ref) => PasswordVisibilityNotifier(),
@@ -105,7 +109,7 @@ class ChangePasswordPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Change Password'),
+        title: const Text('Change Password', style: AppTextStyles.headline1),
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline),
@@ -118,12 +122,12 @@ class ChangePasswordPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Create a new password that is at least 8 characters long."),
+            const Text("Create a new password that is at least 8 characters long.", style: AppTextStyles.bodyText1),
             const SizedBox(height: 10),
             TextButton.icon(
               onPressed: ref.read(passwordVisibilityProvider.notifier).toggleGuidelines,
               icon: const Icon(Icons.shield, color: Colors.blue),
-              label: const Text("What makes a strong password?", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 17)),
+              label: const Text("What makes a strong password?", style: AppTextStyles.headline2),
             ),
             if (visibilityState.showPasswordGuidelines)
               Card(
@@ -134,14 +138,10 @@ class ChangePasswordPage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
-                      Text("Choose a strong password to\nprotect your account\n", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                      // IconButton(
-                      //       icon: Icon(Icons.close),
-                      //       onPressed: () => ref.read(showGuidelinesProvider.notifier).state = false,
-                      //     ),
-                      Text("• It should be a mix of letters, numbers, and special characters", style: TextStyle(fontSize: 16)),
-                      Text("• It should be at least 8 characters long", style: TextStyle(fontSize: 16)),
-                      Text("• It should not contain your name, phone number or email address", style: TextStyle(fontSize: 16))
+                      Text("Choose a strong password to\nprotect your account\n", style: AppTextStyles.headline2),
+                      Text("• It should be a mix of letters, numbers, and special characters", style: AppTextStyles.bodyText1),
+                      Text("• It should be at least 8 characters long", style: AppTextStyles.bodyText1),
+                      Text("• It should not contain your name, phone number or email address", style: AppTextStyles.bodyText1)
                     ],
                   ),
                 ),
@@ -155,16 +155,18 @@ class ChangePasswordPage extends ConsumerWidget {
                   value: passwordState.requireSignIn,
                   onChanged: (_) => ref.read(passwordStateProvider.notifier).toggleRequireSignIn(),
                 ),
-                const Text("Require all devices to sign in with new password"),
+                const Text("Require all devices to sign in with new password", style: AppTextStyles.bodyText2),
               ],
             ),
             ElevatedButton(
+              style: AppButtonStyles.elevatedButton,
               onPressed: passwordState.isSaveEnabled ? () {} : null,
-              child: const Text("Save Password", style: TextStyle(color: Colors.blue),),
+              child: const Text("Save Password"),
             ),
-            TextButton(
+            OutlinedButton(
+              style: AppButtonStyles.outlinedButton,
               onPressed: () {},
-              child: const Text("Forgot Password", style: TextStyle(color: Colors.blueGrey)),
+              child: const Text("Forgot Password"),
             ),
           ],
         ),
@@ -176,7 +178,7 @@ class ChangePasswordPage extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label),
+        Text(label, style: AppTextStyles.bodyText2),
         TextField(
           obscureText: !isVisible,
           onChanged: onChanged,
