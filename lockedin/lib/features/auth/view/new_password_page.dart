@@ -67,16 +67,24 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
             SizedBox(height: 10),
             Row(
               children: [
-                Checkbox(
-                  value: _requireSignIn,
-                  checkColor: Colors.white,
-                  activeColor: Color.fromARGB(255, 1, 95, 171),
-                  onChanged: (value) {
-                    setState(() {
-                      _requireSignIn = value!;
-                    });
-                  },
+                SizedBox(
+                  width: 20,
+                  child: Checkbox(
+                    value: _requireSignIn,
+                    checkColor: Colors.white,
+                    activeColor: Color.fromARGB(255, 1, 95, 171),
+                    onChanged: (value) {
+                      setState(() {
+                        _requireSignIn = value!;
+                      });
+                    },
+                  ),
                 ),
+                
+                SizedBox(
+                  width: 10,
+                ),
+
                 Text("Require all devices to sign in with new password"),
               ],
             ),
