@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+lockedin/linux/flutter/generated_plugin_registrant.cc
+lockedin/linux/flutter/generated_plugin_registrant.h
+lockedin/linux/flutter/generated_plugins.cmake
+lockedin/macos/Flutter/GeneratedPluginRegistrant.swift
+lockedin/windows/flutter/generated_plugin_registrant.h
+lockedin/windows/flutter/generated_plugin_registrant.cc
+lockedin/windows/flutter/generated_plugins.cmake
