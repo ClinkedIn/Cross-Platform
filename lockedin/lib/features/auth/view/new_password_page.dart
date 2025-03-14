@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockedin/shared/theme/colors.dart';
 
 class NewPasswordScreen extends StatefulWidget {
   @override
@@ -12,28 +13,47 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+    final theme = Theme.of(context); // Fetch current theme
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+
+      appBar: AppBar(
+        title: Text(
+          'Choose a new password',
+          style: theme.textTheme.headlineMedium,
+        ),
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        elevation: theme.appBarTheme.elevation,
+      ),
+
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
             SizedBox(height: 20),
+
             Text(
               'Choose a new password',
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              style: theme.textTheme.headlineLarge,
             ),
+
             SizedBox(height: 10),
+
             Text(
-              "To secure your account, choose a strong password you haven’t used before and is at least 8 characters long.",
-              style: TextStyle(fontSize: 16, color: Colors.black),
+              'To secure your account, choose a strong password you haven’t used before and is at least 8 characters long.',
+              style: theme.textTheme.bodyMedium,
             ),
+
             SizedBox(height: 20),
+
             TextField(
               obscureText: !_passwordVisible,
               decoration: InputDecoration(
                 labelText: "New password",
-                border: OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _passwordVisible ? Icons.visibility : Icons.visibility_off,
@@ -46,12 +66,13 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                 ),
               ),
             ),
+
             SizedBox(height: 15),
+
             TextField(
               obscureText: !_confirmPasswordVisible,
               decoration: InputDecoration(
                 labelText: "Retype new password",
-                border: OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _confirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
@@ -64,15 +85,22 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                 ),
               ),
             ),
+
             SizedBox(height: 10),
+
             Row(
               children: [
                 SizedBox(
                   width: 20,
                   child: Checkbox(
                     value: _requireSignIn,
-                    checkColor: Colors.white,
-                    activeColor: Color.fromARGB(255, 1, 95, 171),
+                    fillColor: WidgetStateProperty.resolveWith<Color>((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return AppColors.primary; // Blue when checked
+                      }
+                      return AppColors.background; // Default background color
+                    }),
+                    checkColor: Colors.white, // Checkmark color
                     onChanged: (value) {
                       setState(() {
                         _requireSignIn = value!;
@@ -85,31 +113,23 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                   width: 10,
                 ),
 
-                Text("Require all devices to sign in with new password"),
+                Text("Require all devices to sign in with new password",
+                  style: theme.textTheme.bodySmall,),
               ],
             ),
+
             SizedBox(height: 20),
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color.fromARGB(255, 1, 95, 171),
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
                 child: Text(
                   'Submit',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
                 ),
               ),
             ),
+            
           ],
         ),
       ),
