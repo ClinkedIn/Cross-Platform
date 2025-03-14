@@ -43,4 +43,23 @@ class AppButtonStyles {
       ),
     );
   }
+    static Widget socialLoginButton({
+    required String text,
+    required IconData icon,
+    required VoidCallback onPressed,
+    }) {
+      return OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 50),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        ),
+        onPressed: onPressed,
+        icon: Icon(icon, size: 24, color: AppColors.primary),
+        label: Text(
+          text,
+          style: AppTextStyles.buttonText.copyWith(color: AppColors.primary),
+        ),
+      );
+    }
+
 }
