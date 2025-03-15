@@ -2,27 +2,32 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 class VerificationEmailViewModel extends ChangeNotifier {
-  String _receivedCode = ""; // Code sent from the backend
-  String _userInputCode = ""; // User-entered code
+  String _receivedCode = "";
+  String _userInputCode = "";
   bool _isCodeValid = false;
-  bool _isResendDisabled = false; // Controls resend button state
+  bool _isResendDisabled = false;
+  String _email = "";
 
   String get receivedCode => _receivedCode;
   bool get isCodeValid => _isCodeValid;
   bool get isResendDisabled => _isResendDisabled;
+  String get email => _email;
 
-  // Function to simulate fetching the verification code from the backend
-  Future<void> fetchVerificationCode() async {
-    _receivedCode = ""; // Clear old code (simulating waiting for a response)
-    notifyListeners();
-
-    await Future.delayed(const Duration(seconds: 2)); // Simulate API delay
-    _receivedCode = (100000 + (DateTime.now().millisecond % 900000)).toString();
-    print("New Code Fetched: $_receivedCode"); // Debugging purpose
+  void setEmail(String email) {
+    _email = email;
     notifyListeners();
   }
 
-  // Function to update the user-inputted code
+  Future<void> fetchVerificationCode() async {
+    _receivedCode = "";
+    notifyListeners();
+
+    await Future.delayed(const Duration(seconds: 1));
+    _receivedCode = (100000 + (DateTime.now().millisecond % 900000)).toString();
+    print("New Code Fetched: $_receivedCode");
+    notifyListeners();
+  }
+
   void updateCode(String value) {
     _userInputCode = value;
     _isCodeValid = (_userInputCode == _receivedCode);
@@ -42,7 +47,6 @@ class VerificationEmailViewModel extends ChangeNotifier {
     }
   }
 
-  // Function to handle resending the verification code
   Future<void> resendCode() async {
     if (_isResendDisabled) return;
 
@@ -51,7 +55,6 @@ class VerificationEmailViewModel extends ChangeNotifier {
 
     await fetchVerificationCode();
 
-    // Enable the resend button after 10 seconds
     Future.delayed(const Duration(seconds: 10), () {
       _isResendDisabled = false;
       notifyListeners();

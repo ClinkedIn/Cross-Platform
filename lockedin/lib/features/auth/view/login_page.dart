@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lockedin/features/auth/view/forgot_password_page.dart';
+import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
 //import 'package:google_fonts/google_fonts.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
@@ -40,8 +42,18 @@ class LoginPage extends StatelessWidget {
               children: [
                 Text("or ", style: AppTextStyles.bodyText2),
                 TextButton(
-                  onPressed: () {},
-                  child: Text("Join lockedIn", style: AppTextStyles.buttonText.copyWith(color: AppColors.primary)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SignUpView()),
+                    );
+                  },
+                  child: Text(
+                    "Join lockedIn",
+                    style: AppTextStyles.buttonText.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -52,7 +64,9 @@ class LoginPage extends StatelessWidget {
                 labelText: "Email or Phone",
                 filled: true,
                 fillColor: isDarkMode ? AppColors.black : AppColors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -63,13 +77,27 @@ class LoginPage extends StatelessWidget {
                 labelText: "Password",
                 filled: true,
                 fillColor: isDarkMode ? AppColors.black : AppColors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
             const SizedBox(height: 24),
             TextButton(
-              onPressed: () {},
-              child: Text("Forgot password?", style: AppTextStyles.buttonText.copyWith(color: AppColors.primary)),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ForgotPasswordScreen(),
+                  ),
+                );
+              },
+              child: Text(
+                "Forgot password?",
+                style: AppTextStyles.buttonText.copyWith(
+                  color: AppColors.primary,
+                ),
+              ),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
@@ -109,6 +137,4 @@ class LoginPage extends StatelessWidget {
       ),
     );
   }
-
- 
 }
