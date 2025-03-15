@@ -53,7 +53,6 @@ class AppTheme {
     iconButtonTheme: IconButtonThemeData(style: AppButtonStyles.iconButton),
     iconTheme: IconThemeData(color: AppColors.gray),
 
-    // New Features
     snackBarTheme: SnackBarThemeData(
       backgroundColor: AppColors.primary,
       contentTextStyle: TextStyle(color: Colors.white),
