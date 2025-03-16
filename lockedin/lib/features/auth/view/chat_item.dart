@@ -4,7 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:lockedin/features/auth/view/chat_provider.dart';
 import 'package:lockedin/features/auth/view/chats.dart';
 import 'package:lockedin/features/auth/view/chat_history_screen.dart';
+import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
+import 'package:lockedin/shared/theme/theme_provider.dart';
 
 String formattedTime(DateTime timestamp) {
   final now = DateTime.now();
@@ -37,10 +39,11 @@ class ChatItem extends ConsumerWidget {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(chat.name, style: AppTextStyles.headline2),
+          Text(chat.name, 
+          style: AppTextStyles.headline2.copyWith(color: ref.watch(themeProvider) == AppTheme.darkTheme ? Colors.white : Colors.black)),
           Text(
                 formatted,  
-                style: AppTextStyles.bodyText2,
+                style: AppTextStyles.bodyText2.copyWith(color: ref.watch(themeProvider) == AppTheme.darkTheme ? Colors.white : Colors.black)
               ),
           ]
         ),
@@ -51,7 +54,7 @@ class ChatItem extends ConsumerWidget {
               chat.lastMessage,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.bodyText1,
+              style: AppTextStyles.bodyText1.copyWith(color: ref.watch(themeProvider) == AppTheme.darkTheme ? Colors.white : Colors.black)
             ),
           ),
           if (chat.unreadCount > 0)
