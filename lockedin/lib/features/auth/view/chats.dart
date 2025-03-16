@@ -14,5 +14,15 @@ class Chat {
     required this.isSentByUser,
     required this.timestamp,
 });
+  Chat copyWith({int? unreadCount}) {
+    return Chat(
+      name: name,
+      imageUrl: imageUrl,
+      unreadCount: unreadCount ?? this.unreadCount,
+      lastMessage: lastMessage,
+      isSentByUser: isSentByUser,
+      timestamp: timestamp,
+    );
+  }
 }
 
