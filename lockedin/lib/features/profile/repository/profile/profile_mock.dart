@@ -7,14 +7,14 @@ class ProfileMock extends ProfileRepository {
     return UserModel(
       id: userId,
       name: "Omar Refaat",
-      profilePicture: "assets/images/download.png",
+      profilePicture: "assets/images/default_profile_photo.png",
       headline: "Software Engineer | Flutter Developer",
       location: "Cairo, Egypt",
       connections: 500,
       followers: 1200,
       experience: ["Software Engineer at Google", "Intern at Microsoft"],
       about: "Passionate about software engineering and mobile development.",
-      coverPicture: "assets/images/download.jpeg",
+      coverPicture: "assets/images/default_cover_photo.jpeg",
     );
   }
 }
