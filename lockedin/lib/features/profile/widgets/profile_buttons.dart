@@ -3,10 +3,11 @@ import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 
 class ProfileButtons extends StatelessWidget {
+  const ProfileButtons({super.key});
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = AppColors();
+    // final theme = Theme.of(context);
+    // final colorScheme = AppColors();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),

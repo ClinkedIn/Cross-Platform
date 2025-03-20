@@ -95,7 +95,7 @@ class AppTheme {
   static ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
     primaryColor: AppColors.white,
-    scaffoldBackgroundColor: AppColors.darkBackground,
+    scaffoldBackgroundColor: AppColors.black,
     textTheme: TextTheme(
       headlineLarge: AppTextStyles.headline1.copyWith(color: AppColors.white),
       headlineMedium: AppTextStyles.headline2.copyWith(color: AppColors.white),
@@ -133,7 +133,7 @@ class AppTheme {
       ),
     ),
     cardTheme: CardTheme(
-      color: AppColors.black,
+      color: AppColors.darkBackground,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ),

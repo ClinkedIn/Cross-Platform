@@ -22,7 +22,7 @@ class MainPage extends ConsumerWidget {
 
     final List<Widget> pages = [
       HomePage(),
-      NetworkPage(),
+      NetworksPage(),
       PostPage(),
       NotificationsPage(),
       JobsPage(),
