@@ -8,11 +8,16 @@ import 'package:lockedin/features/profile/view/update_page.dart';
 import 'package:lockedin/features/profile/widgets/profile_buttons.dart';
 import 'package:lockedin/shared/widgets/upper_navbar.dart';
 import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
+import 'package:lockedin/features/profile/viewmodel/profile_component_viewmodel.dart';
+import 'package:lockedin/features/profile/widgets/profile_component.dart';
 
 class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileViewModelProvider);
+    final profileComponentViewModel = ref.watch(
+      profileComponentViewModelProvider,
+    );
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -20,7 +25,6 @@ class ProfilePage extends ConsumerWidget {
         leftIcon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
         leftOnPress: () {
           ref.read(navProvider.notifier).changeTab(0);
-
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => MainPage()),
@@ -176,6 +180,48 @@ class ProfilePage extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  Divider(),
+                  // Profile Component Sections
+                  ProfileComponent(
+                    sectionTitle: "Experience",
+                    items:
+                        ref
+                            .watch(profileComponentViewModelProvider.notifier)
+                            .experienceList,
+                    onAdd: () {
+                      print("Add button clicked");
+                    },
+                    onEdit: () {
+                      print("Edit button clicked");
+                    },
+                  ),
+                  ProfileComponent(
+                    sectionTitle: "Education",
+                    items:
+                        ref
+                            .watch(profileComponentViewModelProvider.notifier)
+                            .educationList,
+                    onAdd: () {
+                      print("Add button clicked");
+                    },
+                    onEdit: () {
+                      print("Edit button clicked");
+                    },
+                  ),
+                  ProfileComponent(
+                    sectionTitle: "Licenses & Certifications",
+                    items:
+                        ref
+                            .watch(profileComponentViewModelProvider.notifier)
+                            .licenseList,
+                    onAdd: () {
+                      print("Add button clicked");
+                    },
+                    onEdit: () {
+                      print("Edit button clicked");
+                    },
+                  ),
+                  SizedBox(height: 20),
                 ],
               ),
             ),
@@ -191,7 +237,6 @@ class ProfilePage extends ConsumerWidget {
       bottomNavigationBar: BottomNavBar(
         currentIndex: -1,
         onTap: (index) {
-          // ref.read(navProvider.notifier).changeTab(index);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => MainPage()),
