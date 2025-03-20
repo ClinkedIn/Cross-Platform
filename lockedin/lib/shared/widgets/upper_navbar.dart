@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
+import 'package:lockedin/features/auth/view/chat_list_page.dart'; //trial for chat button when pressed
+
+final navigationProvider = StateProvider<String>((ref) => '/');
 
 class UpperNavbar extends ConsumerWidget implements PreferredSizeWidget {
   final Widget leftIcon;
@@ -52,6 +55,16 @@ class UpperNavbar extends ConsumerWidget implements PreferredSizeWidget {
           icon: Icon(Icons.settings, color: Colors.grey[700]),
           onPressed: () {},
         ),
+        IconButton(
+          icon: Icon(Icons.chat, color: Colors.grey[700]),
+          onPressed: () {
+            ref.read(navigationProvider.notifier).state = '/chats';
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ChatListScreen()),
+            );
+          },
+        ) //Chat button
       ],
     );
   }
