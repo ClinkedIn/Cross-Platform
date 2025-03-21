@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/verification_code_page.dart';
 import 'package:lockedin/shared/widgets/logo_appbar.dart';
-
+import 'package:sizer/sizer.dart';
 
 class ForgotPasswordScreen extends StatelessWidget {
   @override
@@ -13,26 +13,27 @@ class ForgotPasswordScreen extends StatelessWidget {
       appBar: LogoAppbar(),
 
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h), // Responsive padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 20),
+            SizedBox(height: 3.h), // Responsive spacing
 
             TextField(
               decoration: InputDecoration(
                 labelText: 'Email or Phone',
-              )
+                labelStyle: theme.textTheme.bodyLarge?.copyWith(fontSize: 2.h), // Responsive text
+              ),
             ),
 
-            SizedBox(height: 15),
+            SizedBox(height: 2.h),
 
             Text(
               "We'll send a verification code to this email or phone number if it matches an existing LinkedIn account.",
-              style: theme.textTheme.bodyMedium,
+              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 1.8.h), // Responsive text
             ),
 
-            SizedBox(height: 30),
+            SizedBox(height: 4.h),
 
             SizedBox(
               width: double.infinity,
@@ -48,11 +49,10 @@ class ForgotPasswordScreen extends StatelessWidget {
                 style: theme.elevatedButtonTheme.style, // Use theme styling
                 child: Text(
                   'Next',
-                  style: theme.textTheme.labelLarge
+                  style: theme.textTheme.labelLarge?.copyWith(fontSize: 2.2.h), // Responsive text
                 ),
               ),
             ),
-
           ],
         ),
       ),
