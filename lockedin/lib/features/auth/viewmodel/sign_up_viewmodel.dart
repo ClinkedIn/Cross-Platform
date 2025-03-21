@@ -1,51 +1,44 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:lockedin/features/home_page/repository/posts/fake_sign_up_api.dart';
+import 'package:lockedin/features/auth/repository/sign_up_repository.dart';
+import 'package:lockedin/features/auth/state/sign_up_state.dart';
+import 'dart:convert';
 
 class SignupViewModel extends Notifier<SignupState> {
-  final FakeSignUpApi _api = FakeSignUpApi(); // Fake API instance
-  final _secureStorage = FlutterSecureStorage(); // Secure storage instance
+  final SignupRepository _repository = SignupRepository();
+  final _secureStorage = const FlutterSecureStorage();
 
   @override
   SignupState build() {
-    return SignupState(); // ✅ Provide initial state
+    return const SignupState();
   }
 
-  void setFirstName(String value) {
-    state = state.copyWith(firstName: value);
-  }
-
-  void setLastName(String value) {
-    state = state.copyWith(lastName: value);
-  }
-
-  void setEmail(String value) {
-    state = state.copyWith(email: value);
-  }
-
-  void updateEmailInSignup(String newEmail) {
-    state = state.copyWith(email: newEmail);
-    print("📧 Updated email: ${state.email}");
-  }
-
-  void setPassword(String value) {
-    state = state.copyWith(password: value);
-  }
-
-  void setRememberMe(bool value) {
-    state = state.copyWith(rememberMe: value);
-  }
+  void setFirstName(String value) => state = state.copyWith(firstName: value);
+  void setLastName(String value) => state = state.copyWith(lastName: value);
+  void setEmail(String value) => state = state.copyWith(email: value);
+  void setPassword(String value) => state = state.copyWith(password: value);
+  void setRememberMe(bool value) => state = state.copyWith(rememberMe: value);
 
   String? validateEmailOrPhone(String input) {
-    if (RegExp(r'^\+?[0-9]+$').hasMatch(input)) {
+    print("🔍 Validating input: $input");
+
+    if (RegExp(r'^\+?[ 0-9]+$').hasMatch(input)) {
       if (!input.startsWith('+')) {
+        print("❌ Invalid phone format");
         return "❌ Please enter a valid phone number, including '+' when using a country code.";
-      } else {
-        return null;
       }
-    } else if (RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(input)) {
+      print("✅ Valid phone number");
       return null;
     }
+
+    if (RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    ).hasMatch(input)) {
+      print("✅ Valid email");
+      return null;
+    }
+
+    print("❌ Invalid email or phone");
     return "❌ Invalid input. Please enter a valid email or phone number.";
   }
 
@@ -57,11 +50,6 @@ class SignupViewModel extends Notifier<SignupState> {
 
   Future<void> submitForm() async {
     print('✅ Submit button pressed');
-    print('First Name: ${state.firstName}');
-    print('Last Name: ${state.lastName}');
-    print('Email: ${state.email}');
-    print('Password: ${state.password}');
-    print('Remember Me: ${state.rememberMe}');
 
     if (!isFormValid) {
       print('❌ Error: All fields must be filled!');
@@ -76,26 +64,34 @@ class SignupViewModel extends Notifier<SignupState> {
 
     state = state.copyWith(isLoading: true);
 
-    bool success = await _api.registerUser(
-      state.firstName,
-      state.lastName,
-      state.email,
-      state.password,
-      state.rememberMe,
-    );
+    try {
+      final response = await _repository.registerUser(
+        firstName: state.firstName,
+        lastName: state.lastName,
+        email: state.email,
+        password: state.password,
+        rememberMe: state.rememberMe,
+      );
 
-    state = state.copyWith(isLoading: false, success: success);
+      state = state.copyWith(isLoading: false);
+      print("📨 Server response: ${response.body}");
 
-    if (success && state.rememberMe) {
-      await _secureStorage.write(key: 'email', value: state.email);
-      await _secureStorage.write(key: 'password', value: state.password);
-      print('🔐 Credentials saved securely!');
-    }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        print("✅ Signup successful: ${responseData["message"]}");
+        state = state.copyWith(success: true);
 
-    if (success) {
-      print('✅ Signup successful');
-    } else {
-      print('❌ Signup failed. Please try again.');
+        if (state.rememberMe) {
+          await _secureStorage.write(key: 'email', value: state.email);
+          await _secureStorage.write(key: 'password', value: state.password);
+          print('🔐 Credentials saved securely!');
+        }
+      } else {
+        print('❌ Signup failed. Server responded with: ${response.body}');
+      }
+    } catch (e) {
+      state = state.copyWith(isLoading: false);
+      print('❌ Signup failed due to network error: $e');
     }
   }
 
@@ -124,43 +120,3 @@ class SignupViewModel extends Notifier<SignupState> {
 final signupProvider = NotifierProvider<SignupViewModel, SignupState>(
   SignupViewModel.new,
 );
-
-class SignupState {
-  final String firstName;
-  final String lastName;
-  final String email;
-  final String password;
-  final bool rememberMe;
-  final bool isLoading;
-  final bool success;
-
-  SignupState({
-    this.firstName = '',
-    this.lastName = '',
-    this.email = '',
-    this.password = '',
-    this.rememberMe = false,
-    this.isLoading = false,
-    this.success = false,
-  });
-
-  SignupState copyWith({
-    String? firstName,
-    String? lastName,
-    String? email,
-    String? password,
-    bool? rememberMe,
-    bool? isLoading,
-    bool? success,
-  }) {
-    return SignupState(
-      firstName: firstName ?? this.firstName,
-      lastName: lastName ?? this.lastName,
-      email: email ?? this.email,
-      password: password ?? this.password,
-      rememberMe: rememberMe ?? this.rememberMe,
-      isLoading: isLoading ?? this.isLoading,
-      success: success ?? this.success,
-    );
-  }
-}

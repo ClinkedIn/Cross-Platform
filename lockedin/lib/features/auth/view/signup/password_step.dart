@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockedin/features/auth/state/sign_up_state.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
 import 'package:lockedin/features/auth/viewmodel/sign_up_viewmodel.dart';

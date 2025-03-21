@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/features/auth/view/forgot_password_page.dart';
 import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
-//import 'package:google_fonts/google_fonts.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
+import 'package:sizer/sizer.dart';
 
 class LoginPage extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
@@ -17,7 +17,10 @@ class LoginPage extends StatelessWidget {
 
     return Scaffold(
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        padding: EdgeInsets.symmetric(
+          horizontal: 4.w,
+          vertical: 5.h,
+        ), // Responsive padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -27,20 +30,27 @@ class LoginPage extends StatelessWidget {
                   "Locked ",
                   style: AppTextStyles.headline1.copyWith(
                     color: AppColors.primary,
+                    fontSize: 3.h, // Responsive font size
                   ),
                 ),
                 Image.network(
                   "https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png",
-                  height: 30,
+                  height: 4.h, // Responsive height
                 ),
               ],
             ),
-            const SizedBox(height: 42),
-            Text("Sign in", style: theme.textTheme.headlineLarge),
-            const SizedBox(height: 8),
+            SizedBox(height: 5.h), // Responsive spacing
+            Text(
+              "Sign in",
+              style: theme.textTheme.headlineLarge?.copyWith(fontSize: 3.5.h),
+            ),
+            SizedBox(height: 1.h),
             Row(
               children: [
-                Text("or ", style: AppTextStyles.bodyText2),
+                Text(
+                  "or ",
+                  style: AppTextStyles.bodyText2.copyWith(fontSize: 1.8.h),
+                ),
                 TextButton(
                   onPressed: () {
                     Navigator.push(
@@ -49,15 +59,16 @@ class LoginPage extends StatelessWidget {
                     );
                   },
                   child: Text(
-                    "Join lockedIn",
+                    "Join LockedIn",
                     style: AppTextStyles.buttonText.copyWith(
                       color: AppColors.primary,
+                      fontSize: 1.8.h,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 34),
+            SizedBox(height: 4.h),
             TextField(
               controller: _emailController,
               decoration: InputDecoration(
@@ -65,11 +76,11 @@ class LoginPage extends StatelessWidget {
                 filled: true,
                 fillColor: isDarkMode ? AppColors.black : AppColors.white,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(2.w),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 2.h),
             TextField(
               controller: _passwordController,
               obscureText: true,
@@ -78,11 +89,11 @@ class LoginPage extends StatelessWidget {
                 filled: true,
                 fillColor: isDarkMode ? AppColors.black : AppColors.white,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(2.w),
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 3.h),
             TextButton(
               onPressed: () {
                 Navigator.push(
@@ -96,27 +107,33 @@ class LoginPage extends StatelessWidget {
                 "Forgot password?",
                 style: AppTextStyles.buttonText.copyWith(
                   color: AppColors.primary,
+                  fontSize: 1.8.h,
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 3.h),
             ElevatedButton(
               style: AppButtonStyles.elevatedButton,
               onPressed: () {},
-              child: const Text("Sign in"),
+              child: Text(
+                "Sign in",
+                style: TextStyle(fontSize: 2.h), // Responsive text
+              ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 3.h),
             Row(
-              children: const [
-                Expanded(child: Divider()),
+              children: [
+                const Expanded(child: Divider()),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Text("or"),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 2.w,
+                  ), // Responsive padding
+                  child: Text("or", style: TextStyle(fontSize: 1.8.h)),
                 ),
-                Expanded(child: Divider()),
+                const Expanded(child: Divider()),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 3.h),
             Column(
               children: [
                 AppButtonStyles.socialLoginButton(
@@ -124,7 +141,7 @@ class LoginPage extends StatelessWidget {
                   icon: Icons.apple,
                   onPressed: () {},
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 2.h),
                 AppButtonStyles.socialLoginButton(
                   text: "Sign in with Google",
                   icon: Icons.g_mobiledata,
