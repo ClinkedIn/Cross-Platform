@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/auth/view/main_page.dart';
+import 'package:lockedin/features/auth/viewmodel/login_in_viewmodel.dart';
 import 'package:lockedin/features/auth/view/forgot_password_page.dart';
 import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
 import 'package:lockedin/shared/theme/colors.dart';
@@ -6,14 +9,13 @@ import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
 import 'package:sizer/sizer.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends ConsumerWidget {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final loginState = ref.watch(loginViewModelProvider);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -39,12 +41,14 @@ class LoginPage extends StatelessWidget {
                 ),
               ],
             ),
+
             SizedBox(height: 5.h), // Responsive spacing
             Text(
               "Sign in",
               style: theme.textTheme.headlineLarge?.copyWith(fontSize: 3.5.h),
             ),
             SizedBox(height: 1.h),
+
             Row(
               children: [
                 Text(
@@ -53,14 +57,14 @@ class LoginPage extends StatelessWidget {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => SignUpView()),
                     );
                   },
                   child: Text(
                     "Join LockedIn",
-                    style: AppTextStyles.buttonText.copyWith(
+      style: AppTextStyles.buttonText.copyWith(
                       color: AppColors.primary,
                       fontSize: 1.8.h,
                     ),
@@ -73,8 +77,9 @@ class LoginPage extends StatelessWidget {
               controller: _emailController,
               decoration: InputDecoration(
                 labelText: "Email or Phone",
+
                 filled: true,
-                fillColor: isDarkMode ? AppColors.black : AppColors.white,
+
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(2.w),
                 ),
@@ -87,13 +92,61 @@ class LoginPage extends StatelessWidget {
               decoration: InputDecoration(
                 labelText: "Password",
                 filled: true,
-                fillColor: isDarkMode ? AppColors.black : AppColors.white,
+
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(2.w),
                 ),
               ),
             ),
+
             SizedBox(height: 3.h),
+
+            loginState.when(
+              data:
+                  (_) => ElevatedButton(
+                    style: AppButtonStyles.elevatedButton,
+                    onPressed: () async {
+                      await ref
+                          .read(loginViewModelProvider.notifier)
+                          .login(
+                            _emailController.text,
+                            _passwordController.text,
+                          );
+
+                      // If successful, navigate to Home Page
+                      if (ref.read(loginViewModelProvider).hasValue) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => MainPage()),
+                        );
+                      }
+                    },
+                    child: const Text("Sign in"),
+                  ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error:
+                  (error, _) => Column(
+                    children: [
+                      Text(
+                        "Error: $error",
+                        style: TextStyle(color: Colors.red),
+                      ),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: () async {
+                          await ref
+                              .read(loginViewModelProvider.notifier)
+                              .login(
+                                _emailController.text,
+                                _passwordController.text,
+                              );
+                        },
+                        child: const Text("Retry"),
+                      ),
+                    ],
+                  ),
+            ),
+
             TextButton(
               onPressed: () {
                 Navigator.push(
@@ -111,16 +164,10 @@ class LoginPage extends StatelessWidget {
                 ),
               ),
             ),
+
+
             SizedBox(height: 3.h),
-            ElevatedButton(
-              style: AppButtonStyles.elevatedButton,
-              onPressed: () {},
-              child: Text(
-                "Sign in",
-                style: TextStyle(fontSize: 2.h), // Responsive text
-              ),
-            ),
-            SizedBox(height: 3.h),
+
             Row(
               children: [
                 const Expanded(child: Divider()),
