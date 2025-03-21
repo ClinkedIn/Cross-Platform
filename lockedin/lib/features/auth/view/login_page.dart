@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/auth/view/main_page.dart';
-import 'package:lockedin/features/auth/view/sign_up_view.dart';
 import 'package:lockedin/features/auth/viewmodel/login_in_viewmodel.dart';
-import 'package:lockedin/main.dart';
 import 'package:lockedin/features/auth/view/forgot_password_page.dart';
 import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
-//import 'package:google_fonts/google_fonts.dart';
-
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
@@ -48,10 +44,7 @@ class LoginPage extends ConsumerWidget {
                 Text("or ", style: AppTextStyles.bodyText2),
                 TextButton(
                   onPressed: () {
-
                     Navigator.pushReplacement(
-                    Navigator.push(
-
                       context,
                       MaterialPageRoute(builder: (context) => SignUpView()),
                     );
@@ -73,7 +66,6 @@ class LoginPage extends ConsumerWidget {
                 labelText: "Email or Phone",
 
                 filled: true,
-                fillColor: isDarkMode ? AppColors.black : AppColors.white,
 
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -87,7 +79,6 @@ class LoginPage extends ConsumerWidget {
               decoration: InputDecoration(
                 labelText: "Password",
                 filled: true,
-                fillColor: isDarkMode ? AppColors.black : AppColors.white,
 
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -139,7 +130,7 @@ class LoginPage extends ConsumerWidget {
                       ),
                     ],
                   ),
-
+            ),
             TextButton(
               onPressed: () {
                 Navigator.push(
@@ -156,12 +147,7 @@ class LoginPage extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              style: AppButtonStyles.elevatedButton,
-              onPressed: () {},
-              child: const Text("Sign in"),
-            ),
+
             const SizedBox(height: 20),
             Row(
               children: const [
@@ -188,7 +174,6 @@ class LoginPage extends ConsumerWidget {
                   onPressed: () {},
                 ),
               ],
-
             ),
           ],
         ),
