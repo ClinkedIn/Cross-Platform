@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/auth/viewmodel/change_password_viewmodel.dart';
+import 'package:lockedin/features/auth/view/forgot_password_page.dart';
 //import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
 //import 'package:lockedin/shared/theme/colors.dart';
+
+final navigationProvider = StateProvider<String>((ref) => '/');
 
 final passwordVisibilityProvider = StateNotifierProvider<PasswordVisibilityNotifier, PasswordVisibilityState>(
   (ref) => PasswordVisibilityNotifier(),
@@ -62,11 +66,13 @@ class PasswordVisibilityNotifier extends StateNotifier<PasswordVisibilityState> 
 }
 
 class PasswordState {
+  final String currentPassword;
   final String newPassword;
   final String confirmPassword;
   final bool requireSignIn;
 
   PasswordState({
+    this.currentPassword = '',
     this.newPassword = '',
     this.confirmPassword = '',
     this.requireSignIn = true,
@@ -74,12 +80,15 @@ class PasswordState {
 
   bool get isSaveEnabled => newPassword.length >= 8 && newPassword == confirmPassword;
 
+
   PasswordState copyWith({
+    String? currentPassword,
     String? newPassword,
     String? confirmPassword,
     bool? requireSignIn,
   }) {
     return PasswordState(
+      currentPassword: currentPassword ?? this.currentPassword,
       newPassword: newPassword ?? this.newPassword,
       confirmPassword: confirmPassword ?? this.confirmPassword,
       requireSignIn: requireSignIn ?? this.requireSignIn,
@@ -90,8 +99,8 @@ class PasswordState {
 class PasswordStateNotifier extends StateNotifier<PasswordState> {
   PasswordStateNotifier() : super(PasswordState());
 
-  void updatePasswords(String newPassword, String confirmPassword) {
-    state = state.copyWith(newPassword: newPassword, confirmPassword: confirmPassword);
+  void updatePasswords(String currentPassword, String newPassword, String confirmPassword) {
+    state = state.copyWith(currentPassword: currentPassword, newPassword: newPassword, confirmPassword: confirmPassword);
   }
 
   void toggleRequireSignIn() {
@@ -106,6 +115,7 @@ class ChangePasswordPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final visibilityState = ref.watch(passwordVisibilityProvider);
     final passwordState = ref.watch(passwordStateProvider);
+    final changePasswordState = ref.watch(changePasswordViewModelProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -146,9 +156,9 @@ class ChangePasswordPage extends ConsumerWidget {
                   ),
                 ),
               ),
-            _buildPasswordField("Type your current password", visibilityState.isCurrentPasswordVisible, ref.read(passwordVisibilityProvider.notifier).toggleCurrentPasswordVisibility),
-            _buildPasswordField("Type your new password", visibilityState.isNewPasswordVisible, ref.read(passwordVisibilityProvider.notifier).toggleNewPasswordVisibility, (value) => ref.read(passwordStateProvider.notifier).updatePasswords(value, passwordState.confirmPassword)),
-            _buildPasswordField("Retype your new password", visibilityState.isConfirmPasswordVisible, ref.read(passwordVisibilityProvider.notifier).toggleConfirmPasswordVisibility, (value) => ref.read(passwordStateProvider.notifier).updatePasswords(passwordState.newPassword, value)),
+            _buildPasswordField("Type your current password", visibilityState.isCurrentPasswordVisible, ref.read(passwordVisibilityProvider.notifier).toggleCurrentPasswordVisibility, (value) => ref.read(passwordStateProvider.notifier).updatePasswords(value, passwordState.newPassword, passwordState.confirmPassword)),
+            _buildPasswordField("Type your new password", visibilityState.isNewPasswordVisible, ref.read(passwordVisibilityProvider.notifier).toggleNewPasswordVisibility, (value) => ref.read(passwordStateProvider.notifier).updatePasswords(passwordState.currentPassword, value, passwordState.confirmPassword)),
+            _buildPasswordField("Retype your new password", visibilityState.isConfirmPasswordVisible, ref.read(passwordVisibilityProvider.notifier).toggleConfirmPasswordVisibility, (value) => ref.read(passwordStateProvider.notifier).updatePasswords(passwordState.currentPassword, passwordState.newPassword, value)),
             Row(
               children: [
                 Checkbox(
@@ -158,14 +168,37 @@ class ChangePasswordPage extends ConsumerWidget {
                 const Text("Require all devices to sign in with new password", style: AppTextStyles.bodyText2),
               ],
             ),
+            
             ElevatedButton(
               style: AppButtonStyles.elevatedButton,
-              onPressed: passwordState.isSaveEnabled ? () {} : null,
+              onPressed: passwordState.isSaveEnabled ? () {
+                ref.read(changePasswordViewModelProvider.notifier).changePassword(
+                  passwordState.newPassword,
+                  passwordState.currentPassword, // Replace with actual input              
+                );
+              } : null,
               child: const Text("Save Password"),
             ),
+            // Success or error message display
+            // if (AuthService.successMessage != null) 
+            //   Padding(
+            //     padding: const EdgeInsets.symmetric(vertical: 10),
+            //     child: Text(AuthService.successMessage, style: AppTextStyles.bodyText1.copyWith(color: Colors.green)),
+            //   ),
+            // if (AuthService.errorMessage != null) 
+            //   Padding(
+            //     padding: const EdgeInsets.symmetric(vertical: 10),
+            //     child: Text(AuthService.errorMessage!, style: AppTextStyles.bodyText1.copyWith(color: Colors.red)),
+            //   ),
             OutlinedButton(
               style: AppButtonStyles.outlinedButton,
-              onPressed: () {},
+              onPressed: () {
+                ref.read(navigationProvider.notifier).state = '/chats';
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+            );
+              },
               child: const Text("Forgot Password"),
             ),
           ],
