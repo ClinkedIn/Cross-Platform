@@ -4,6 +4,10 @@ import 'package:lockedin/features/auth/view/main_page.dart';
 import 'package:lockedin/features/auth/view/sign_up_view.dart';
 import 'package:lockedin/features/auth/viewmodel/login_in_viewmodel.dart';
 import 'package:lockedin/main.dart';
+import 'package:lockedin/features/auth/view/forgot_password_page.dart';
+import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
+//import 'package:google_fonts/google_fonts.dart';
+
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
@@ -44,13 +48,17 @@ class LoginPage extends ConsumerWidget {
                 Text("or ", style: AppTextStyles.bodyText2),
                 TextButton(
                   onPressed: () {
+
                     Navigator.pushReplacement(
+                    Navigator.push(
+
                       context,
                       MaterialPageRoute(builder: (context) => SignUpView()),
                     );
                   },
                   child: Text(
                     "Join LockedIn",
+
                     style: AppTextStyles.buttonText.copyWith(
                       color: AppColors.primary,
                     ),
@@ -63,6 +71,10 @@ class LoginPage extends ConsumerWidget {
               controller: _emailController,
               decoration: InputDecoration(
                 labelText: "Email or Phone",
+
+                filled: true,
+                fillColor: isDarkMode ? AppColors.black : AppColors.white,
+
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -74,6 +86,9 @@ class LoginPage extends ConsumerWidget {
               obscureText: true,
               decoration: InputDecoration(
                 labelText: "Password",
+                filled: true,
+                fillColor: isDarkMode ? AppColors.black : AppColors.white,
+
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -124,6 +139,56 @@ class LoginPage extends ConsumerWidget {
                       ),
                     ],
                   ),
+
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ForgotPasswordScreen(),
+                  ),
+                );
+              },
+              child: Text(
+                "Forgot password?",
+                style: AppTextStyles.buttonText.copyWith(
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              style: AppButtonStyles.elevatedButton,
+              onPressed: () {},
+              child: const Text("Sign in"),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: const [
+                Expanded(child: Divider()),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Text("or"),
+                ),
+                Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Column(
+              children: [
+                AppButtonStyles.socialLoginButton(
+                  text: "Sign in with Apple",
+                  icon: Icons.apple,
+                  onPressed: () {},
+                ),
+                const SizedBox(height: 12),
+                AppButtonStyles.socialLoginButton(
+                  text: "Sign in with Google",
+                  icon: Icons.g_mobiledata,
+                  onPressed: () {},
+                ),
+              ],
+
             ),
           ],
         ),
