@@ -16,6 +16,7 @@ class LoginPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final loginState = ref.watch(loginViewModelProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -64,7 +65,7 @@ class LoginPage extends ConsumerWidget {
                   },
                   child: Text(
                     "Join LockedIn",
-      style: AppTextStyles.buttonText.copyWith(
+                    style: AppTextStyles.buttonText.copyWith(
                       color: AppColors.primary,
                       fontSize: 1.8.h,
                     ),
@@ -164,7 +165,6 @@ class LoginPage extends ConsumerWidget {
                 ),
               ),
             ),
-
 
             SizedBox(height: 3.h),
 

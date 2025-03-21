@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
-import 'package:lockedin/features/auth/view/chats.dart';
+import 'package:lockedin/features/chat/view/chats.dart';
 
 class ChatNotifier extends StateNotifier<List<Chat>> {
   ChatNotifier() : super([]);
@@ -12,7 +12,8 @@ class ChatNotifier extends StateNotifier<List<Chat>> {
     state = [
       Chat(
         name: "Lionel Messi",
-        imageUrl: "https://img.a.transfermarkt.technology/portrait/header/28003-1740766555.jpg?lm=1",
+        imageUrl:
+            "https://img.a.transfermarkt.technology/portrait/header/28003-1740766555.jpg?lm=1",
         unreadCount: 1,
         lastMessage: "Have you seen the new Flutter update?",
         isSentByUser: false,
@@ -20,7 +21,8 @@ class ChatNotifier extends StateNotifier<List<Chat>> {
       ),
       Chat(
         name: "Cristiano Ronaldo",
-        imageUrl: "https://img.a.transfermarkt.technology/portrait/header/8198-1694609670.jpg?lm=1",
+        imageUrl:
+            "https://img.a.transfermarkt.technology/portrait/header/8198-1694609670.jpg?lm=1",
         unreadCount: 2,
         lastMessage: "I'm waiting for the new update!",
         isSentByUser: false,
@@ -28,7 +30,8 @@ class ChatNotifier extends StateNotifier<List<Chat>> {
       ),
       Chat(
         name: "Mohamed Salah",
-        imageUrl: "https://img.a.transfermarkt.technology/portrait/header/148455-1727337594.jpg?lm=1",
+        imageUrl:
+            "https://img.a.transfermarkt.technology/portrait/header/148455-1727337594.jpg?lm=1",
         unreadCount: 3,
         lastMessage: "Amazing performance last night!",
         isSentByUser: true,
@@ -39,12 +42,13 @@ class ChatNotifier extends StateNotifier<List<Chat>> {
 
   // Function to mark chat as read
   void markChatAsRead(Chat chat) {
-    state = state.map((c) {
-      if (c.name == chat.name) {
-        return c.copyWith(unreadCount: 0);
-      }
-      return c;
-    }).toList();
+    state =
+        state.map((c) {
+          if (c.name == chat.name) {
+            return c.copyWith(unreadCount: 0);
+          }
+          return c;
+        }).toList();
   }
 }
 
