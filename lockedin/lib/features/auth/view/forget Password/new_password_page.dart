@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/shared/theme/colors.dart';
+import 'package:lockedin/shared/widgets/logo_appbar.dart';
 
 class NewPasswordScreen extends StatefulWidget {
   @override
@@ -19,14 +20,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
 
-      appBar: AppBar(
-        title: Text(
-          'Choose a new password',
-          style: theme.textTheme.headlineMedium,
-        ),
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: theme.appBarTheme.elevation,
-      ),
+      appBar: LogoAppbar(),
 
       body: Padding(
         padding: const EdgeInsets.all(20.0),

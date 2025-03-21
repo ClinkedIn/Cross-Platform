@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/shared/theme/colors.dart';
-import 'package:lockedin/features/auth/view/new_password_page.dart';
+import 'package:lockedin/features/auth/view/forget%20Password/new_password_page.dart';
+import 'package:lockedin/shared/widgets/logo_appbar.dart';
 
 class VerificationCodeScreen extends StatelessWidget {
   @override
@@ -10,14 +11,7 @@ class VerificationCodeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Verification Code',
-          style: theme.textTheme.headlineMedium,
-        ),
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: theme.appBarTheme.elevation,
-      ),
+      appBar: LogoAppbar(),
 
       body: Padding(
         padding: const EdgeInsets.all(20.0),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:lockedin/features/auth/view/verification_code_page.dart';
+import 'package:lockedin/features/auth/view/forget%20Password/verification_code_page.dart';
+import 'package:lockedin/shared/widgets/logo_appbar.dart';
 
 
 class ForgotPasswordScreen extends StatelessWidget {
@@ -9,26 +10,13 @@ class ForgotPasswordScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor, // Apply theme background
-      appBar: AppBar(
-        title: Text(
-          'Forgot password',
-          style: theme.textTheme.headlineMedium, // Apply theme-based text styling
-        ),
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: theme.appBarTheme.elevation,
-      ),
+      appBar: LogoAppbar(),
 
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 20),
-            Text(
-              'Forgot password',
-              style: theme.textTheme.headlineLarge, // Theme applied
-            ),
-
             SizedBox(height: 20),
 
             TextField(
