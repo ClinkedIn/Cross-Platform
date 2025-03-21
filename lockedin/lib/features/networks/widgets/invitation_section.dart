@@ -8,7 +8,7 @@ class InvitationSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Container(
-      color: theme.cardColor, // Match LinkedIn dark theme background
+      color: theme.cardColor,
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -27,8 +27,7 @@ class InvitationSection extends StatelessWidget {
           SizedBox(
             height: 200, // Adjust this based on card height
             child: ListView(
-              physics:
-                  NeverScrollableScrollPhysics(), // Disable scrolling inside
+              physics: NeverScrollableScrollPhysics(),
               children: const [
                 InvitationCard(
                   name: "Omar Fawzi",
