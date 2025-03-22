@@ -4,8 +4,11 @@ class SecureStorageService {
   final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   Future<void> saveCredentials(String email, String password) async {
-    await _secureStorage.write(key: 'email', value: email);
-    await _secureStorage.write(key: 'password', value: password);
+    Future.microtask(() async {
+      await _secureStorage.write(key: 'email', value: email);
+      await _secureStorage.write(key: 'password', value: password);
+      print('✅ Credentials saved securely!');
+    });
   }
 
   Future<Map<String, String?>> loadCredentials() async {
