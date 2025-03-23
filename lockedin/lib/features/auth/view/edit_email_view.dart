@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/auth/repository/edit_email_repository.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/features/auth/viewmodel/edit_email_viewmodel.dart';
 
 final editEmailViewModelProvider = ChangeNotifierProvider(
-  (ref) => EditEmailViewModel(),
+  (ref) => EditEmailViewModel(ref.read(editEmailRepositoryProvider)),
 );
 
 class EditEmailView extends ConsumerStatefulWidget {
@@ -18,16 +19,19 @@ class EditEmailView extends ConsumerStatefulWidget {
 
 class _EditEmailViewState extends ConsumerState<EditEmailView> {
   late TextEditingController emailController;
+  late TextEditingController passwordController;
 
   @override
   void initState() {
     super.initState();
     emailController = TextEditingController(text: widget.initialEmail);
+    passwordController = TextEditingController();
   }
 
   @override
   void dispose() {
     emailController.dispose();
+    passwordController.dispose();
     super.dispose();
   }
 
@@ -51,16 +55,53 @@ class _EditEmailViewState extends ConsumerState<EditEmailView> {
                 ),
                 errorText: viewModel.emailError,
               ),
-              onChanged: viewModel.validateEmail,
+              onChanged: viewModel.validateEmailOrPhone,
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: "Password",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
             const SizedBox(height: 20),
+
+            if (viewModel.isLoading) const CircularProgressIndicator(),
+
+            if (viewModel.apiMessage != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  viewModel.apiMessage!,
+                  style: TextStyle(
+                    color:
+                        viewModel.apiMessage!.contains("success")
+                            ? Colors.green
+                            : Colors.red,
+                  ),
+                ),
+              ),
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed:
-                    viewModel.isEmailValid
-                        ? () {
-                          Navigator.pop(context, emailController.text);
+                    viewModel.isEmailValid && !viewModel.isLoading
+                        ? () async {
+                          await ref
+                              .read(editEmailViewModelProvider)
+                              .updateEmail(
+                                emailController.text,
+                                passwordController.text,
+                              );
+                          if (viewModel.apiMessage ==
+                              "Email updated successfully") {
+                            Navigator.pop(context, emailController.text);
+                          }
                         }
                         : null,
                 style: AppButtonStyles.elevatedButton,

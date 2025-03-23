@@ -76,17 +76,16 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
 
     final viewModel = ref.watch(signupProvider);
     final notifier = ref.read(signupProvider.notifier);
-    ref.listen(signupProvider, (previous, next) async {
-      if (next.success) {
-        print("✅ Navigation Triggered with Email: ${next.email}");
-        if (context.mounted) {
-          Navigator.push(
+    ref.listen(signupProvider, (previous, next) {
+      if (previous?.success == false && next.success) {
+        Future.microtask(() {
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => VerificationEmailView(email: next.email),
             ),
           );
-        }
+        });
       }
     });
 

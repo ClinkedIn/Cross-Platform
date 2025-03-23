@@ -65,6 +65,7 @@ class SignupViewModel extends Notifier<SignupState> {
     state = state.copyWith(isLoading: true);
 
     try {
+      final startTime = DateTime.now();
       final response = await _repository.registerUser(
         firstName: state.firstName,
         lastName: state.lastName,
@@ -72,22 +73,37 @@ class SignupViewModel extends Notifier<SignupState> {
         password: state.password,
         rememberMe: state.rememberMe,
       );
+      final endTime = DateTime.now();
+      print(
+        "⏳ API Call Duration: ${endTime.difference(startTime).inMilliseconds}ms",
+      );
 
-      state = state.copyWith(isLoading: false);
       print("📨 Server response: ${response.body}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         print("✅ Signup successful: ${responseData["message"]}");
-        state = state.copyWith(success: true);
+
+        state = state.copyWith(
+          success: true,
+          isLoading: false,
+          email: responseData["email"],
+        );
 
         if (state.rememberMe) {
-          await _secureStorage.write(key: 'email', value: state.email);
-          await _secureStorage.write(key: 'password', value: state.password);
-          print('🔐 Credentials saved securely!');
+          Future.microtask(() async {
+            await _secureStorage.write(key: 'email', value: state.email);
+            await _secureStorage.write(key: 'password', value: state.password);
+            print('🔐 Credentials saved securely in the background!');
+          });
         }
+
+        print(
+          "✅ State updated: success=${state.success}, email=${state.email}",
+        );
       } else {
         print('❌ Signup failed. Server responded with: ${response.body}');
+        state = state.copyWith(isLoading: false);
       }
     } catch (e) {
       state = state.copyWith(isLoading: false);
