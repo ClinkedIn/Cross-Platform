@@ -1,40 +1,26 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:lockedin/shared/theme/colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
 import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
+import 'package:lockedin/shared/widgets/custom_appbar.dart';
 
 class UpdatePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileViewModelProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Update Profile',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 25,
-          ),
-        ),
-        backgroundColor: Colors.black,
-        actions: [
-          IconButton(
-            onPressed: () {
+      appBar: CustomAppbar(leftIcon: Icon(Icons.close), leftOnPress: () {
               ref.read(navProvider.notifier).changeTab(0);
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => ProfilePage()),
               );
-            },
-            icon: Icon(Icons.close, color: Colors.white, size: 30),
-            highlightColor: const Color.fromARGB(94, 255, 255, 255),
-          ),
-        ],
-      ),
+            }),
 
       body: Padding(
         padding: EdgeInsets.all(20),
@@ -59,7 +45,7 @@ class UpdatePage extends ConsumerWidget {
             ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
+                backgroundColor: Color(0xFF0A66C2),
                 minimumSize: Size(400, 20),
               ),
               child: Text(
@@ -89,8 +75,11 @@ class ProfessionalInfo extends StatelessWidget {
         ),
         TextButton.icon(
           onPressed: () {},
-          label: Text('Add new position', style: TextStyle(fontSize: 16)),
-          icon: Icon(Icons.add),
+          label: Text(
+            'Add new position',
+            style: TextStyle(fontSize: 16, color: Color(0xFF0A66C2)),
+          ),
+          icon: Icon(Icons.add, color: Color(0xFF0A66C2)),
         ),
         DropdownMenu(
           width: 380,
@@ -117,7 +106,7 @@ class ProfessionalInfo extends StatelessWidget {
                 text: 'industry options',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(243, 101, 36, 170),
+                  color: Color(0xFF0A66C2),
                 ),
               ),
             ],
@@ -143,8 +132,11 @@ class ProfessionalInfo extends StatelessWidget {
         ),
         TextButton.icon(
           onPressed: () {},
-          label: Text('Add new education', style: TextStyle(fontSize: 16)),
-          icon: Icon(Icons.add),
+          label: Text(
+            'Add new education',
+            style: TextStyle(fontSize: 16, color: Color(0xFF0A66C2)),
+          ),
+          icon: Icon(Icons.add, color: Color(0xFF0A66C2)),
         ),
       ],
     );
@@ -183,15 +175,18 @@ class PersonalInfo extends StatelessWidget {
         ),
         OutlinedButton.icon(
           onPressed: () {},
-          icon: Icon(Icons.remove_red_eye),
+          icon: Icon(Icons.remove_red_eye, color: Color(0xFF0A66C2)),
           label: Text('All LockedIn Members'),
         ),
         SizedBox(height: 10),
         Text('Name pronunciation', style: TextStyle(fontSize: 16)),
         TextButton.icon(
           onPressed: () {},
-          label: Text('Add name pronunciation'),
-          icon: Icon(Icons.add),
+          label: Text(
+            'Add name pronunciation',
+            style: TextStyle(color: Color(0xFF0A66C2)),
+          ),
+          icon: Icon(Icons.add, color: Color(0xFF0A66C2)),
         ),
         SizedBox(height: 10),
         TextField(
@@ -235,7 +230,10 @@ class ConnectionInfo extends StatelessWidget {
         ),
         TextButton(
           onPressed: () {},
-          child: Text('Use current location', style: TextStyle(fontSize: 16)),
+          child: Text(
+            'Use current location',
+            style: TextStyle(fontSize: 16, color: Color(0xFF0A66C2)),
+          ),
         ),
         DropdownMenu(
           width: 380,
@@ -266,7 +264,11 @@ class ConnectionInfo extends StatelessWidget {
               onPressed: () {},
               child: Text(
                 'Edit contact info',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF0A66C2),
+                ),
               ),
             ),
             Text(
