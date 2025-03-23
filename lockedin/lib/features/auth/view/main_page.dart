@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/core/services/token_services.dart';
 import 'package:lockedin/features/auth/view/login_page.dart';
+import 'package:lockedin/features/profile/state/user_state.dart';
 import 'package:lockedin/shared/widgets/side_bar.dart';
 import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
 import 'package:lockedin/shared/widgets/upper_navbar.dart';
@@ -26,6 +27,7 @@ class _MainPageState extends ConsumerState<MainPage> {
   void initState() {
     super.initState();
     _checkAuthentication();
+    _fetchUserProfile();
   }
 
   Future<void> _checkAuthentication() async {
@@ -39,10 +41,14 @@ class _MainPageState extends ConsumerState<MainPage> {
     }
   }
 
+  void _fetchUserProfile() {
+    ref.read(profileViewModelProvider).fetchUser();
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(navProvider);
-    final currentUserAsync = ref.watch(profileViewModelProvider);
+    final currentUser = ref.watch(userProvider);
 
     final List<Widget> pages = [
       HomePage(),
@@ -55,25 +61,13 @@ class _MainPageState extends ConsumerState<MainPage> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: UpperNavbar(
-        leftIcon: currentUserAsync.when(
-          data:
-              (currentUser) => CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.transparent,
-                backgroundImage: AssetImage(currentUser.profilePicture),
-              ),
-          loading:
-              () => CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.grey.shade300,
-                child: Icon(Icons.person, color: Colors.white),
-              ),
-          error:
-              (error, stackTrace) => CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.red,
-                child: Icon(Icons.error, color: Colors.white),
-              ),
+        leftIcon: CircleAvatar(
+          radius: 20,
+          backgroundColor: Colors.transparent,
+          backgroundImage:
+              currentUser?.profilePicture.isNotEmpty == true
+                  ? AssetImage(currentUser!.profilePicture)
+                  : AssetImage('assets/images/default_profile_photo.png'),
         ),
         leftOnPress: () {
           _scaffoldKey.currentState?.openDrawer();

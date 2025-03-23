@@ -1,27 +1,19 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/profile/model/user_model.dart';
-import 'package:lockedin/features/profile/repository/profile/profile_mock.dart';
-import 'package:lockedin/features/profile/repository/profile/profile_repository.dart';
+import 'package:lockedin/features/profile/repository/profile/profile_api.dart';
+import 'package:lockedin/features/profile/state/user_state.dart';
 
-final profileViewModelProvider =
-    StateNotifierProvider<ProfileViewModel, AsyncValue<UserModel>>((ref) {
-      return ProfileViewModel(ProfileMock()); // Use ProfileMock() for testing
-    });
+class ProfileViewModel {
+  final Ref ref;
 
-class ProfileViewModel extends StateNotifier<AsyncValue<UserModel>> {
-  final ProfileRepository _repository;
+  ProfileViewModel(this.ref);
 
-  ProfileViewModel(this._repository) : super(const AsyncValue.loading()) {
-    fetchProfile("123"); // Example User ID
-  }
-
-  Future<void> fetchProfile(String userId) async {
-    try {
-      state = const AsyncValue.loading();
-      final profile = await _repository.fetchUserProfile(userId);
-      state = AsyncValue.data(profile);
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
-    }
+  Future<void> fetchUser() async {
+    final user = await ProfileService().fetchUserData();
+    ref.read(userProvider.notifier).setUser(user);
   }
 }
+
+final profileViewModelProvider = Provider((ref) => ProfileViewModel(ref));
