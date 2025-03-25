@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/auth/view/edit_email_view.dart';
+import 'package:lockedin/features/auth/view/main_page.dart';
 import 'package:lockedin/features/auth/viewmodel/sign_up_viewmodel.dart';
 import 'package:lockedin/features/auth/viewmodel/verification_email_viewmodel.dart';
+import 'package:lockedin/shared/theme/colors.dart';
+import 'package:lockedin/shared/theme/styled_buttons.dart';
+import 'package:lockedin/shared/theme/text_styles.dart';
 
 final verificationEmailViewModelProvider = ChangeNotifierProvider(
   (ref) => VerificationEmailViewModel(),
@@ -10,6 +15,7 @@ final verificationEmailViewModelProvider = ChangeNotifierProvider(
 class VerificationEmailView extends ConsumerStatefulWidget {
   final String email;
   const VerificationEmailView({super.key, required this.email});
+
   @override
   _VerificationEmailViewState createState() => _VerificationEmailViewState();
 }
@@ -20,7 +26,6 @@ class _VerificationEmailViewState extends ConsumerState<VerificationEmailView> {
   @override
   void initState() {
     super.initState();
-    // Fetch the verification code when the screen loads
     Future.microtask(
       () =>
           ref.read(verificationEmailViewModelProvider).fetchVerificationCode(),
@@ -31,7 +36,6 @@ class _VerificationEmailViewState extends ConsumerState<VerificationEmailView> {
   Widget build(BuildContext context) {
     final viewModel = ref.watch(verificationEmailViewModelProvider);
     final signupState = ref.watch(signupProvider);
-
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -39,50 +43,60 @@ class _VerificationEmailViewState extends ConsumerState<VerificationEmailView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🔹 Header Section
-              const Text(
-                'LockedIn',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+              // Header Section
+              Row(
+                children: [
+                  Text(
+                    "Locked ",
+                    style: AppTextStyles.headline1.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  Image.network(
+                    "https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png",
+                    height: 30,
+                  ),
+                ],
               ),
               const SizedBox(height: 28),
-              const Text(
+              Text(
                 "Enter the verification code",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineLarge,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
 
-              // 🔹 Email Info & Edit Option
               RichText(
                 text: TextSpan(
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color.fromARGB(255, 116, 114, 114),
-                  ),
+                  style: Theme.of(context).textTheme.bodyLarge,
                   children: [
                     TextSpan(
                       text:
-                          "We sent the verification code to   ${widget.email}  ",
+                          "We sent the verification code to ${signupState.email} ",
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     WidgetSpan(
                       child: GestureDetector(
-                        onTap: () {
-                          Navigator.pop(
+                        onTap: () async {
+                          final updatedEmail = await Navigator.push(
                             context,
-                            true,
-                          ); // Send 'true' to indicate email edit
-                        }, // Navigate back to edit email
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => EditEmailView(
+                                    initialEmail: signupState.email,
+                                  ),
+                            ),
+                          );
 
-                        child: const Text(
+                          if (updatedEmail != null) {
+                            ref
+                                .read(signupProvider.notifier)
+                                .setEmail(updatedEmail);
+                          }
+                        },
+                        child: Text(
                           "Edit email",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
+                          style: AppTextStyles.buttonText.copyWith(
+                            color: AppColors.primary,
                           ),
                         ),
                       ),
@@ -90,69 +104,71 @@ class _VerificationEmailViewState extends ConsumerState<VerificationEmailView> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 28),
 
-              // 🔹 Display the received verification code (For Debugging - REMOVE in Production)
+              // Debugging Code Display (Remove in production)
               Text(
                 "Received Code: ${viewModel.receivedCode}",
-                style: const TextStyle(fontSize: 14, color: Colors.grey),
+                style: Theme.of(context).textTheme.bodySmall,
               ),
+              const SizedBox(height: 12),
 
-              const SizedBox(height: 10),
-
-              // 🔹 Verification Code Input
+              // Verification Code Input
               TextField(
                 controller: codeController,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
-                style: const TextStyle(color: Colors.black),
-                decoration: const InputDecoration(
+                style: Theme.of(context).textTheme.bodyLarge,
+
+                decoration: InputDecoration(
                   labelText: "6-digit code*",
-                  labelStyle: TextStyle(color: Colors.black),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black, width: 2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onChanged: (value) {
-                  ref
-                      .read(verificationEmailViewModelProvider)
-                      .updateCode(value);
-                },
+
+                onChanged:
+                    (value) => ref
+                        .read(verificationEmailViewModelProvider)
+                        .updateCode(value),
               ),
 
               const Spacer(),
 
-              // 🔹 Buttons (Next & Resend)
+              // Buttons (Next & Resend)
               Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  ElevatedButton(
-                    onPressed:
-                        viewModel.isCodeValid
-                            ? () {
-                              viewModel.verifyCode(context);
-                            }
-                            : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      minimumSize: const Size(double.infinity, 50),
-                    ),
-                    child: const Text(
-                      "Next",
-                      style: TextStyle(color: Colors.white),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed:
+                          viewModel.isCodeValid
+                              ? () {
+                                viewModel.verifyCode(context);
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => MainPage(),
+                                  ),
+                                );
+                              }
+                              : null,
+                      style: AppButtonStyles.elevatedButton,
+                      child: const Text("Next"),
                     ),
                   ),
+
                   const SizedBox(height: 10),
+
                   TextButton(
                     onPressed:
                         viewModel.isResendDisabled
-                            ? null // Disable button when resend is in cooldown
+                            ? null
                             : () => viewModel.resendCode(),
                     child: Text(
                       viewModel.isResendDisabled ? "Wait..." : "Resend code",
-                      style: const TextStyle(color: Colors.black),
+                      style: TextStyle(color: AppColors.primary),
                     ),
                   ),
                 ],

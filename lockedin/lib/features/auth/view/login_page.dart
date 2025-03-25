@@ -1,21 +1,29 @@
 import 'package:flutter/material.dart';
-//import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/auth/view/main_page.dart';
+import 'package:lockedin/features/auth/viewmodel/login_in_viewmodel.dart';
+import 'package:lockedin/features/auth/view/forgot_password_page.dart';
+import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
+import 'package:sizer/sizer.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends ConsumerWidget {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final loginState = ref.watch(loginViewModelProvider);
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        padding: EdgeInsets.symmetric(
+          horizontal: 4.w,
+          vertical: 5.h,
+        ), // Responsive padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -25,70 +33,154 @@ class LoginPage extends StatelessWidget {
                   "Locked ",
                   style: AppTextStyles.headline1.copyWith(
                     color: AppColors.primary,
+                    fontSize: 3.h, // Responsive font size
                   ),
                 ),
                 Image.network(
                   "https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png",
-                  height: 30,
+                  height: 4.h, // Responsive height
                 ),
               ],
             ),
-            const SizedBox(height: 42),
-            Text("Sign in", style: theme.textTheme.headlineLarge),
-            const SizedBox(height: 8),
+
+            SizedBox(height: 5.h), // Responsive spacing
+            Text(
+              "Sign in",
+              style: theme.textTheme.headlineLarge?.copyWith(fontSize: 3.5.h),
+            ),
+            SizedBox(height: 1.h),
+
             Row(
               children: [
-                Text("or ", style: AppTextStyles.bodyText2),
+                Text(
+                  "or ",
+                  style: AppTextStyles.bodyText2.copyWith(fontSize: 1.8.h),
+                ),
                 TextButton(
-                  onPressed: () {},
-                  child: Text("Join lockedIn", style: AppTextStyles.buttonText.copyWith(color: AppColors.primary)),
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => SignUpView()),
+                    );
+                  },
+                  child: Text(
+                    "Join LockedIn",
+                    style: AppTextStyles.buttonText.copyWith(
+                      color: AppColors.primary,
+                      fontSize: 1.8.h,
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 34),
+            SizedBox(height: 4.h),
             TextField(
               controller: _emailController,
               decoration: InputDecoration(
                 labelText: "Email or Phone",
+
                 filled: true,
-                fillColor: isDarkMode ? AppColors.black : AppColors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(2.w),
+                ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 2.h),
             TextField(
               controller: _passwordController,
               obscureText: true,
               decoration: InputDecoration(
                 labelText: "Password",
                 filled: true,
-                fillColor: isDarkMode ? AppColors.black : AppColors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(2.w),
+                ),
               ),
             ),
-            const SizedBox(height: 24),
+
+            SizedBox(height: 3.h),
+
+            loginState.when(
+              data:
+                  (_) => ElevatedButton(
+                    style: AppButtonStyles.elevatedButton,
+                    onPressed: () async {
+                      await ref
+                          .read(loginViewModelProvider.notifier)
+                          .login(
+                            _emailController.text,
+                            _passwordController.text,
+                          );
+
+                      // If successful, navigate to Home Page
+                      if (ref.read(loginViewModelProvider).hasValue) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => MainPage()),
+                        );
+                      }
+                    },
+                    child: const Text("Sign in"),
+                  ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error:
+                  (error, _) => Column(
+                    children: [
+                      Text(
+                        "Error: $error",
+                        style: TextStyle(color: Colors.red),
+                      ),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: () async {
+                          await ref
+                              .read(loginViewModelProvider.notifier)
+                              .login(
+                                _emailController.text,
+                                _passwordController.text,
+                              );
+                        },
+                        child: const Text("Retry"),
+                      ),
+                    ],
+                  ),
+            ),
+
             TextButton(
-              onPressed: () {},
-              child: Text("Forgot password?", style: AppTextStyles.buttonText.copyWith(color: AppColors.primary)),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              style: AppButtonStyles.elevatedButton,
-              onPressed: () {},
-              child: const Text("Sign in"),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: const [
-                Expanded(child: Divider()),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Text("or"),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ForgotPasswordScreen(),
+                  ),
+                );
+              },
+              child: Text(
+                "Forgot password?",
+                style: AppTextStyles.buttonText.copyWith(
+                  color: AppColors.primary,
+                  fontSize: 1.8.h,
                 ),
-                Expanded(child: Divider()),
+              ),
+            ),
+
+            SizedBox(height: 3.h),
+
+            Row(
+              children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 2.w,
+                  ), // Responsive padding
+                  child: Text("or", style: TextStyle(fontSize: 1.8.h)),
+                ),
+                const Expanded(child: Divider()),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 3.h),
             Column(
               children: [
                 AppButtonStyles.socialLoginButton(
@@ -96,7 +188,7 @@ class LoginPage extends StatelessWidget {
                   icon: Icons.apple,
                   onPressed: () {},
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 2.h),
                 AppButtonStyles.socialLoginButton(
                   text: "Sign in with Google",
                   icon: Icons.g_mobiledata,
@@ -109,6 +201,4 @@ class LoginPage extends StatelessWidget {
       ),
     );
   }
-
- 
 }

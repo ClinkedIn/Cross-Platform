@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'colors.dart';
-import 'text_styles.dart';
+import 'package:lockedin/shared/theme/colors.dart';
+import 'package:lockedin/shared/theme/text_styles.dart';
+import 'package:sizer/sizer.dart';
 
 class AppButtonStyles {
   static final ButtonStyle elevatedButton = ElevatedButton.styleFrom(
@@ -8,58 +9,60 @@ class AppButtonStyles {
     foregroundColor: AppColors.white,
     textStyle: AppTextStyles.buttonText,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(90)),
-    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+    padding: EdgeInsets.symmetric(vertical: 1.h, horizontal: 5.w),
   );
 
   static final ButtonStyle outlinedButton = OutlinedButton.styleFrom(
     foregroundColor: AppColors.primary,
     textStyle: AppTextStyles.buttonText.copyWith(color: AppColors.primary),
-    side: const BorderSide(color: AppColors.primary, width: 3),
+    side: BorderSide(color: AppColors.primary, width: 0.3.w),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(90)),
-    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+    padding: EdgeInsets.symmetric(vertical: 1.h, horizontal: 5.w),
   );
+
   static final ButtonStyle iconButton = IconButton.styleFrom(
-    padding: const EdgeInsets.all(8),
+    padding: EdgeInsets.all(2.w),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(90)),
   );
+
   static Widget outlinedIconButton({
     required VoidCallback onPressed,
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.all(0), // Reduced padding
+      padding: EdgeInsets.all(0), // Reduced padding
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
           color: AppColors.primary,
-          width: 2, // Reduced border width
+          width: 0.3.w, // Reduced border width
         ),
       ),
       child: IconButton(
         onPressed: onPressed,
         icon: Icon(icon, color: AppColors.primary),
-        iconSize: 20, // Reduced icon size
-        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        iconSize: 5.w, // Reduced icon size
+        constraints: BoxConstraints(minWidth: 8.w, minHeight: 8.w),
       ),
     );
   }
-    static Widget socialLoginButton({
+
+  static Widget socialLoginButton({
     required String text,
     required IconData icon,
     required VoidCallback onPressed,
-    }) {
-      return OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size(double.infinity, 50),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        ),
-        onPressed: onPressed,
-        icon: Icon(icon, size: 24, color: AppColors.primary),
-        label: Text(
-          text,
-          style: AppTextStyles.buttonText.copyWith(color: AppColors.primary),
-        ),
-      );
-    }
-
+  }) {
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        minimumSize: Size(double.infinity, 6.h),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+      ),
+      onPressed: onPressed,
+      icon: Icon(icon, size: 6.w, color: AppColors.primary),
+      label: Text(
+        text,
+        style: AppTextStyles.buttonText.copyWith(color: AppColors.primary),
+      ),
+    );
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:lockedin/features/profile/repository/profile/update_profile_api.dart';
+import 'package:lockedin/features/profile/state/user_state.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
@@ -9,21 +10,45 @@ import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
 import 'package:lockedin/shared/widgets/custom_appbar.dart';
 import '../model/user_model.dart';
 
-final TextEditingController firstNameController = TextEditingController();
-final TextEditingController lastNameController = TextEditingController();
-final TextEditingController additionalNameController = TextEditingController();
-final TextEditingController headlineController = TextEditingController();
-final TextEditingController linkController = TextEditingController();
-
-class UpdatePage extends ConsumerWidget {
+class UpdatePage extends ConsumerStatefulWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final profileState = ref.watch(profileViewModelProvider);
-    final theme = Theme.of(context);
+  _UpdatePageState createState() => _UpdatePageState();
+}
 
+class _UpdatePageState extends ConsumerState<UpdatePage> {
+  late TextEditingController firstNameController;
+  late TextEditingController lastNameController;
+  late TextEditingController additionalNameController;
+  late TextEditingController headlineController;
+  late TextEditingController linkController;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = ref.read(userProvider);
+
+    firstNameController = TextEditingController(text: user?.firstName ?? '');
+    lastNameController = TextEditingController(text: user?.lastName ?? '');
+    additionalNameController = TextEditingController();
+    headlineController = TextEditingController(text: user?.bio ?? '');
+    linkController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    firstNameController.dispose();
+    lastNameController.dispose();
+    additionalNameController.dispose();
+    headlineController.dispose();
+    linkController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppbar(
-        leftIcon: Icon(Icons.close),
+        leftIcon: const Icon(Icons.close),
         leftOnPress: () {
           ref.read(navProvider.notifier).changeTab(0);
           Navigator.pushReplacement(
@@ -32,27 +57,28 @@ class UpdatePage extends ConsumerWidget {
           );
         },
       ),
-
       body: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
             Expanded(
               child: ListView(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 15,
-                    children: [
-                      PersonalInfo(),
-                      ProfessionalInfo(),
-                      ConnectionInfo(),
-                    ],
+                  const SizedBox(height: 10),
+                  PersonalInfo(
+                    firstNameController: firstNameController,
+                    lastNameController: lastNameController,
+                    additionalNameController: additionalNameController,
+                    headlineController: headlineController,
                   ),
+                  const SizedBox(height: 20),
+                  const ProfessionalInfo(),
+                  const SizedBox(height: 20),
+                  const ConnectionInfo(),
                 ],
               ),
             ),
-            Divider(thickness: 1, indent: 0),
+            const Divider(thickness: 1),
             ElevatedButton(
               onPressed: () {
                 Map<String, String> userInput = {
@@ -62,13 +88,14 @@ class UpdatePage extends ConsumerWidget {
                   "headline": headlineController.text,
                   "link": linkController.text,
                 };
-                UpdateProfileApi.updateProfileApi(userInput);
+                print(userInput); // Debugging output
+                // Call your API here: UpdateProfileApi.updateProfileApi(userInput);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF0A66C2),
-                minimumSize: Size(400, 20),
+                backgroundColor: const Color(0xFF0A66C2),
+                minimumSize: const Size(400, 20),
               ),
-              child: Text(
+              child: const Text(
                 'Save',
                 style: TextStyle(color: Colors.white, fontSize: 30),
               ),
@@ -76,6 +103,82 @@ class UpdatePage extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class PersonalInfo extends StatelessWidget {
+  final TextEditingController firstNameController;
+  final TextEditingController lastNameController;
+  final TextEditingController additionalNameController;
+  final TextEditingController headlineController;
+
+  const PersonalInfo({
+    Key? key,
+    required this.firstNameController,
+    required this.lastNameController,
+    required this.additionalNameController,
+    required this.headlineController,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: firstNameController,
+          maxLength: 50,
+          decoration: const InputDecoration(
+            labelText: 'First Name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: lastNameController,
+          maxLength: 50,
+          decoration: const InputDecoration(
+            labelText: 'Last Name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: additionalNameController,
+          maxLength: 50,
+          decoration: const InputDecoration(
+            labelText: 'Additional Name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.remove_red_eye, color: Color(0xFF0A66C2)),
+          label: const Text('All LockedIn Members'),
+        ),
+        const SizedBox(height: 10),
+        const Text('Name pronunciation', style: TextStyle(fontSize: 16)),
+        TextButton.icon(
+          onPressed: () {},
+          label: const Text(
+            'Add name pronunciation',
+            style: TextStyle(color: Color(0xFF0A66C2)),
+          ),
+          icon: const Icon(Icons.add, color: Color(0xFF0A66C2)),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: headlineController,
+          maxLength: 220,
+          maxLines: null,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            label: Text('Headline'),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -163,72 +266,14 @@ class ProfessionalInfo extends StatelessWidget {
   }
 }
 
-class PersonalInfo extends StatelessWidget {
-  const PersonalInfo({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 5,
-      children: [
-        TextField(
-          controller: firstNameController,
-          maxLength: 50,
-          decoration: InputDecoration(
-            labelText: 'First Name',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        TextField(
-          controller: lastNameController,
-          maxLength: 50,
-          decoration: InputDecoration(
-            labelText: 'Last Name',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        TextField(
-          controller: additionalNameController,
-          maxLength: 50,
-          decoration: InputDecoration(
-            labelText: 'Additional Name',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        OutlinedButton.icon(
-          onPressed: () {},
-          icon: Icon(Icons.remove_red_eye, color: Color(0xFF0A66C2)),
-          label: Text('All LockedIn Members'),
-        ),
-        SizedBox(height: 10),
-        Text('Name pronunciation', style: TextStyle(fontSize: 16)),
-        TextButton.icon(
-          onPressed: () {},
-          label: Text(
-            'Add name pronunciation',
-            style: TextStyle(color: Color(0xFF0A66C2)),
-          ),
-          icon: Icon(Icons.add, color: Color(0xFF0A66C2)),
-        ),
-        SizedBox(height: 10),
-        TextField(
-          controller: headlineController,
-          maxLength: 220,
-          maxLines: null,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            label: Text('Headline'),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class ConnectionInfo extends StatelessWidget {
+class ConnectionInfo extends StatefulWidget {
   const ConnectionInfo({super.key});
 
+  @override
+  State<ConnectionInfo> createState() => _ConnectionInfoState();
+}
+
+class _ConnectionInfoState extends State<ConnectionInfo> {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -304,7 +349,6 @@ class ConnectionInfo extends StatelessWidget {
               style: TextStyle(color: Colors.black, fontSize: 16),
             ),
             TextField(
-              controller: linkController,
               maxLength: 262,
               decoration: InputDecoration(
                 label: Text('Link'),
