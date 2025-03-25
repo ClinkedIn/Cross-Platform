@@ -132,9 +132,9 @@ class ChangePasswordPage extends ConsumerWidget {
     final visibilityState = ref.watch(passwordVisibilityProvider);
     final passwordState = ref.watch(passwordStateProvider);
 
-    final changePasswordState = ref.watch(changePasswordViewModelProvider);
+    //final changePasswordState = ref.watch(changePasswordViewModelProvider);
 
-    final theme = Theme.of(context);
+    //final theme = Theme.of(context);
 
 
     return Scaffold(

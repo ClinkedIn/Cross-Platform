@@ -40,13 +40,17 @@ class ChangePasswordViewModel extends StateNotifier<AsyncValue<bool>> {
 }
 
 class AuthService {
-  final String _baseUrl =
-      "https://a5a7a475-1f05-430d-a300-01cdf67ccb7e.mock.pstmn.io";
+  final String _baseUrl = "https://a5a7a475-1f05-430d-a300-01cdf67ccb7e.mock.pstmn.io";
+  final http.Client client;  // Accepting the client as a constructor parameter
+
+  // Constructor with a default value for client
+  AuthService({http.Client? client}) : client = client ?? http.Client();
+
   String successMessage = "";
   String errorMessage = "";
 
   Future<bool> changePassword(ChangePasswordRequest request) async {
-    final response = await http.patch(
+    final response = await client.patch(
       Uri.parse("$_baseUrl/users/update-password"),
       body: jsonEncode(request.toJson()),
     );
