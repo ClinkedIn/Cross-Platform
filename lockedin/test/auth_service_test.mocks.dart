@@ -5,7 +5,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
 
-import 'package:lockedin/features/auth/repository/auth_service.dart' as _i2;
+import 'package:lockedin/features/auth/services/auth_service.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i3;
 
@@ -40,6 +40,17 @@ class MockAuthService extends _i1.Mock implements _i2.AuthService {
           as String);
 
   @override
+  String get forgotPasswordUrl =>
+      (super.noSuchMethod(
+            Invocation.getter(#forgotPasswordUrl),
+            returnValue: _i3.dummyValue<String>(
+              this,
+              Invocation.getter(#forgotPasswordUrl),
+            ),
+          )
+          as String);
+
+  @override
   Map<String, String> get headers =>
       (super.noSuchMethod(
             Invocation.getter(#headers),
@@ -59,4 +70,13 @@ class MockAuthService extends _i1.Mock implements _i2.AuthService {
             ),
           )
           as _i4.Future<String>);
+
+  @override
+  _i4.Future<void> forgotPassword(String? emailOrPhone) =>
+      (super.noSuchMethod(
+            Invocation.method(#forgotPassword, [emailOrPhone]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 }
