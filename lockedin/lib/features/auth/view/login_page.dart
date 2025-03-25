@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:lockedin/features/auth/view/forgot_password_page.dart';
+
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/auth/view/main_page.dart';
+import 'package:lockedin/features/auth/viewmodel/login_in_viewmodel.dart';
+import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
+
 import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
 //import 'package:google_fonts/google_fonts.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
+
+import 'package:lockedin/shared/widgets/logo_appbar.dart';
+import 'package:sizer/sizer.dart';
+
 
 class LoginPage extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
@@ -16,11 +26,15 @@ class LoginPage extends StatelessWidget {
     final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
+
+      appBar: LogoAppbar(),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
             Row(
               children: [
                 Text(
@@ -38,6 +52,7 @@ class LoginPage extends StatelessWidget {
             const SizedBox(height: 42),
             Text("Sign in", style: theme.textTheme.headlineLarge),
             const SizedBox(height: 8),
+
             Row(
               children: [
                 Text("or ", style: AppTextStyles.bodyText2),
@@ -57,7 +72,11 @@ class LoginPage extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 34),
+
+
+            SizedBox(height: 4.h),
+
+
             TextField(
               controller: _emailController,
               decoration: InputDecoration(
@@ -69,7 +88,10 @@ class LoginPage extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+
+
+            SizedBox(height: 2.h),
+
             TextField(
               controller: _passwordController,
               obscureText: true,
@@ -92,12 +114,14 @@ class LoginPage extends StatelessWidget {
                   ),
                 );
               },
+
               child: Text(
                 "Forgot password?",
                 style: AppTextStyles.buttonText.copyWith(
                   color: AppColors.primary,
                 ),
               ),
+
             ),
             const SizedBox(height: 24),
             ElevatedButton(
@@ -116,7 +140,10 @@ class LoginPage extends StatelessWidget {
                 Expanded(child: Divider()),
               ],
             ),
-            const SizedBox(height: 20),
+
+
+            SizedBox(height: 3.h),
+
             Column(
               children: [
                 AppButtonStyles.socialLoginButton(
@@ -132,6 +159,7 @@ class LoginPage extends StatelessWidget {
                 ),
               ],
             ),
+
           ],
         ),
       ),
