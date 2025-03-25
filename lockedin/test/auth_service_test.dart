@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-import 'package:lockedin/features/auth/repository/auth_service.dart';
+import 'package:lockedin/features/auth/services/auth_service.dart';
 
 import 'auth_service_test.mocks.dart'; // Auto-generated file
 
