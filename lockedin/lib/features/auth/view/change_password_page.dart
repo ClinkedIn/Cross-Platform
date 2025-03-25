@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lockedin/features/auth/viewmodel/change_password_viewmodel.dart';
-import 'package:lockedin/features/auth/view/forget Password/forgot_password_page.dart';
+
+import 'package:lockedin/features/auth/view/Forget password/forgot_password_page.dart';
+
 //import 'package:lockedin/shared/theme/app_theme.dart';
 
 import 'package:lockedin/shared/theme/styled_buttons.dart';
@@ -10,10 +12,12 @@ import 'package:lockedin/shared/theme/text_styles.dart';
 
 final navigationProvider = StateProvider<String>((ref) => '/');
 
-final passwordVisibilityProvider =
-    StateNotifierProvider<PasswordVisibilityNotifier, PasswordVisibilityState>(
-      (ref) => PasswordVisibilityNotifier(),
-    );
+
+final passwordVisibilityProvider = StateNotifierProvider<PasswordVisibilityNotifier, PasswordVisibilityState>(
+  (ref) => PasswordVisibilityNotifier(),
+);
+
+
 
 final passwordStateProvider =
     StateNotifierProvider<PasswordStateNotifier, PasswordState>(
@@ -137,9 +141,9 @@ class ChangePasswordPage extends ConsumerWidget {
     final visibilityState = ref.watch(passwordVisibilityProvider);
     final passwordState = ref.watch(passwordStateProvider);
 
-    final changePasswordState = ref.watch(changePasswordViewModelProvider);
+    //final changePasswordState = ref.watch(changePasswordViewModelProvider);
 
-    final theme = Theme.of(context);
+    //final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
