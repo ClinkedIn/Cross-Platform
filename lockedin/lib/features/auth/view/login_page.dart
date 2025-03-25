@@ -150,13 +150,7 @@ class LoginPage extends ConsumerWidget {
                   ),
                 );
               },
-              child: Text(
-                "Forgot password?",
-                style: AppTextStyles.buttonText.copyWith(
-                  color: AppColors.primary,
-                  fontSize: 1.8.h,
-                ),
-              ),
+              child: Text("Forgot password?", style: AppTextStyles.buttonText),
             ),
 
             SizedBox(height: 3.h),
