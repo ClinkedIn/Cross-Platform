@@ -1,15 +1,11 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
-import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
 
 class UpdatePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileState = ref.watch(profileViewModelProvider);
-
     return Scaffold(
       appBar: AppBar(
         title: Text(

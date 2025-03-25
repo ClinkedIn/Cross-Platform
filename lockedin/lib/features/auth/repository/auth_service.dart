@@ -14,7 +14,6 @@ class AuthService {
       body: jsonEncode(body),
     );
     final data = jsonDecode(response.body);
-    print("Response: $data");
 
     if (response.statusCode == 200) {
       return data["token"];
