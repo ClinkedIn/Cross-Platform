@@ -1,7 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:lockedin/features/auth/repository/email_verification_repository.dart';
 
 class VerificationEmailViewModel extends ChangeNotifier {
+  final EmailVerificationRepository _repository;
+  VerificationEmailViewModel(this._repository);
+
   String _receivedCode = "";
   String _userInputCode = "";
   bool _isCodeValid = false;
@@ -19,13 +23,19 @@ class VerificationEmailViewModel extends ChangeNotifier {
   }
 
   Future<void> fetchVerificationCode() async {
-    _receivedCode = "";
-    notifyListeners();
+    try {
+      _receivedCode = "";
+      notifyListeners();
 
-    await Future.delayed(const Duration(seconds: 1));
-    _receivedCode = (100000 + (DateTime.now().millisecond % 900000)).toString();
-    print("New Code Fetched: $_receivedCode");
-    notifyListeners();
+      final code = await _repository.sendVerificationEmail();
+      if (code != null) {
+        _receivedCode = code;
+        print("New Code Fetched: $_receivedCode");
+        notifyListeners();
+      }
+    } catch (e) {
+      print("Error fetching verification code: $e");
+    }
   }
 
   void updateCode(String value) {
@@ -34,7 +44,6 @@ class VerificationEmailViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Function to verify the code
   void verifyCode(BuildContext context) {
     if (_isCodeValid) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -53,7 +62,16 @@ class VerificationEmailViewModel extends ChangeNotifier {
     _isResendDisabled = true;
     notifyListeners();
 
-    await fetchVerificationCode();
+    try {
+      final code = await _repository.sendVerificationEmail();
+      if (code != null) {
+        _receivedCode = code;
+        print("Resent Code: $_receivedCode");
+        notifyListeners();
+      }
+    } catch (e) {
+      print("Error resending verification code: $e");
+    }
 
     Future.delayed(const Duration(seconds: 10), () {
       _isResendDisabled = false;

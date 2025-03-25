@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/auth/view/main_page.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
@@ -27,7 +28,7 @@ class MyApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       title: 'LockedIn',
       theme: theme,
-      home: LoginPage(),
+      home: MainPage(),
     );
   }
 }
