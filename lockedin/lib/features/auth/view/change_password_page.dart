@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lockedin/features/auth/viewmodel/change_password_viewmodel.dart';
-import 'package:lockedin/features/auth/view/forgot_password_page.dart';
+import 'package:lockedin/features/auth/view/Forget password/forgot_password_page.dart';
 //import 'package:lockedin/shared/theme/app_theme.dart';
 
 import 'package:lockedin/shared/theme/styled_buttons.dart';
@@ -14,12 +14,6 @@ final navigationProvider = StateProvider<String>((ref) => '/');
 final passwordVisibilityProvider = StateNotifierProvider<PasswordVisibilityNotifier, PasswordVisibilityState>(
   (ref) => PasswordVisibilityNotifier(),
 );
-
-final passwordVisibilityProvider =
-    StateNotifierProvider<PasswordVisibilityNotifier, PasswordVisibilityState>(
-      (ref) => PasswordVisibilityNotifier(),
-    );
-
 
 final passwordStateProvider =
     StateNotifierProvider<PasswordStateNotifier, PasswordState>(
