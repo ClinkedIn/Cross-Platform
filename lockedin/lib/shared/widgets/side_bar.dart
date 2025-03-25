@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/profile/state/user_state.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
-import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
 
 class SidebarDrawer extends ConsumerWidget {
   SidebarDrawer({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentUserAsync = ref.watch(profileViewModelProvider);
-    final currentUser = currentUserAsync.asData?.value;
+    final currentUserAsync = ref.watch(userProvider);
     return Drawer(
       backgroundColor: Colors.black, // Dark background like LinkedIn
       child: ListView(
@@ -31,9 +30,11 @@ class SidebarDrawer extends ConsumerWidget {
                   child: CircleAvatar(
                     radius: 30,
                     backgroundImage:
-                        currentUser != null
-                            ? AssetImage(currentUser.profilePicture)
-                            : AssetImage('assets/images/default_profile.png'),
+                        currentUserAsync != null
+                            ? AssetImage(currentUserAsync.profilePicture)
+                            : AssetImage(
+                              'assets/images/default_profile_photo.png',
+                            ),
                   ),
                 ),
                 SizedBox(height: 8),

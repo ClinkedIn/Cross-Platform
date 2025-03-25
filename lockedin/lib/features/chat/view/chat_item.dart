@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';  
-import 'package:lockedin/features/auth/view/chat_provider.dart';
-import 'package:lockedin/features/auth/view/chats.dart';
-import 'package:lockedin/features/auth/view/chat_history_screen.dart';
+import 'package:intl/intl.dart';
+import 'package:lockedin/features/chat/view/chat_provider.dart';
+import 'package:lockedin/features/chat/view/chats.dart';
+import 'package:lockedin/features/chat/view/chat_history_screen.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 
 String formattedTime(DateTime timestamp) {
   final now = DateTime.now();
-  
-  if (timestamp.year == now.year && timestamp.month == now.month && timestamp.day == now.day) {
+
+  if (timestamp.year == now.year &&
+      timestamp.month == now.month &&
+      timestamp.day == now.day) {
     // Same day -> Show time (e.g., "2:30 PM")
     return DateFormat('h:mm a').format(timestamp);
   } else if (timestamp.year == now.year) {
@@ -33,20 +35,30 @@ class ChatItem extends ConsumerWidget {
     String formatted = formattedTime(chat.timestamp);
 
     return ListTile(
-      leading: CircleAvatar(
-        backgroundImage: NetworkImage(chat.imageUrl),
-      ),
+      leading: CircleAvatar(backgroundImage: NetworkImage(chat.imageUrl)),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(chat.name, 
-          style: AppTextStyles.headline2.copyWith(color: ref.watch(themeProvider) == AppTheme.darkTheme ? Colors.white : Colors.black)),
           Text(
-                formatted,  
-                style: AppTextStyles.bodyText2.copyWith(color: ref.watch(themeProvider) == AppTheme.darkTheme ? Colors.white : Colors.black)
-              ),
-          ]
-        ),
+            chat.name,
+            style: AppTextStyles.headline2.copyWith(
+              color:
+                  ref.watch(themeProvider) == AppTheme.darkTheme
+                      ? Colors.white
+                      : Colors.black,
+            ),
+          ),
+          Text(
+            formatted,
+            style: AppTextStyles.bodyText2.copyWith(
+              color:
+                  ref.watch(themeProvider) == AppTheme.darkTheme
+                      ? Colors.white
+                      : Colors.black,
+            ),
+          ),
+        ],
+      ),
       subtitle: Row(
         children: [
           Expanded(
@@ -54,7 +66,12 @@ class ChatItem extends ConsumerWidget {
               chat.lastMessage,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.bodyText1.copyWith(color: ref.watch(themeProvider) == AppTheme.darkTheme ? Colors.white : Colors.black)
+              style: AppTextStyles.bodyText1.copyWith(
+                color:
+                    ref.watch(themeProvider) == AppTheme.darkTheme
+                        ? Colors.white
+                        : Colors.black,
+              ),
             ),
           ),
           if (chat.unreadCount > 0)
@@ -65,17 +82,15 @@ class ChatItem extends ConsumerWidget {
                 chat.unreadCount.toString(),
                 style: AppTextStyles.bodyText1.copyWith(color: Colors.white),
               ),
-            )
-          ],
-        ),
+            ),
+        ],
+      ),
       onTap: () {
         ref.read(chatProvider.notifier).markChatAsRead(chat);
-        
+
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => ChatDetailScreen(chat: chat),
-          ),
+          MaterialPageRoute(builder: (context) => ChatDetailScreen(chat: chat)),
         );
       },
     );

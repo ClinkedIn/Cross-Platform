@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lockedin/features/auth/view/chats.dart';
+import 'package:lockedin/features/chat/view/chats.dart';
 
 class ChatDetailScreen extends StatelessWidget {
   final Chat chat;
@@ -9,12 +9,10 @@ class ChatDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(chat.name),
-      ),
+      appBar: AppBar(title: Text(chat.name)),
       body: Center(
         child: Text('Chat history with ${chat.name} will be displayed here'),
-     ),
+      ),
     );
   }
 }

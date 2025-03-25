@@ -7,6 +7,8 @@ import 'package:lockedin/shared/theme/text_styles.dart';
 import 'package:lockedin/features/auth/view/signup/name_step.dart';
 import 'package:lockedin/features/auth/view/signup/password_step.dart';
 import 'package:lockedin/features/auth/view/signup/email_step.dart';
+import 'package:lockedin/shared/widgets/logo_appbar.dart';
+import 'package:sizer/sizer.dart';
 
 class SignUpView extends ConsumerStatefulWidget {
   @override
@@ -75,39 +77,21 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
 
     final viewModel = ref.watch(signupProvider);
     final notifier = ref.read(signupProvider.notifier);
-    ref.listen(signupProvider, (previous, next) async {
-      if (next.success) {
-        print("✅ Navigation Triggered with Email: ${next.email}");
-
-        if (context.mounted) {
-          Navigator.push(
+    ref.listen(signupProvider, (previous, next) {
+      if (previous?.success == false && next.success) {
+        Future.microtask(() {
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => VerificationEmailView(email: next.email),
             ),
           );
-        }
+        });
       }
     });
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Row(
-          children: [
-            Text(
-              "Locked ",
-              style: AppTextStyles.headline1.copyWith(color: AppColors.primary),
-            ),
-            Image.network(
-              "https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png",
-              height: 30,
-            ),
-          ],
-        ),
-      ),
+      appBar: LogoAppbar(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -116,23 +100,28 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
             backgroundColor: Colors.grey[300],
             valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 1.h), // Responsive spacing
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: EdgeInsets.symmetric(
+              horizontal: 4.w,
+            ), // Responsive padding
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Create account', style: theme.textTheme.bodyLarge),
+                    Text(
+                      'Create account',
+                      style: theme.textTheme.bodyLarge?.copyWith(fontSize: 2.h),
+                    ),
                     Text(
                       '${(_progress * 100).toInt()}%',
-                      style: theme.textTheme.bodyLarge,
+                      style: theme.textTheme.bodyLarge?.copyWith(fontSize: 2.h),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 2.h), // Responsive spacing
                 if (viewModel.isLoading)
                   const Center(child: CircularProgressIndicator())
                 else if (_currentStep == 1)
