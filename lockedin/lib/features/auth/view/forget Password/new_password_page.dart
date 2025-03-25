@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/shared/theme/colors.dart';
+import 'package:lockedin/shared/widgets/logo_appbar.dart';
+import 'package:sizer/sizer.dart';
 
 class NewPasswordScreen extends StatefulWidget {
   @override
@@ -13,47 +15,39 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     final theme = Theme.of(context); // Fetch current theme
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
 
-      appBar: AppBar(
-        title: Text(
-          'Choose a new password',
-          style: theme.textTheme.headlineMedium,
-        ),
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: theme.appBarTheme.elevation,
-      ),
+      appBar: LogoAppbar(),
 
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h), // Responsive padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            SizedBox(height: 20),
+            SizedBox(height: 3.h), // Responsive spacing
 
             Text(
               'Choose a new password',
-              style: theme.textTheme.headlineLarge,
+              style: theme.textTheme.headlineLarge?.copyWith(fontSize: 3.h),
             ),
 
-            SizedBox(height: 10),
+            SizedBox(height: 1.5.h),
 
             Text(
               'To secure your account, choose a strong password you haven’t used before and is at least 8 characters long.',
-              style: theme.textTheme.bodyMedium,
+              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 1.8.h),
             ),
 
-            SizedBox(height: 20),
+            SizedBox(height: 3.h),
 
             TextField(
               obscureText: !_passwordVisible,
               decoration: InputDecoration(
                 labelText: "New password",
+                labelStyle: theme.textTheme.bodyLarge?.copyWith(fontSize: 2.h),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _passwordVisible ? Icons.visibility : Icons.visibility_off,
@@ -67,12 +61,13 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
               ),
             ),
 
-            SizedBox(height: 15),
+            SizedBox(height: 2.h),
 
             TextField(
               obscureText: !_confirmPasswordVisible,
               decoration: InputDecoration(
                 labelText: "Retype new password",
+                labelStyle: theme.textTheme.bodyLarge?.copyWith(fontSize: 2.h),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _confirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
@@ -86,12 +81,12 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
               ),
             ),
 
-            SizedBox(height: 10),
+            SizedBox(height: 2.h),
 
             Row(
               children: [
                 SizedBox(
-                  width: 20,
+                  width: 6.w, // Responsive checkbox width
                   child: Checkbox(
                     value: _requireSignIn,
                     fillColor: WidgetStateProperty.resolveWith<Color>((states) {
@@ -109,16 +104,18 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                   ),
                 ),
                 
-                SizedBox(
-                  width: 10,
-                ),
+                SizedBox(width: 2.w),
 
-                Text("Require all devices to sign in with new password",
-                  style: theme.textTheme.bodySmall,),
+                Expanded(
+                  child: Text(
+                    "Require all devices to sign in with new password",
+                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 1.8.h),
+                  ),
+                ),
               ],
             ),
 
-            SizedBox(height: 20),
+            SizedBox(height: 3.h),
 
             SizedBox(
               width: double.infinity,
@@ -126,10 +123,10 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                 onPressed: () {},
                 child: Text(
                   'Submit',
+                  style: theme.textTheme.labelLarge?.copyWith(fontSize: 2.2.h),
                 ),
               ),
             ),
-            
           ],
         ),
       ),

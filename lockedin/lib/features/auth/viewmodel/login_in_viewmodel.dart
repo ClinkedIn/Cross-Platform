@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/core/services/token_services.dart';
-import 'package:lockedin/features/auth/repository/auth_service.dart';
+import 'package:lockedin/features/auth/services/auth_service.dart';
 
 final loginViewModelProvider =
     StateNotifierProvider<LoginViewModel, AsyncValue<void>>((ref) {

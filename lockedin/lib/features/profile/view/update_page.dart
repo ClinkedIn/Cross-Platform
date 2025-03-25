@@ -1,64 +1,107 @@
 import 'package:flutter/material.dart';
+import 'package:lockedin/features/profile/repository/profile/update_profile_api.dart';
+import 'package:lockedin/features/profile/state/user_state.dart';
+import 'package:lockedin/shared/theme/colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
+<<<<<<< HEAD
+=======
+import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
+import 'package:lockedin/shared/widgets/custom_appbar.dart';
+import '../model/user_model.dart';
+>>>>>>> main
 
-class UpdatePage extends ConsumerWidget {
+class UpdatePage extends ConsumerStatefulWidget {
   @override
+<<<<<<< HEAD
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Update Profile',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 25,
-          ),
-        ),
-        backgroundColor: Colors.black,
-        actions: [
-          IconButton(
-            onPressed: () {
-              ref.read(navProvider.notifier).changeTab(0);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => ProfilePage()),
-              );
-            },
-            icon: Icon(Icons.close, color: Colors.white, size: 30),
-            highlightColor: const Color.fromARGB(94, 255, 255, 255),
-          ),
-        ],
-      ),
+=======
+  _UpdatePageState createState() => _UpdatePageState();
+}
 
+class _UpdatePageState extends ConsumerState<UpdatePage> {
+  late TextEditingController firstNameController;
+  late TextEditingController lastNameController;
+  late TextEditingController additionalNameController;
+  late TextEditingController headlineController;
+  late TextEditingController linkController;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = ref.read(userProvider);
+
+    firstNameController = TextEditingController(text: user?.firstName ?? '');
+    lastNameController = TextEditingController(text: user?.lastName ?? '');
+    additionalNameController = TextEditingController();
+    headlineController = TextEditingController(text: user?.bio ?? '');
+    linkController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    firstNameController.dispose();
+    lastNameController.dispose();
+    additionalNameController.dispose();
+    headlineController.dispose();
+    linkController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+>>>>>>> main
+    return Scaffold(
+      appBar: CustomAppbar(
+        leftIcon: const Icon(Icons.close),
+        leftOnPress: () {
+          ref.read(navProvider.notifier).changeTab(0);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => ProfilePage()),
+          );
+        },
+      ),
       body: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
             Expanded(
               child: ListView(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 15,
-                    children: [
-                      PersonalInfo(),
-                      ProfessionalInfo(),
-                      ConnectionInfo(),
-                    ],
+                  const SizedBox(height: 10),
+                  PersonalInfo(
+                    firstNameController: firstNameController,
+                    lastNameController: lastNameController,
+                    additionalNameController: additionalNameController,
+                    headlineController: headlineController,
                   ),
+                  const SizedBox(height: 20),
+                  const ProfessionalInfo(),
+                  const SizedBox(height: 20),
+                  const ConnectionInfo(),
                 ],
               ),
             ),
-            Divider(thickness: 1, indent: 0),
+            const Divider(thickness: 1),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Map<String, String> userInput = {
+                  "firstName": firstNameController.text,
+                  "lastName": lastNameController.text,
+                  "additionalName": additionalNameController.text,
+                  "headline": headlineController.text,
+                  "link": linkController.text,
+                };
+                print(userInput); // Debugging output
+                // Call your API here: UpdateProfileApi.updateProfileApi(userInput);
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                minimumSize: Size(400, 20),
+                backgroundColor: const Color(0xFF0A66C2),
+                minimumSize: const Size(400, 20),
               ),
-              child: Text(
+              child: const Text(
                 'Save',
                 style: TextStyle(color: Colors.white, fontSize: 30),
               ),
@@ -66,6 +109,82 @@ class UpdatePage extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class PersonalInfo extends StatelessWidget {
+  final TextEditingController firstNameController;
+  final TextEditingController lastNameController;
+  final TextEditingController additionalNameController;
+  final TextEditingController headlineController;
+
+  const PersonalInfo({
+    Key? key,
+    required this.firstNameController,
+    required this.lastNameController,
+    required this.additionalNameController,
+    required this.headlineController,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: firstNameController,
+          maxLength: 50,
+          decoration: const InputDecoration(
+            labelText: 'First Name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: lastNameController,
+          maxLength: 50,
+          decoration: const InputDecoration(
+            labelText: 'Last Name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: additionalNameController,
+          maxLength: 50,
+          decoration: const InputDecoration(
+            labelText: 'Additional Name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.remove_red_eye, color: Color(0xFF0A66C2)),
+          label: const Text('All LockedIn Members'),
+        ),
+        const SizedBox(height: 10),
+        const Text('Name pronunciation', style: TextStyle(fontSize: 16)),
+        TextButton.icon(
+          onPressed: () {},
+          label: const Text(
+            'Add name pronunciation',
+            style: TextStyle(color: Color(0xFF0A66C2)),
+          ),
+          icon: const Icon(Icons.add, color: Color(0xFF0A66C2)),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: headlineController,
+          maxLength: 220,
+          maxLines: null,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            label: Text('Headline'),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -85,8 +204,11 @@ class ProfessionalInfo extends StatelessWidget {
         ),
         TextButton.icon(
           onPressed: () {},
-          label: Text('Add new position', style: TextStyle(fontSize: 16)),
-          icon: Icon(Icons.add),
+          label: Text(
+            'Add new position',
+            style: TextStyle(fontSize: 16, color: Color(0xFF0A66C2)),
+          ),
+          icon: Icon(Icons.add, color: Color(0xFF0A66C2)),
         ),
         DropdownMenu(
           width: 380,
@@ -113,7 +235,7 @@ class ProfessionalInfo extends StatelessWidget {
                 text: 'industry options',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(243, 101, 36, 170),
+                  color: Color(0xFF0A66C2),
                 ),
               ),
             ],
@@ -139,73 +261,25 @@ class ProfessionalInfo extends StatelessWidget {
         ),
         TextButton.icon(
           onPressed: () {},
-          label: Text('Add new education', style: TextStyle(fontSize: 16)),
-          icon: Icon(Icons.add),
+          label: Text(
+            'Add new education',
+            style: TextStyle(fontSize: 16, color: Color(0xFF0A66C2)),
+          ),
+          icon: Icon(Icons.add, color: Color(0xFF0A66C2)),
         ),
       ],
     );
   }
 }
 
-class PersonalInfo extends StatelessWidget {
-  const PersonalInfo({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 5,
-      children: [
-        TextField(
-          maxLength: 50,
-          decoration: InputDecoration(
-            labelText: 'First Name',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        TextField(
-          maxLength: 50,
-          decoration: InputDecoration(
-            labelText: 'Last Name',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        TextField(
-          maxLength: 50,
-          decoration: InputDecoration(
-            labelText: 'Additional Name',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        OutlinedButton.icon(
-          onPressed: () {},
-          icon: Icon(Icons.remove_red_eye),
-          label: Text('All LockedIn Members'),
-        ),
-        SizedBox(height: 10),
-        Text('Name pronunciation', style: TextStyle(fontSize: 16)),
-        TextButton.icon(
-          onPressed: () {},
-          label: Text('Add name pronunciation'),
-          icon: Icon(Icons.add),
-        ),
-        SizedBox(height: 10),
-        TextField(
-          maxLength: 220,
-          maxLines: null,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            label: Text('Headline'),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class ConnectionInfo extends StatelessWidget {
+class ConnectionInfo extends StatefulWidget {
   const ConnectionInfo({super.key});
 
+  @override
+  State<ConnectionInfo> createState() => _ConnectionInfoState();
+}
+
+class _ConnectionInfoState extends State<ConnectionInfo> {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -231,7 +305,10 @@ class ConnectionInfo extends StatelessWidget {
         ),
         TextButton(
           onPressed: () {},
-          child: Text('Use current location', style: TextStyle(fontSize: 16)),
+          child: Text(
+            'Use current location',
+            style: TextStyle(fontSize: 16, color: Color(0xFF0A66C2)),
+          ),
         ),
         DropdownMenu(
           width: 380,
@@ -262,7 +339,11 @@ class ConnectionInfo extends StatelessWidget {
               onPressed: () {},
               child: Text(
                 'Edit contact info',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF0A66C2),
+                ),
               ),
             ),
             Text(

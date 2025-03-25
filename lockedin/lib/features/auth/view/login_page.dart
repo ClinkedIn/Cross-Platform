@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/auth/view/main_page.dart';
 import 'package:lockedin/features/auth/viewmodel/login_in_viewmodel.dart';
-import 'package:lockedin/features/auth/view/forgot_password_page.dart';
+import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
 import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
+import 'package:lockedin/shared/widgets/logo_appbar.dart';
 import 'package:sizer/sizer.dart';
 
 class LoginPage extends ConsumerWidget {
@@ -19,6 +20,9 @@ class LoginPage extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
+
+      appBar: LogoAppbar(),
+
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(
           horizontal: 4.w,
@@ -27,27 +31,12 @@ class LoginPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text(
-                  "Locked ",
-                  style: AppTextStyles.headline1.copyWith(
-                    color: AppColors.primary,
-                    fontSize: 3.h, // Responsive font size
-                  ),
-                ),
-                Image.network(
-                  "https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png",
-                  height: 4.h, // Responsive height
-                ),
-              ],
-            ),
 
-            SizedBox(height: 5.h), // Responsive spacing
             Text(
               "Sign in",
               style: theme.textTheme.headlineLarge?.copyWith(fontSize: 3.5.h),
             ),
+
             SizedBox(height: 1.h),
 
             Row(
@@ -73,7 +62,9 @@ class LoginPage extends ConsumerWidget {
                 ),
               ],
             ),
+
             SizedBox(height: 4.h),
+
             TextField(
               controller: _emailController,
               decoration: InputDecoration(
@@ -86,7 +77,9 @@ class LoginPage extends ConsumerWidget {
                 ),
               ),
             ),
+
             SizedBox(height: 2.h),
+
             TextField(
               controller: _passwordController,
               obscureText: true,
@@ -174,7 +167,9 @@ class LoginPage extends ConsumerWidget {
                 const Expanded(child: Divider()),
               ],
             ),
+
             SizedBox(height: 3.h),
+
             Column(
               children: [
                 AppButtonStyles.socialLoginButton(
@@ -190,6 +185,7 @@ class LoginPage extends ConsumerWidget {
                 ),
               ],
             ),
+
           ],
         ),
       ),

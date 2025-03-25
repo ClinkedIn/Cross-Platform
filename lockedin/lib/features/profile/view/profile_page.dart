@@ -108,6 +108,7 @@ class ProfilePage extends ConsumerWidget {
                               Spacer(),
                               IconButton(
                                 onPressed: () {
+                                  ref.read(userProvider.notifier).setUser(user);
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
