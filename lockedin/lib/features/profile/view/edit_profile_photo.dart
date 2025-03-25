@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:lockedin/features/profile/state/user_state.dart';
-import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
 
 class EditProfilePhoto extends ConsumerWidget {
   @override
@@ -43,7 +42,7 @@ class EditProfilePhoto extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 80), // Replaces Spacer()
+                    const SizedBox(height: 80),
                     // Profile image with circular border
                     Container(
                       decoration: const BoxDecoration(
@@ -53,14 +52,12 @@ class EditProfilePhoto extends ConsumerWidget {
                       padding: const EdgeInsets.all(4),
                       child: CircleAvatar(
                         radius: 120,
-                        backgroundImage:
-                            user.profilePicture.isNotEmpty
-                                ? NetworkImage(user.profilePicture)
-                                : const AssetImage('assets/default_profile.png')
-                                    as ImageProvider, // Fallback image
+                        backgroundImage: const AssetImage(
+                          'assets/images/default_profile_photo.png',
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 80), // Replaces Spacer()
+                    const SizedBox(height: 80),
                     // Bottom bar with icons
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
