@@ -1,11 +1,19 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:lockedin/features/profile/repository/profile/update_profile_api.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
 import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
 import 'package:lockedin/shared/widgets/custom_appbar.dart';
+import '../model/user_model.dart';
+
+final TextEditingController firstNameController = TextEditingController();
+final TextEditingController lastNameController = TextEditingController();
+final TextEditingController additionalNameController = TextEditingController();
+final TextEditingController headlineController = TextEditingController();
+final TextEditingController linkController = TextEditingController();
 
 class UpdatePage extends ConsumerWidget {
   @override
@@ -14,13 +22,16 @@ class UpdatePage extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: CustomAppbar(leftIcon: Icon(Icons.close), leftOnPress: () {
-              ref.read(navProvider.notifier).changeTab(0);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => ProfilePage()),
-              );
-            }),
+      appBar: CustomAppbar(
+        leftIcon: Icon(Icons.close),
+        leftOnPress: () {
+          ref.read(navProvider.notifier).changeTab(0);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => ProfilePage()),
+          );
+        },
+      ),
 
       body: Padding(
         padding: EdgeInsets.all(20),
@@ -43,7 +54,16 @@ class UpdatePage extends ConsumerWidget {
             ),
             Divider(thickness: 1, indent: 0),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Map<String, String> userInput = {
+                  "firstName": firstNameController.text,
+                  "lastName": lastNameController.text,
+                  "additionalName": additionalNameController.text,
+                  "headline": headlineController.text,
+                  "link": linkController.text,
+                };
+                UpdateProfileApi.updateProfileApi(userInput);
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF0A66C2),
                 minimumSize: Size(400, 20),
@@ -153,6 +173,7 @@ class PersonalInfo extends StatelessWidget {
       spacing: 5,
       children: [
         TextField(
+          controller: firstNameController,
           maxLength: 50,
           decoration: InputDecoration(
             labelText: 'First Name',
@@ -160,6 +181,7 @@ class PersonalInfo extends StatelessWidget {
           ),
         ),
         TextField(
+          controller: lastNameController,
           maxLength: 50,
           decoration: InputDecoration(
             labelText: 'Last Name',
@@ -167,6 +189,7 @@ class PersonalInfo extends StatelessWidget {
           ),
         ),
         TextField(
+          controller: additionalNameController,
           maxLength: 50,
           decoration: InputDecoration(
             labelText: 'Additional Name',
@@ -190,6 +213,7 @@ class PersonalInfo extends StatelessWidget {
         ),
         SizedBox(height: 10),
         TextField(
+          controller: headlineController,
           maxLength: 220,
           maxLines: null,
           decoration: InputDecoration(
@@ -280,6 +304,7 @@ class ConnectionInfo extends StatelessWidget {
               style: TextStyle(color: Colors.black, fontSize: 16),
             ),
             TextField(
+              controller: linkController,
               maxLength: 262,
               decoration: InputDecoration(
                 label: Text('Link'),
