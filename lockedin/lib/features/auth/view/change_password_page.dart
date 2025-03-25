@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lockedin/features/auth/viewmodel/change_password_viewmodel.dart';
+
 import 'package:lockedin/features/auth/view/Forget password/forgot_password_page.dart';
+
 //import 'package:lockedin/shared/theme/app_theme.dart';
 
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
 
-
 final navigationProvider = StateProvider<String>((ref) => '/');
+
 
 final passwordVisibilityProvider = StateNotifierProvider<PasswordVisibilityNotifier, PasswordVisibilityState>(
   (ref) => PasswordVisibilityNotifier(),
 );
+
+
 
 final passwordStateProvider =
     StateNotifierProvider<PasswordStateNotifier, PasswordState>(
@@ -94,7 +98,6 @@ class PasswordState {
   bool get isSaveEnabled =>
       newPassword.length >= 8 && newPassword == confirmPassword;
 
-
   PasswordState copyWith({
     String? currentPassword,
     String? newPassword,
@@ -113,10 +116,16 @@ class PasswordState {
 class PasswordStateNotifier extends StateNotifier<PasswordState> {
   PasswordStateNotifier() : super(PasswordState());
 
-
-  void updatePasswords(String currentPassword, String newPassword, String confirmPassword) {
-    state = state.copyWith(currentPassword: currentPassword, newPassword: newPassword, confirmPassword: confirmPassword);
-
+  void updatePasswords(
+    String currentPassword,
+    String newPassword,
+    String confirmPassword,
+  ) {
+    state = state.copyWith(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+      confirmPassword: confirmPassword,
+    );
   }
 
   void toggleRequireSignIn() {
@@ -135,7 +144,6 @@ class ChangePasswordPage extends ConsumerWidget {
     //final changePasswordState = ref.watch(changePasswordViewModelProvider);
 
     //final theme = Theme.of(context);
-
 
     return Scaffold(
       appBar: AppBar(
@@ -195,9 +203,48 @@ class ChangePasswordPage extends ConsumerWidget {
                 ),
               ),
 
-            _buildPasswordField("Type your current password", visibilityState.isCurrentPasswordVisible, ref.read(passwordVisibilityProvider.notifier).toggleCurrentPasswordVisibility, (value) => ref.read(passwordStateProvider.notifier).updatePasswords(value, passwordState.newPassword, passwordState.confirmPassword)),
-            _buildPasswordField("Type your new password", visibilityState.isNewPasswordVisible, ref.read(passwordVisibilityProvider.notifier).toggleNewPasswordVisibility, (value) => ref.read(passwordStateProvider.notifier).updatePasswords(passwordState.currentPassword, value, passwordState.confirmPassword)),
-            _buildPasswordField("Retype your new password", visibilityState.isConfirmPasswordVisible, ref.read(passwordVisibilityProvider.notifier).toggleConfirmPasswordVisibility, (value) => ref.read(passwordStateProvider.notifier).updatePasswords(passwordState.currentPassword, passwordState.newPassword, value)),
+            _buildPasswordField(
+              "Type your current password",
+              visibilityState.isCurrentPasswordVisible,
+              ref
+                  .read(passwordVisibilityProvider.notifier)
+                  .toggleCurrentPasswordVisibility,
+              (value) => ref
+                  .read(passwordStateProvider.notifier)
+                  .updatePasswords(
+                    value,
+                    passwordState.newPassword,
+                    passwordState.confirmPassword,
+                  ),
+            ),
+            _buildPasswordField(
+              "Type your new password",
+              visibilityState.isNewPasswordVisible,
+              ref
+                  .read(passwordVisibilityProvider.notifier)
+                  .toggleNewPasswordVisibility,
+              (value) => ref
+                  .read(passwordStateProvider.notifier)
+                  .updatePasswords(
+                    passwordState.currentPassword,
+                    value,
+                    passwordState.confirmPassword,
+                  ),
+            ),
+            _buildPasswordField(
+              "Retype your new password",
+              visibilityState.isConfirmPasswordVisible,
+              ref
+                  .read(passwordVisibilityProvider.notifier)
+                  .toggleConfirmPasswordVisibility,
+              (value) => ref
+                  .read(passwordStateProvider.notifier)
+                  .updatePasswords(
+                    passwordState.currentPassword,
+                    passwordState.newPassword,
+                    value,
+                  ),
+            ),
 
             Row(
               children: [
@@ -215,24 +262,30 @@ class ChangePasswordPage extends ConsumerWidget {
                 ),
               ],
             ),
-            
+
             ElevatedButton(
               style: AppButtonStyles.elevatedButton,
-              onPressed: passwordState.isSaveEnabled ? () {
-                ref.read(changePasswordViewModelProvider.notifier).changePassword(
-                  passwordState.newPassword,
-                  passwordState.currentPassword, // Replace with actual input              
-                );
-              } : null,
+              onPressed:
+                  passwordState.isSaveEnabled
+                      ? () {
+                        ref
+                            .read(changePasswordViewModelProvider.notifier)
+                            .changePassword(
+                              passwordState.newPassword,
+                              passwordState
+                                  .currentPassword, // Replace with actual input
+                            );
+                      }
+                      : null,
               child: const Text("Save Password"),
             ),
             // Success or error message display
-            // if (AuthService.successMessage != null) 
+            // if (AuthService.successMessage != null)
             //   Padding(
             //     padding: const EdgeInsets.symmetric(vertical: 10),
             //     child: Text(AuthService.successMessage, style: AppTextStyles.bodyText1.copyWith(color: Colors.green)),
             //   ),
-            // if (AuthService.errorMessage != null) 
+            // if (AuthService.errorMessage != null)
             //   Padding(
             //     padding: const EdgeInsets.symmetric(vertical: 10),
             //     child: Text(AuthService.errorMessage!, style: AppTextStyles.bodyText1.copyWith(color: Colors.red)),
@@ -243,8 +296,10 @@ class ChangePasswordPage extends ConsumerWidget {
                 ref.read(navigationProvider.notifier).state = '/chats';
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
-            );
+                  MaterialPageRoute(
+                    builder: (context) => ForgotPasswordScreen(),
+                  ),
+                );
               },
               child: const Text("Forgot Password"),
             ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 
 class ProfileButtons extends StatelessWidget {

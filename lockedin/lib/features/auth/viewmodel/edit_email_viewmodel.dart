@@ -11,27 +11,38 @@ class EditEmailViewModel extends ChangeNotifier {
   bool isLoading = false;
   String? apiMessage;
 
-  String? validateEmailOrPhone(String input) {
+  void validateEmailOrPhone(String input) {
     print("🔍 Validating input: $input");
 
     if (RegExp(r'^\+?[ 0-9]+$').hasMatch(input)) {
       if (!input.startsWith('+')) {
         print("❌ Invalid phone format");
-        return "❌ Please enter a valid phone number, including '+' when using a country code.";
+        emailError =
+            "❌ Please enter a valid phone number, including '+' when using a country code.";
+        isEmailValid = false;
+      } else {
+        print("✅ Valid phone number");
+        emailError = null;
+        isEmailValid = true;
       }
-      print("✅ Valid phone number");
-      return null;
+      notifyListeners();
+      return;
     }
 
     if (RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     ).hasMatch(input)) {
       print("✅ Valid email");
-      return null;
+      emailError = null;
+      isEmailValid = true;
+    } else {
+      print("❌ Invalid email or phone");
+      emailError =
+          "❌ Invalid input. Please enter a valid email or phone number.";
+      isEmailValid = false;
     }
 
-    print("❌ Invalid email or phone");
-    return "❌ Invalid input. Please enter a valid email or phone number.";
+    notifyListeners();
   }
 
   Future<void> updateEmail(String newEmail, String password) async {
