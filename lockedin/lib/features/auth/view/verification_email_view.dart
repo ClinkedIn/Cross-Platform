@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/auth/repository/email_verification_repository.dart';
 import 'package:lockedin/features/auth/view/edit_email_view.dart';
 import 'package:lockedin/features/auth/view/main_page.dart';
 import 'package:lockedin/features/auth/viewmodel/sign_up_viewmodel.dart';
@@ -9,7 +10,7 @@ import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
 
 final verificationEmailViewModelProvider = ChangeNotifierProvider(
-  (ref) => VerificationEmailViewModel(),
+  (ref) => VerificationEmailViewModel(EmailVerificationRepository()),
 );
 
 class VerificationEmailView extends ConsumerStatefulWidget {
@@ -117,11 +118,11 @@ class _VerificationEmailViewState extends ConsumerState<VerificationEmailView> {
               TextField(
                 controller: codeController,
                 keyboardType: TextInputType.number,
-                maxLength: 6,
+                maxLength: 15,
                 style: Theme.of(context).textTheme.bodyLarge,
 
                 decoration: InputDecoration(
-                  labelText: "6-digit code*",
+                  labelText: "code*",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),

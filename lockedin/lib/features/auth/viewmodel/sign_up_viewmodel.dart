@@ -10,7 +10,15 @@ class SignupViewModel extends Notifier<SignupState> {
 
   @override
   SignupState build() {
-    return const SignupState();
+    return const SignupState(
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      rememberMe: false,
+      isLoading: false,
+      success: false,
+    );
   }
 
   void setFirstName(String value) => state = state.copyWith(firstName: value);
@@ -128,6 +136,7 @@ class SignupViewModel extends Notifier<SignupState> {
   Future<void> clearSavedCredentials() async {
     await _secureStorage.delete(key: 'email');
     await _secureStorage.delete(key: 'password');
+
     state = state.copyWith(email: '', password: '', rememberMe: false);
     print('🗑️ Secure storage cleared');
   }

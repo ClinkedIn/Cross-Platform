@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:lockedin/features/profile/repository/profile/update_profile_api.dart';
 import 'package:lockedin/features/profile/state/user_state.dart';
@@ -6,6 +5,7 @@ import 'package:lockedin/shared/theme/colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
+
 import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
 import 'package:lockedin/shared/widgets/custom_appbar.dart';
 import '../model/user_model.dart';

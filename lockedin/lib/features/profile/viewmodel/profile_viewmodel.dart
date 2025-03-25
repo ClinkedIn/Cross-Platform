@@ -1,7 +1,4 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/profile/model/user_model.dart';
 import 'package:lockedin/features/profile/repository/profile/profile_api.dart';
 import 'package:lockedin/features/profile/state/user_state.dart';
 

@@ -11,9 +11,6 @@ class ProfileService {
     try {
       final response = await http.get(Uri.parse(url), headers: headers);
 
-      print("Status Code: ${response.statusCode}");
-      print("Response Body: ${response.body}");
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return UserModel.fromJson(data);
@@ -21,7 +18,6 @@ class ProfileService {
         throw Exception("Failed to load user: ${response.body}");
       }
     } catch (e) {
-      print("Error fetching user: $e");
       throw Exception("Network error: $e");
     }
   }
