@@ -192,7 +192,9 @@ class LoginPage extends ConsumerWidget {
                 AppButtonStyles.socialLoginButton(
                   text: "Sign in with Google",
                   icon: Icons.g_mobiledata,
-                  onPressed: () {},
+                  onPressed: () async{
+                    await ref.read(loginViewModelProvider.notifier).loginWithGoogle();
+                  },
                 ),
               ],
             ),
