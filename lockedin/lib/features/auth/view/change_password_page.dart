@@ -87,12 +87,14 @@ class PasswordState {
   final String newPassword;
   final String confirmPassword;
   final bool requireSignIn;
+  final String statusMessage;
 
   PasswordState({
     this.currentPassword = '',
     this.newPassword = '',
     this.confirmPassword = '',
     this.requireSignIn = true,
+    this.statusMessage = '',
   });
 
   bool get isSaveEnabled =>
@@ -103,12 +105,14 @@ class PasswordState {
     String? newPassword,
     String? confirmPassword,
     bool? requireSignIn,
+    String? statusMessage,
   }) {
     return PasswordState(
       currentPassword: currentPassword ?? this.currentPassword,
       newPassword: newPassword ?? this.newPassword,
       confirmPassword: confirmPassword ?? this.confirmPassword,
       requireSignIn: requireSignIn ?? this.requireSignIn,
+      statusMessage: statusMessage ?? this.statusMessage,
     );
   }
 }
@@ -130,6 +134,10 @@ class PasswordStateNotifier extends StateNotifier<PasswordState> {
 
   void toggleRequireSignIn() {
     state = state.copyWith(requireSignIn: !state.requireSignIn);
+  }
+
+  void setStatusMessage(String message) {
+    state = state.copyWith(statusMessage: message);
   }
 }
 
@@ -268,28 +276,27 @@ class ChangePasswordPage extends ConsumerWidget {
               onPressed:
                   passwordState.isSaveEnabled
                       ? () {
-                        ref
-                            .read(changePasswordViewModelProvider.notifier)
+                        ref.read(changePasswordViewModelProvider.notifier)
                             .changePassword(
                               passwordState.newPassword,
-                              passwordState
-                                  .currentPassword, // Replace with actual input
+                              passwordState.currentPassword // Replace with actual input
                             );
                       }
                       : null,
               child: const Text("Save Password"),
             ),
             // Success or error message display
-            // if (AuthService.successMessage != null)
-            //   Padding(
-            //     padding: const EdgeInsets.symmetric(vertical: 10),
-            //     child: Text(AuthService.successMessage, style: AppTextStyles.bodyText1.copyWith(color: Colors.green)),
-            //   ),
-            // if (AuthService.errorMessage != null)
-            //   Padding(
-            //     padding: const EdgeInsets.symmetric(vertical: 10),
-            //     child: Text(AuthService.errorMessage!, style: AppTextStyles.bodyText1.copyWith(color: Colors.red)),
-            //   ),
+
+            if (passwordState.statusMessage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  passwordState.statusMessage,
+                  style: AppTextStyles.bodyText1.copyWith(
+                    color: passwordState.statusMessage.contains("✅") ? Colors.green : Colors.red,
+                  ),
+                ),
+              ),     
             OutlinedButton(
               style: AppButtonStyles.outlinedButton,
               onPressed: () {

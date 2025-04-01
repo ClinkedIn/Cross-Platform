@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:lockedin/features/auth/view/change_password_page.dart';
 
 // Provider for API service
 final authServiceProvider = Provider((ref) => AuthService());
@@ -9,13 +10,14 @@ final authServiceProvider = Provider((ref) => AuthService());
 final changePasswordViewModelProvider =
     StateNotifierProvider<ChangePasswordViewModel, AsyncValue<bool>>((ref) {
       final authService = ref.read(authServiceProvider);
-      return ChangePasswordViewModel(authService);
+      return ChangePasswordViewModel(authService, ref);
     });
 
 class ChangePasswordViewModel extends StateNotifier<AsyncValue<bool>> {
   final AuthService authService;
+  final Ref ref;
 
-  ChangePasswordViewModel(this.authService)
+  ChangePasswordViewModel(this.authService, this.ref)
     : super(const AsyncValue.data(false));
 
   Future<void> changePassword(
@@ -31,8 +33,15 @@ class ChangePasswordViewModel extends StateNotifier<AsyncValue<bool>> {
         //requireSignIn: requireSignIn,
       );
 
-      final success = await authService.changePassword(request);
+      final success = await authService.changePasswordRequest(request);
       state = AsyncValue.data(success);
+      ref
+          .read(passwordStateProvider.notifier)
+          .setStatusMessage(
+            success
+                ? "✅ Password changed successfully"
+                : "❌ Error changing password",
+          );
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
     }
@@ -40,16 +49,14 @@ class ChangePasswordViewModel extends StateNotifier<AsyncValue<bool>> {
 }
 
 class AuthService {
-  final String _baseUrl = "https://a5a7a475-1f05-430d-a300-01cdf67ccb7e.mock.pstmn.io";
-  final http.Client client;  // Accepting the client as a constructor parameter
+  final String _baseUrl =
+      "https://a5a7a475-1f05-430d-a300-01cdf67ccb7e.mock.pstmn.io";
+  final http.Client client; // Accepting the client as a constructor parameter
 
   // Constructor with a default value for client
   AuthService({http.Client? client}) : client = client ?? http.Client();
 
-  String successMessage = "";
-  String errorMessage = "";
-
-  Future<bool> changePassword(ChangePasswordRequest request) async {
+  Future<bool> changePasswordRequest(ChangePasswordRequest request) async {
     final response = await client.patch(
       Uri.parse("$_baseUrl/users/update-password"),
       body: jsonEncode(request.toJson()),
@@ -57,11 +64,9 @@ class AuthService {
 
     try {
       if (response.statusCode == 200) {
-        successMessage = " ✅ Password changed successfully";
         print("✅ Success: ${response.body}");
         return true; // Password changed successfully
       } else {
-        errorMessage = "❌ Error changing password";
         print("❌ API Error: ${response.statusCode} - ${response.body}");
         return false; // Password change failed
       }
