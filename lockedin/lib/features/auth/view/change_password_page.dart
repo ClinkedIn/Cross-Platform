@@ -12,12 +12,10 @@ import 'package:lockedin/shared/theme/text_styles.dart';
 
 final navigationProvider = StateProvider<String>((ref) => '/');
 
-
-final passwordVisibilityProvider = StateNotifierProvider<PasswordVisibilityNotifier, PasswordVisibilityState>(
-  (ref) => PasswordVisibilityNotifier(),
-);
-
-
+final passwordVisibilityProvider =
+    StateNotifierProvider<PasswordVisibilityNotifier, PasswordVisibilityState>(
+      (ref) => PasswordVisibilityNotifier(),
+    );
 
 final passwordStateProvider =
     StateNotifierProvider<PasswordStateNotifier, PasswordState>(
@@ -88,6 +86,7 @@ class PasswordState {
   final String confirmPassword;
   final bool requireSignIn;
   final String statusMessage;
+  final String errorMessage;
 
   PasswordState({
     this.currentPassword = '',
@@ -95,6 +94,7 @@ class PasswordState {
     this.confirmPassword = '',
     this.requireSignIn = true,
     this.statusMessage = '',
+    this.errorMessage = '',
   });
 
   bool get isSaveEnabled =>
@@ -106,6 +106,7 @@ class PasswordState {
     String? confirmPassword,
     bool? requireSignIn,
     String? statusMessage,
+    String? errorMessage,
   }) {
     return PasswordState(
       currentPassword: currentPassword ?? this.currentPassword,
@@ -113,6 +114,7 @@ class PasswordState {
       confirmPassword: confirmPassword ?? this.confirmPassword,
       requireSignIn: requireSignIn ?? this.requireSignIn,
       statusMessage: statusMessage ?? this.statusMessage,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 }
@@ -139,6 +141,17 @@ class PasswordStateNotifier extends StateNotifier<PasswordState> {
   void setStatusMessage(String message) {
     state = state.copyWith(statusMessage: message);
   }
+
+  void setErrorMessage(String message) {
+    state = state.copyWith(errorMessage: message);
+  }
+
+  void isValidPassword(String password) {
+    setErrorMessage("");
+    final regex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$');
+    if (!regex.hasMatch(password)) setErrorMessage("❌ Invalid password format");
+    return;
+  }
 }
 
 class ChangePasswordPage extends ConsumerWidget {
@@ -148,10 +161,6 @@ class ChangePasswordPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final visibilityState = ref.watch(passwordVisibilityProvider);
     final passwordState = ref.watch(passwordStateProvider);
-
-    //final changePasswordState = ref.watch(changePasswordViewModelProvider);
-
-    //final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -276,27 +285,38 @@ class ChangePasswordPage extends ConsumerWidget {
               onPressed:
                   passwordState.isSaveEnabled
                       ? () {
-                        ref.read(changePasswordViewModelProvider.notifier)
-                            .changePassword(
-                              passwordState.newPassword,
-                              passwordState.currentPassword // Replace with actual input
-                            );
+                        ref.read(passwordStateProvider.notifier).isValidPassword(passwordState.newPassword);
+                        ref.read(changePasswordViewModelProvider.notifier).changePassword(
+                          passwordState.newPassword,passwordState.currentPassword);
                       }
                       : null,
               child: const Text("Save Password"),
             ),
-            // Success or error message display
 
-            if (passwordState.statusMessage.isNotEmpty)
+            // Status message display
+            if (passwordState.statusMessage.isNotEmpty && passwordState.errorMessage.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Text(
                   passwordState.statusMessage,
                   style: AppTextStyles.bodyText1.copyWith(
-                    color: passwordState.statusMessage.contains("✅") ? Colors.green : Colors.red,
+                    color:
+                        passwordState.statusMessage.contains("✅")
+                            ? Colors.green
+                            : Colors.red,
                   ),
                 ),
-              ),     
+              ),
+            // Error message display
+            if (passwordState.errorMessage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  passwordState.errorMessage,
+                  style: AppTextStyles.bodyText1.copyWith(color: Colors.red),
+                ),
+              ),
+
             OutlinedButton(
               style: AppButtonStyles.outlinedButton,
               onPressed: () {
