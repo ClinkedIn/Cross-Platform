@@ -57,12 +57,11 @@ class AuthService {
   AuthService({http.Client? client}) : client = client ?? http.Client();
 
   Future<bool> changePasswordRequest(ChangePasswordRequest request) async {
-    final response = await client.patch(
-      Uri.parse("$_baseUrl/users/update-password"),
-      body: jsonEncode(request.toJson()),
-    );
-
     try {
+      final response = await client.patch(
+        Uri.parse("$_baseUrl/users/update-password"),
+        body: jsonEncode(request.toJson()),
+      );
       if (response.statusCode == 200) {
         print("✅ Success: ${response.body}");
         return true; // Password changed successfully

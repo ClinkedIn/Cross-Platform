@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:http/http.dart' as http;
 import 'package:lockedin/features/auth/viewmodel/change_password_viewmodel.dart';
-import 'package:lockedin/features/auth/view/change_password_page.dart';
 
 void main() {
   late MockAuthService mockAuthService;
