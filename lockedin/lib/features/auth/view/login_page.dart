@@ -1,40 +1,53 @@
 import 'package:flutter/material.dart';
-
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/auth/view/main_page.dart';
 import 'package:lockedin/features/auth/viewmodel/login_in_viewmodel.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
-
 import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
-//import 'package:google_fonts/google_fonts.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
-
 import 'package:lockedin/shared/widgets/logo_appbar.dart';
 import 'package:sizer/sizer.dart';
 
-
-class LoginPage extends StatelessWidget {
+class LoginPage extends ConsumerWidget {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
+    // Listen to login state
+    ref.listen<AsyncValue<void>>(loginViewModelProvider, (previous, next) {
+      next.when(
+        data: (_) {
+          // Success case: Navigate to MainPage
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => MainPage()),
+          );
+        },
+        error: (error, stackTrace) {
+          // Error case: Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $error')),
+          );
+        },
+        loading: () {
+          // Optional: Show loading indicator (handled below if needed)
+        },
+      );
+    });
+
     return Scaffold(
-
       appBar: LogoAppbar(),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             Row(
               children: [
                 Text(
@@ -52,7 +65,6 @@ class LoginPage extends StatelessWidget {
             const SizedBox(height: 42),
             Text("Sign in", style: theme.textTheme.headlineLarge),
             const SizedBox(height: 8),
-
             Row(
               children: [
                 Text("or ", style: AppTextStyles.bodyText2),
@@ -72,11 +84,7 @@ class LoginPage extends StatelessWidget {
                 ),
               ],
             ),
-
-
             SizedBox(height: 4.h),
-
-
             TextField(
               controller: _emailController,
               decoration: InputDecoration(
@@ -88,10 +96,7 @@ class LoginPage extends StatelessWidget {
                 ),
               ),
             ),
-
-
             SizedBox(height: 2.h),
-
             TextField(
               controller: _passwordController,
               obscureText: true,
@@ -114,19 +119,22 @@ class LoginPage extends StatelessWidget {
                   ),
                 );
               },
-
               child: Text(
                 "Forgot password?",
                 style: AppTextStyles.buttonText.copyWith(
                   color: AppColors.primary,
                 ),
               ),
-
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               style: AppButtonStyles.elevatedButton,
-              onPressed: () {},
+              onPressed: () {
+                ref.read(loginViewModelProvider.notifier).login(
+                      _emailController.text,
+                      _passwordController.text,
+                    );
+              },
               child: const Text("Sign in"),
             ),
             const SizedBox(height: 20),
@@ -140,10 +148,7 @@ class LoginPage extends StatelessWidget {
                 Expanded(child: Divider()),
               ],
             ),
-
-
             SizedBox(height: 3.h),
-
             Column(
               children: [
                 AppButtonStyles.socialLoginButton(
@@ -155,11 +160,12 @@ class LoginPage extends StatelessWidget {
                 AppButtonStyles.socialLoginButton(
                   text: "Sign in with Google",
                   icon: Icons.g_mobiledata,
-                  onPressed: () {},
+                  onPressed: () {
+                    ref.read(loginViewModelProvider.notifier).signInWithGoogle();
+                  },
                 ),
               ],
             ),
-
           ],
         ),
       ),

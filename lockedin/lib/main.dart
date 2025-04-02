@@ -4,8 +4,11 @@ import 'package:lockedin/features/auth/view/main_page.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(
     ProviderScope(
       child: Sizer(
