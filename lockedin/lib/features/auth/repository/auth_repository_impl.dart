@@ -19,4 +19,16 @@ class AuthRepositoryImpl implements AuthRepository {
       throw Exception("Failed to reset password");
     }
   }
+
+// This method will be called when the user submits the new password
+  // It will send the new password to the server and handle the response
+  // If requireSignIn is true, it will also sign out the user after resetting the password
+@override
+Future<void> resetPassword(String newPassword, bool requireSignIn) async {
+  try {
+    await _authService.resetPassword(newPassword, requireSignIn);
+  } catch (e) {
+    throw Exception("Failed to reset password: ${e.toString()}");
+  }
+}
 }

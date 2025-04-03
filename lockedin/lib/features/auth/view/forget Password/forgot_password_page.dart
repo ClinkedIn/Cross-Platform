@@ -14,13 +14,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>(); // Form key for validation
   final TextEditingController emailOrPhoneController = TextEditingController();
 
-
-  //Check if the email is valid
-  bool _isValidEmail(String input) {
-    final emailRegex = RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");  
-    return emailRegex.hasMatch(input);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -49,12 +42,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     labelStyle: theme.textTheme.bodyLarge?.copyWith(fontSize: 2.h),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Field cannot be empty";
-                    } else if (!_isValidEmail(value)) {
-                      return "Enter a valid email address";
-                    }
-                    return null;
+                    return forgotPasswordViewModel.validateEmailOrPhone(value);
                   },
                 ),
 

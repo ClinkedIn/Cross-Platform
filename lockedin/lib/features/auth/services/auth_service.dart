@@ -43,4 +43,24 @@ class AuthService {
     throw Exception("Failed to send email. Please try again.");
   }
   }
+
+  // Add resetPassword method
+  // This method will be called when the user submits the new password
+  Future<void> resetPassword(String newPassword, bool requireSignIn) async {
+    final String resetPasswordUrl = "your_reset_password_endpoint";
+    final Map<String, dynamic> body = {
+      "new_password": newPassword,
+      "require_sign_in": requireSignIn
+    };
+    
+    final response = await http.post(
+      Uri.parse(resetPasswordUrl),
+      headers: headers,
+      body: jsonEncode(body),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception("Failed to reset password.");
+    }
+  }
 }
