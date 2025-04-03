@@ -120,7 +120,7 @@ class BottomNavBar extends ConsumerWidget {
                           unseenNotificationsCount.toString(), // Replace with dynamic value if needed
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 14.sp,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
