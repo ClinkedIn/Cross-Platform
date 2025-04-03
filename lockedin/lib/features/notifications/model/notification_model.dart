@@ -5,6 +5,7 @@ class NotificationModel {
   final String description;
   final String timeAgo; // e.g., "15m", "45m", "4h"
   final String profileImageUrl;
+  bool isSeen;
   bool isRead; // Default value is false
 
   NotificationModel({
@@ -14,6 +15,7 @@ class NotificationModel {
     required this.description,
     required this.timeAgo,
     required this.profileImageUrl,
+    this.isSeen = false,
     this.isRead = false,
   });
 }
