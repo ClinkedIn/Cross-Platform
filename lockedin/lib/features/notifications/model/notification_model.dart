@@ -1,6 +1,7 @@
 class NotificationModel {
-  final String id;
+  final int id;
   final String username;
+  final String secondUsername;
   final String activityType; // e.g., "posted", "commented on"
   final String description;
   final String timeAgo; // e.g., "15m", "45m", "4h"
@@ -17,5 +18,6 @@ class NotificationModel {
     required this.profileImageUrl,
     this.isSeen = false,
     this.isRead = false,
+    this.secondUsername = "",
   });
 }
