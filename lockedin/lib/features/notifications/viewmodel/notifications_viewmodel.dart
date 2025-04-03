@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/home_page/model/post_model.dart';
-import 'package:lockedin/features/home_page/view/home_page.dart';
+//import 'package:lockedin/features/home_page/view/home_page.dart';
 import 'package:lockedin/features/notifications/model/notification_model.dart';
 import 'package:lockedin/features/profile/widgets/post_card.dart';
 
@@ -15,7 +15,7 @@ class NotificationsViewModel extends StateNotifier<List<NotificationModel>> {
 
     final notifications = [
       NotificationModel(
-        id: "1",
+        id: 1,
         username: "Muhammad Salah",
         activityType: "posted",
         description: ": The assignment deadline has been postponed to next week. Eid Mubarak!",
@@ -23,21 +23,22 @@ class NotificationsViewModel extends StateNotifier<List<NotificationModel>> {
         profileImageUrl: "https://img.a.transfermarkt.technology/portrait/header/148455-1727337594.jpg?lm=1",
       ),
       NotificationModel(
-        id: "2",
+        id: 2,
         username: "Cristiano Ronaldo",
         activityType: "commented on",
-        description: "congrats Omar, well deserved!",
+        secondUsername: "Karim Benzema",
+        description: "post: congrats Karim, well deserved!",
         timeAgo: "30m",
         profileImageUrl: "https://img.a.transfermarkt.technology/portrait/header/8198-1694609670.jpg?lm=1",
       ),
       NotificationModel(
-        id: "3",
+        id: 3,
         username: "Lionel Messi",
         activityType: "posted",
         description: ": The new update is live! Check it out.",
         timeAgo: "1h",
         profileImageUrl: "https://img.a.transfermarkt.technology/portrait/header/28003-1740766555.jpg?lm=1",
-      )
+      ),
     ];
 
     state = notifications; // ✅ Update state correctly so UI rebuilds
@@ -55,6 +56,7 @@ class NotificationsViewModel extends StateNotifier<List<NotificationModel>> {
           profileImageUrl: notification.profileImageUrl,
           isRead: true, // ✅ Mark as read
           isSeen: notification.isSeen, // Keep the isSeen state unchanged
+          secondUsername: notification.secondUsername,
         );
       }
       return notification;
@@ -93,6 +95,7 @@ class NotificationsViewModel extends StateNotifier<List<NotificationModel>> {
         return NotificationModel(
           id: notification.id,
           username: notification.username,
+          secondUsername: notification.secondUsername,
           activityType: notification.activityType,
           description: notification.description,
           timeAgo: notification.timeAgo,
