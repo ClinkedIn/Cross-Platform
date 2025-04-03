@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/home_page/model/post_model.dart';
+import 'package:lockedin/features/home_page/view/home_page.dart';
 import 'package:lockedin/features/notifications/model/notification_model.dart';
 import 'package:lockedin/features/profile/widgets/post_card.dart';
 
@@ -18,7 +19,7 @@ class NotificationsViewModel extends StateNotifier<List<NotificationModel>> {
         username: "Muhammad Salah",
         activityType: "posted",
         description: ": The assignment deadline has been postponed to next week. Eid Mubarak!",
-        timeAgo: "9m",
+        timeAgo: "10m",
         profileImageUrl: "https://img.a.transfermarkt.technology/portrait/header/148455-1727337594.jpg?lm=1",
       ),
       NotificationModel(
@@ -26,7 +27,7 @@ class NotificationsViewModel extends StateNotifier<List<NotificationModel>> {
         username: "Cristiano Ronaldo",
         activityType: "commented on",
         description: "congrats Omar, well deserved!",
-        timeAgo: "39m",
+        timeAgo: "30m",
         profileImageUrl: "https://img.a.transfermarkt.technology/portrait/header/8198-1694609670.jpg?lm=1",
       ),
       NotificationModel(
@@ -36,7 +37,7 @@ class NotificationsViewModel extends StateNotifier<List<NotificationModel>> {
         description: ": The new update is live! Check it out.",
         timeAgo: "1h",
         profileImageUrl: "https://img.a.transfermarkt.technology/portrait/header/28003-1740766555.jpg?lm=1",
-      ),
+      )
     ];
 
     state = notifications; // ✅ Update state correctly so UI rebuilds
@@ -53,6 +54,7 @@ class NotificationsViewModel extends StateNotifier<List<NotificationModel>> {
           timeAgo: notification.timeAgo,
           profileImageUrl: notification.profileImageUrl,
           isRead: true, // ✅ Mark as read
+          isSeen: notification.isSeen, // Keep the isSeen state unchanged
         );
       }
       return notification;
@@ -62,7 +64,8 @@ class NotificationsViewModel extends StateNotifier<List<NotificationModel>> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PostCard(
+        builder: (context) => //HomePage(),
+        PostCard(
           post: PostModel(
             id: '1',
             userId: '100',
@@ -80,9 +83,25 @@ class NotificationsViewModel extends StateNotifier<List<NotificationModel>> {
           onComment: () {},
           onShare: () {},
           onFollow: () {},
-        ),
+        )
       ),
     );
+  }
+
+  void markAllAsSeen() {
+    state = state.map((notification) {
+        return NotificationModel(
+          id: notification.id,
+          username: notification.username,
+          activityType: notification.activityType,
+          description: notification.description,
+          timeAgo: notification.timeAgo,
+          profileImageUrl: notification.profileImageUrl,
+          isRead: notification.isRead,
+          isSeen: true, // ✅ Mark as seen
+        );
+      }
+    ).toList();
   }
 }
 
