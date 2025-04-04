@@ -28,8 +28,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+
+          // Wrap UI in Form
           child: Form(
-            key: _formKey, // Wrap UI in Form
+            key: _formKey, 
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -58,8 +60,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: forgotPasswordState.isLoading
-                        ? null
+                    onPressed: forgotPasswordState.isLoading ? null // Disable button if loading
                         : () async {
                             if (_formKey.currentState!.validate()) {
                               FocusScope.of(context).unfocus(); // Hide keyboard
