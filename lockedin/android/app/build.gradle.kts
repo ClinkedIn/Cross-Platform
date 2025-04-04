@@ -1,10 +1,8 @@
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
-    id("com.google.gms.google-services") // This is where Firebase is added
-    // END: FlutterFire Configuration
+    // FlutterFire Configuration
+    id("com.google.gms.google-services") // Firebase plugin
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -24,8 +22,8 @@ android {
 
     defaultConfig {
         applicationId = "com.example.lockedin"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 23 // Use minSdk instead of minSdkVersion in Kotlin DSL
+        targetSdk = 34 // Use targetSdk instead of targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -33,7 +31,7 @@ android {
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Signing with debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }

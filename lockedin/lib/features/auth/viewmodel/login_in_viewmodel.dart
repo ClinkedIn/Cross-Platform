@@ -30,38 +30,44 @@ class LoginViewModel extends StateNotifier<AsyncValue<void>> {
 
   // Updated Google Sign-In method with token and error logging
   Future<void> signInWithGoogle() async {
-  state = const AsyncValue.loading();
-  try {
-    print('Starting Google Sign-In');
-    final GoogleSignIn googleSignIn = GoogleSignIn();
+    try {
+    // Initialize GoogleSignIn with scopes
+    final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
     final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+    // Check if user aborted the sign-in
     if (googleUser == null) {
-      print('Google Sign-In canceled by user');
-      state = const AsyncValue.data(null);
+      print("Sign-in aborted by user");
       return;
     }
-    print('Google User: ${googleUser.email}');
+
+    // Get authentication details
     final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-    print('Google Access Token: ${googleAuth.accessToken}');
-    print('Google ID Token: ${googleAuth.idToken}');
-    final credential = GoogleAuthProvider.credential(
+    print("Access Token: ${googleAuth.accessToken}");
+    print("ID Token: ${googleAuth.idToken}");
+
+    // Validate tokens
+    if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+      throw Exception("Google authentication tokens are missing");
+    }
+
+    // Create Firebase credential
+    final OAuthCredential credential = GoogleAuthProvider.credential(
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
     );
-    print('Credential created, signing in with Firebase');
-    final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-    print('Firebase sign-in complete, fetching ID token');
-    final idToken = await userCredential.user?.getIdToken();
-    if (idToken != null) {
-      print('Firebase ID Token: $idToken');
-      await TokenService.saveToken(idToken);
-    } else {
-      print('No Firebase ID Token received');
-    }
-    state = const AsyncValue.data(null);
-  } catch (e, stackTrace) {
-    print('Google Sign-In Error: $e\nStackTrace: $stackTrace');
-    state = AsyncValue.error(e, stackTrace);
+
+    // Sign in with Firebase
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    final UserCredential userCredential = await _auth.signInWithCredential(credential);
+    // Get Firebase Token
+    final String? firebaseToken = await userCredential.user?.getIdToken();
+    print("Firebase Token: $firebaseToken");
+    
+    print("Signed in user: ${userCredential.user?.uid}");
+  } catch (e) {
+    print("Google Sign-In error: $e");
+    rethrow; // Optional: rethrow for further handling
   }
- }
+}
 }
