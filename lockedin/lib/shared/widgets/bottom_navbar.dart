@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/notifications/model/notification_model.dart';
 import 'package:lockedin/features/notifications/viewmodel/notifications_viewmodel.dart';
 import 'package:sizer/sizer.dart';
-
+///////
+//CAN IT BE ASYNC TO LOAD UNSEEN NOTIFICATIONS COUNT AND CONNECTION REQUESTS COUNT? 
+///////
 final notificationsProvider =
     StateNotifierProvider<NotificationsViewModel, List<NotificationModel>>(
       (ref) => NotificationsViewModel(),
@@ -25,6 +27,7 @@ class BottomNavBar extends ConsumerWidget {
     final navBarTheme = theme.bottomNavigationBarTheme;
     final unseenNotifications =
         ref.read(notificationsProvider.notifier).getUnseenNotificationsCount();   
+    //print("Unseen notifications count: $unseenNotifications");    
 
     return Container(
       color: navBarTheme.backgroundColor,
