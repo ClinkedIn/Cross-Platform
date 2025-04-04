@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/notifications/view/notifications_page.dart';
+import 'package:lockedin/features/notifications/state/notification_settings_provider.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
@@ -87,64 +88,64 @@ Widget buildBottomSheet(BuildContext context, bool isDarkMode, String username) 
 }
 
 Widget buildNotificationPreferencesSheet(BuildContext context, bool isDarkMode, String username) {
-  bool allowUserNotifications = true; // Replace with state management
-  bool allowNetworkUpdates = true; // Replace with state management
+  return Consumer(
+    builder: (context, ref, _) {
+      final settings = ref.watch(notificationSettingsProvider)[username] ??
+          NotificationSettings(allowUserNotifications: true, allowNetworkUpdates: true);
 
-  return StatefulBuilder(
-    builder: (context, setState) {
-      return Container(
-        padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Allow notifications about",
-              style: AppTextStyles.bodyText1.copyWith(fontSize: 2.h, 
-              color: isDarkMode ? Colors.white : Colors.black),
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Container(
+            padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Allow notifications about",
+                  style: AppTextStyles.bodyText1.copyWith(fontSize: 2.h, 
+                  color: isDarkMode ? Colors.white : Colors.black),
+                ),
+                ListTile(
+                  title: Text(username, style: AppTextStyles.bodyText1.copyWith(
+                    color: isDarkMode ? Colors.white : Colors.grey[700]),
+                  ),
+                  trailing: Switch(
+                    value: settings.allowUserNotifications,
+                    onChanged: (value) {
+                      ref.read(notificationSettingsProvider.notifier).toggleUserNotifications(username, value);
+                      showToggleMessage(context,
+                      value ? "You turned on notifications about $username. For more options, go to $username's profile." :
+                              "You'll no longer receive notifications about $username. For more options, go to $username's profile.", isDarkMode);
+                    },
+                    activeColor: Colors.green[900],
+                    activeTrackColor: Colors.green[600],
+                    inactiveTrackColor: Colors.grey[500],
+                    inactiveThumbColor: Colors.grey[700],
+                  ),
+                ),
+                ListTile(
+                  title: Text("Updates from your network", style: AppTextStyles.bodyText1.copyWith(
+                    color: isDarkMode ? Colors.white : Colors.grey[700],),
+                  ),
+                  trailing: Switch(
+                    value: settings.allowNetworkUpdates,
+                    onChanged: (value) {
+                      ref.read(notificationSettingsProvider.notifier).toggleNetworkUpdates(username, value);
+                      showToggleMessage(context,
+                      value ? 'You turned on notifications about updates from your network. For more options, go to "connecting with others" in Notification settings.' :
+                              'You\'ll no longer receive notifications about updates from your network. For more options, go to "connecting with others" in Notification settings.', isDarkMode);
+                    },
+                    activeColor: Colors.green[900],
+                    activeTrackColor: Colors.green[600],
+                    inactiveTrackColor: Colors.grey[500],
+                    inactiveThumbColor: Colors.grey[700],
+                  ),
+                ),
+                SizedBox(height: 1.h),
+              ],
             ),
-            ListTile(
-              title: Text(username, style: AppTextStyles.bodyText1.copyWith(
-                color: isDarkMode ? Colors.white : Colors.grey[700]),
-              ),
-              trailing: Switch(
-                value: allowUserNotifications,
-                onChanged: (value) {
-                  setState(() {
-                    allowUserNotifications = value;
-                  });
-                  showToggleMessage(context,
-                  value ? "You turned on notifications about $username. For more options, go to $username's profile." :
-                          "You'll no longer receive notifications about $username. For more options, go to $username's profile.", isDarkMode);
-                },
-                activeColor: Colors.green[900],
-                activeTrackColor: Colors.green[600],
-                inactiveTrackColor: Colors.grey[500],
-                inactiveThumbColor: Colors.grey[700],
-              ),
-            ),
-            ListTile(
-              title: Text("Updates from your network", style: AppTextStyles.bodyText1.copyWith(
-                color: isDarkMode ? Colors.white : Colors.grey[700],),
-              ),
-              trailing: Switch(
-                value: allowNetworkUpdates,
-                onChanged: (value) {
-                  setState(() {
-                    allowNetworkUpdates = value;
-                  });
-                  showToggleMessage(context,
-                  value ? 'You turned on notifications about updates from your network. For more options, go to "connecting with others" in Notification settings.' :
-                          'You\'ll no longer receive notifications about updates from your network. For more options, go to "connecting with others" in Notification settings.', isDarkMode);
-                },
-                activeColor: Colors.green[900],
-                activeTrackColor: Colors.green[600],
-                inactiveTrackColor: Colors.grey[500],
-                inactiveThumbColor: Colors.grey[700],
-              ),
-            ),
-            SizedBox(height: 1.h),
-          ],
-        ),
+          );
+        },
       );
     },
   );
