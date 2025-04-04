@@ -96,6 +96,14 @@ Widget buildBottomSheet(
           onTap: () {
             // Handle notification deletion
             ref.read(notificationsProvider.notifier).deleteNotification(id);
+            showDeleteMessage(
+              context,
+              () {
+                ref.read(notificationsProvider.notifier).undoDeleteNotification();
+                //Navigator.pop(context);
+              },
+              isDarkMode,
+            );
             Navigator.pop(context);
           },
         ),
@@ -270,4 +278,49 @@ void showToggleMessage(BuildContext context, String message, bool isDarkMode) {
       overlayEntry.remove();
     }
   });
+}
+
+void showDeleteMessage(BuildContext context, VoidCallback onUndo, bool isDarkMode) {
+  if (!context.mounted) return; // Prevent accessing a deactivated widget
+  final snackBar = SnackBar(
+    content: Row(
+      children: [
+        Icon(Icons.delete, color: isDarkMode ? Colors.white : Colors.black), // Trash icon on the left
+        SizedBox(width: 8.w),
+        Expanded(
+          child: Text('Notification deleted.', style: AppTextStyles.bodyText1.copyWith(
+            color: isDarkMode ? Colors.white : Colors.black,)),
+        ),
+        TextButton(
+          onPressed: () {
+              // if(context.mounted) {
+              //   ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              // }
+              onUndo();
+              if(context.mounted) {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              }
+          },
+          child: Text('Undo', style: AppTextStyles.bodyText1.copyWith(
+            color: isDarkMode ? Colors.white : Colors.black,
+            decoration: TextDecoration.underline)),
+        ),
+      ],
+    ),
+    action: SnackBarAction(
+      label: '✖',
+      textColor: isDarkMode ? Colors.white : Colors.black,
+      onPressed: () {
+        if(context.mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        }
+      },
+    ),
+    duration: Duration(seconds: 3),
+    behavior: SnackBarBehavior.floating, // Makes it float like in the image
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), // Smooth rounded edges
+    backgroundColor: isDarkMode ? Colors.grey[800] : Colors.white, // Background color similar to the image
+  );
+
+  ScaffoldMessenger.of(context).showSnackBar(snackBar);
 }

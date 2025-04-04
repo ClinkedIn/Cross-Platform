@@ -180,6 +180,23 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
       }
     });
   }
+
+  void undoDeleteNotification() {
+    if (deletedNotification != null && deletedNotificationIndex != null) {
+      state.whenData((notifications) {
+        // Create a new list with the deleted notification added back
+        final updatedNotifications = List<NotificationModel>.from(notifications);  
+        updatedNotifications.insert(deletedNotificationIndex!, deletedNotification!);
+        // Update the state with the new list
+        state = AsyncValue.data(updatedNotifications);
+        // ✅ Clear the deleted notification to prevent duplicate undo
+        deletedNotification = null;
+        deletedNotificationIndex = null;
+      });
+    } else {
+      //print("No notification to undo delete.");
+    }
+  }
 }
 
 // ✅ Riverpod Provider (no change)
