@@ -1,13 +1,15 @@
-// chat_conversation_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
-import 'package:lockedin/features/chat/model/chat_message_model.dart';
+import 'package:lockedin/features/chat/widgets/attachment_widget.dart';
+import 'package:lockedin/features/chat/widgets/chat_app_bar.dart';
+import 'package:lockedin/features/chat/widgets/chat_bubble_widget.dart';
+import 'package:lockedin/features/chat/widgets/chat_input_field_widget.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
-import 'package:lockedin/shared/theme/colors.dart';
-import 'package:lockedin/shared/theme/text_styles.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 
 class ChatConversationScreen extends ConsumerStatefulWidget {
@@ -22,6 +24,8 @@ class ChatConversationScreen extends ConsumerStatefulWidget {
 class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ImagePicker _imagePicker = ImagePicker();
+  bool _showAttachmentOptions = false;
 
   @override
   void dispose() {
@@ -34,207 +38,175 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     }
+  }
+
+  void toggleAttachment() {
+    setState(() {
+      _showAttachmentOptions = !_showAttachmentOptions;
+    });
+  }
+
+  void sendMessage() {
+    if (_messageController.text.trim().isNotEmpty) {
+      final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+      chatViewModel.sendMessage(_messageController.text.trim());
+      _messageController.clear();
+      _scrollToBottom();
+    }
+  }
+  
+  // Document button functionality
+  Future<void> _handleDocumentSelection() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'],
+      );
+      
+      if (result != null) {
+        final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+        await chatViewModel.sendDocumentAttachment(result.files.single.path!);
+        
+        setState(() {
+          _showAttachmentOptions = false;
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error selecting document: $e')),
+      );
+    }
+  }
+  
+  // Camera button functionality
+  Future<void> _handleCameraCapture() async {
+    try {
+      final XFile? photo = await _imagePicker.pickImage(source: ImageSource.camera);
+      
+      if (photo != null) {
+        final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+        await chatViewModel.sendImageAttachment(photo.path, true);
+        
+        setState(() {
+          _showAttachmentOptions = false;
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error capturing image: $e')),
+      );
+    }
+  }
+  
+  // Media button functionality
+  Future<void> _handleMediaSelection() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
+      
+      if (image != null) {
+        final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+        await chatViewModel.sendImageAttachment(image.path, false);
+        
+        setState(() {
+          _showAttachmentOptions = false;
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error selecting media: $e')),
+      );
+    }
+  }
+  
+  // GIF button functionality
+  void _handleGifSelection() {
+    // TODO: Implement GIF picker
+    // For demonstration purposes only
+    final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+    chatViewModel.sendGifAttachment("https://example.com/sample.gif");
+    
+    setState(() {
+      _showAttachmentOptions = false;
+    });
+    _scrollToBottom();
+  }
+  
+  // Mention button functionality
+  void _handleMention() {
+    // Insert @ symbol in current text position
+    _messageController.text = _messageController.text + '@';
+    _messageController.selection = TextSelection.fromPosition(
+      TextPosition(offset: _messageController.text.length),
+    );
+    
+    setState(() {
+      _showAttachmentOptions = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
     final chatState = ref.watch(chatConversationProvider(widget.chat.id));
-    final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
-    
+
     // Scroll to bottom when new messages are loaded
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
     return Scaffold(
-      appBar: AppBar(
-        leadingWidth: 30,
-        title: Row(
-          children: [
-            CircleAvatar(
-              backgroundImage: NetworkImage(widget.chat.imageUrl),
-              radius: 20,
-            ),
-            SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.chat.name,
-                  style: AppTextStyles.headline2.copyWith(
-                    color: isDarkMode ? Colors.white : Colors.black,
-                  ),
-                ),
-                Text(
-                  widget.chat.isOnline ? 'Online' : 'Offline',
-                  style: AppTextStyles.bodyText2.copyWith(
-                    color: isDarkMode ? Colors.white70 : Colors.black54,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.more_vert),
-            onPressed: () {
-              // Show chat options menu
-            },
-          ),
-        ],
+      appBar: ChatAppBar(
+        name: widget.chat.name,
+        imageUrl: widget.chat.imageUrl,
+        isOnline: widget.chat.isOnline,
+        isDarkMode: Theme.of(context).brightness == Brightness.dark,
       ),
-
       body: Column(
         children: [
-          // Messages list
           Expanded(
             child: chatState.isLoading
-                ? Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator())
                 : chatState.error != null
                     ? Center(child: Text('Error: ${chatState.error}'))
                     : ListView.builder(
                         controller: _scrollController,
-                        padding: EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(16),
                         itemCount: chatState.messages.length,
                         itemBuilder: (context, index) {
                           final message = chatState.messages[index];
-                          final isMe = message.senderId == chatViewModel.currentUserId;
+                          final currentUserId = ref.read(chatConversationProvider(widget.chat.id).notifier).currentUserId;
+                          final isMe = message.senderId == currentUserId;
                           
-                          return _buildMessageBubble(
+                          return ChatBubble(
                             message: message.content,
                             isMe: isMe,
                             time: DateFormat('hh:mm a').format(message.timestamp),
+                            senderImageUrl: widget.chat.imageUrl,
+                            isRead: widget.chat.isRead,
+                            attachmentUrl: message.attachmentUrl,
+                            attachmentType: message.attachmentType,
                           );
                         },
                       ),
           ),
-          
-          // Message input area
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  offset: Offset(0, -1),
-                  blurRadius: 4,
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: Icon(Icons.attach_file),
-                  onPressed: () {
-                    // Handle attachment
-                  },
-                ),
-
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Type a message...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: isDarkMode ? Colors.grey[800] : Colors.white,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                    ),
-                    minLines: 1,
-                    maxLines: 5,
-                  ),
-                ),
-
-                IconButton(
-                  icon: Icon(Icons.send, color: AppColors.primary),
-                  onPressed: () {
-                    if (_messageController.text.trim().isNotEmpty) {
-                      chatViewModel.sendMessage(_messageController.text.trim());
-                      _messageController.clear();
-                    }
-                  },
-                ),
-                
-              ],
-            ),
+          if (_showAttachmentOptions) AttachmentWidget(
+            onDocumentPressed: _handleDocumentSelection,
+            onCameraPressed: _handleCameraCapture,
+            onMediaPressed: _handleMediaSelection,
+            onGifPressed: _handleGifSelection,
+            onMentionPressed: _handleMention,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageBubble({
-    required String message,
-    required bool isMe,
-    required String time,
-  }) {
-    final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
-    
-    return Padding(
-      padding: EdgeInsets.only(bottom: 8),
-      child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [
-          if (!isMe) ...[
-            CircleAvatar(
-              backgroundImage: NetworkImage(widget.chat.imageUrl),
-              radius: 16,
-            ),
-            SizedBox(width: 8),
-          ],
-          
-          Container(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.7,
-            ),
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: isMe 
-                ? AppColors.primary 
-                : isDarkMode ? Colors.grey[800] : Colors.grey[200],
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  message,
-                  style: TextStyle(
-                    color: isMe ? Colors.white : (isDarkMode ? Colors.white : Colors.black87),
-                    fontSize: 16,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  time,
-                  style: TextStyle(
-                    color: isMe ? Colors.white70 : Colors.grey,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
+          ChatInputField(
+            messageController: _messageController,
+            onAttachmentPressed: toggleAttachment,
+            onSendPressed: sendMessage,
+            isDarkMode: isDarkMode,
           ),
-          
-          if (isMe) ...[
-            SizedBox(width: 8),
-            Icon(
-              Icons.done_all,
-              size: 16,
-              color: widget.chat.isRead ? Colors.blue : Colors.grey,
-            ),
-          ],
         ],
       ),
     );

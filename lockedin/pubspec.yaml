@@ -49,6 +49,8 @@ dependencies:
   intl: ^0.20.2
   mockito: ^5.4.2
   build_runner: ^2.4.7
+  file_picker: ^10.0.0
+  giphy_picker: ^3.0.0
 
 dev_dependencies:
   flutter_test:
