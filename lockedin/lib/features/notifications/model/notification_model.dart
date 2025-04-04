@@ -20,4 +20,18 @@ class NotificationModel {
     this.isRead = false,
     this.secondUsername = "",
   });
+
+  factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    return NotificationModel(
+      id: json['id'],
+      username: json['username'],
+      secondUsername: json['secondUsername'] ?? "",
+      activityType: json['activityType'],
+      description: json['description'],
+      timeAgo: json['timeAgo'],
+      profileImageUrl: json['profileImageUrl'],
+      isRead: json['isRead'] ?? false,
+      isSeen: json['isSeen'] ?? false,
+    );
+  }
 }

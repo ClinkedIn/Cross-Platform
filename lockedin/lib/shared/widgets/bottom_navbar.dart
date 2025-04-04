@@ -7,7 +7,7 @@ import 'package:sizer/sizer.dart';
 //CAN IT BE ASYNC TO LOAD UNSEEN NOTIFICATIONS COUNT AND CONNECTION REQUESTS COUNT? 
 ///////
 final notificationsProvider =
-    StateNotifierProvider<NotificationsViewModel, List<NotificationModel>>(
+    StateNotifierProvider<NotificationsViewModel, AsyncValue<List<NotificationModel>>>(
       (ref) => NotificationsViewModel(),
     );
 
@@ -25,9 +25,7 @@ class BottomNavBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final navBarTheme = theme.bottomNavigationBarTheme;
-    final unseenNotifications =
-        ref.read(notificationsProvider.notifier).getUnseenNotificationsCount();   
-    //print("Unseen notifications count: $unseenNotifications");    
+    final unseenNotifications = ref.watch(notificationsProvider.notifier).getUnseenNotificationsCount();
 
     return Container(
       color: navBarTheme.backgroundColor,
@@ -44,9 +42,12 @@ class BottomNavBar extends ConsumerWidget {
               3,
               Icons.notifications,
               'Notifications',
-              unseenNotificationsCount: unseenNotifications,
+              unseenNotificationsCount: unseenNotifications.when(
+                data: (count) => count,
+                loading: () => null,
+                error: (err, stack) => null,
+              ),
               onTap: () {
-                // Mark all notifications as read when the user taps on Notifications
                 ref.read(notificationsProvider.notifier).markAllAsSeen();
                 onTap(3); // Navigate to the Notifications page
               }
