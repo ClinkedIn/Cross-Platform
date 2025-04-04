@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
-import 'package:lockedin/features/chat/view/chats.dart';
+import 'package:lockedin/features/chat/model/chat_model.dart';
 
 class ChatNotifier extends StateNotifier<List<Chat>> {
   ChatNotifier() : super([]);
@@ -11,6 +11,7 @@ class ChatNotifier extends StateNotifier<List<Chat>> {
 
     state = [
       Chat(
+        id: '1',
         name: "Lionel Messi",
         imageUrl:
             "https://img.a.transfermarkt.technology/portrait/header/28003-1740766555.jpg?lm=1",
@@ -20,6 +21,7 @@ class ChatNotifier extends StateNotifier<List<Chat>> {
         timestamp: DateTime(2025, 3, 16, 10, 30),
       ),
       Chat(
+        id: '2',
         name: "Cristiano Ronaldo",
         imageUrl:
             "https://img.a.transfermarkt.technology/portrait/header/8198-1694609670.jpg?lm=1",
@@ -29,6 +31,7 @@ class ChatNotifier extends StateNotifier<List<Chat>> {
         timestamp: DateTime(2025, 2, 16, 11, 54),
       ),
       Chat(
+        id: '3',
         name: "Mohamed Salah",
         imageUrl:
             "https://img.a.transfermarkt.technology/portrait/header/148455-1727337594.jpg?lm=1",

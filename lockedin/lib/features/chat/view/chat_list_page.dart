@@ -41,23 +41,3 @@ class ChatListScreen extends ConsumerWidget {
     );
   }
 }
-
-
-// class ChatListScreen extends ConsumerWidget {
-//   @override
-//   Widget build(BuildContext context, WidgetRef ref) {
-//     final chatAsyncValue = ref.watch(chatProvider);
-
-//     return Scaffold(
-//       appBar: AppBar(title: Text("Chats")),
-//       body: chatAsyncValue.when(
-//         data: (chats) => ListView.builder(
-//           itemCount: chats.length,
-//           itemBuilder: (context, index) => ChatItem(chat: chats[index]),
-//         ),
-//         loading: () => Center(child: CircularProgressIndicator()),
-//         error: (err, stack) => Center(child: Text('Failed to load chats')),
-//      ),
-//     );
-//   }
-// }
