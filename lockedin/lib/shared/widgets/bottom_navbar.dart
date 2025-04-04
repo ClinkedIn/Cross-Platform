@@ -24,7 +24,7 @@ class BottomNavBar extends ConsumerWidget {
     final theme = Theme.of(context);
     final navBarTheme = theme.bottomNavigationBarTheme;
     final unseenNotifications =
-        ref.watch(notificationsProvider).where((notification) => !notification.isSeen).length;
+        ref.read(notificationsProvider.notifier).getUnseenNotificationsCount();   
 
     return Container(
       color: navBarTheme.backgroundColor,
