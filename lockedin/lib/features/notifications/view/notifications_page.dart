@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/notifications/viewmodel/notifications_viewmodel.dart';
 import 'package:lockedin/features/notifications/widgets/notifications_widgets.dart';
@@ -21,11 +22,11 @@ class NotificationsPage extends ConsumerWidget {
       data: (notificationsData) {
         switch (selectedCategory) {
           case 'Jobs':
-            return [notificationsData[0]];
+            return notificationsData.isNotEmpty ? [notificationsData[0]] : [];
           case 'My posts':
-            return [notificationsData[1]];
+            return notificationsData.length > 1 ? [notificationsData[1]] : [];
           case 'Mentions':
-            return [notificationsData[2]];
+            return notificationsData.length > 2 ? [notificationsData[2]] : [];
           default:
             return notificationsData;
         }
@@ -184,7 +185,8 @@ class NotificationsPage extends ConsumerWidget {
                                             ),
                                     ),
                                     TextSpan(
-                                      text: notification.description,
+                                      text: notification.isPlaceholder ? 
+                                      "Thanks. Your feedback helps us improve your notifications. ": notification.description,
                                       style: AppTextStyles.bodyText1.copyWith(
                                         color:
                                             notification.isPlaceholder
@@ -196,26 +198,19 @@ class NotificationsPage extends ConsumerWidget {
                                       ),
                                     ),
                                     if(notification.isPlaceholder)
-                                    WidgetSpan(
-                                      alignment: PlaceholderAlignment.middle,
-                                      child: TextButton(
-                                                onPressed: () {
-                                                  ref.read(notificationsProvider.notifier).undoShowLessLikeThis();
-                                                  if (context.mounted) {
-                                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                                  }
-                                                },
-                                                style: TextButton.styleFrom(
-                                                  padding: EdgeInsets.zero,
-                                                ),
-                                                child: Text(
-                                                  'Undo',
-                                                  style: AppTextStyles.bodyText1.copyWith(
-                                                    color: Colors.green[800],
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
+                                    TextSpan(
+                                      text: "Undo",
+                                      style: AppTextStyles.bodyText1.copyWith(
+                                        color: Colors.green[800],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      recognizer: TapGestureRecognizer()
+                                        ..onTap = () {
+                                          ref.read(notificationsProvider.notifier).undoShowLessLikeThis();
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                          }
+                                        },
                                     ),
                                   ],
                                 ),

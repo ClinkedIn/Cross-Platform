@@ -13,8 +13,10 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
     fetchNotifications();
   }
   final baseUrl = "https://a5a7a475-1f05-430d-a300-01cdf67ccb7e.mock.pstmn.io";
+
   NotificationModel? deletedNotification;
   int? deletedNotificationIndex; // For undo deleting notification
+  //////// Needed to add a map for deleted notifications and show less to handle more than one ////////
 
   Future<void> fetchNotifications() async {
     final url = Uri.parse("$baseUrl/notifications");
@@ -226,8 +228,7 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
           id: -1, 
           username: "", 
           activityType: "", 
-          description: "Thanks. Your feedback helps us improve your notifications. ", 
-          additionalDescription: "Undo",
+          description: "", 
           timeAgo: "0m",
           profileImageUrl: "",
           isPlaceholder: true));

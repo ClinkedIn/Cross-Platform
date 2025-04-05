@@ -4,7 +4,6 @@ class NotificationModel {
   final String secondUsername;
   final String activityType; // e.g., "posted", "commented on"
   final String description;
-  final String additionalDescription;
   final String timeAgo; // e.g., "15m", "45m", "4h"
   final String profileImageUrl;
   bool isSeen;
@@ -21,7 +20,6 @@ class NotificationModel {
     this.isSeen = false,
     this.isRead = false,
     this.secondUsername = "",
-    this.additionalDescription = "", //"Undo" for showLessLikeThis
     this.isPlaceholder = false,
   });
 
@@ -37,7 +35,6 @@ class NotificationModel {
       isRead: json['isRead'] ?? false,
       isSeen: json['isSeen'] ?? false,
       isPlaceholder: json['isPlaceholder'] ?? false,
-      additionalDescription: json['additionalDescription'] ?? "",
     );
   }
 }
