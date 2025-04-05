@@ -89,6 +89,9 @@ class NotificationsPage extends ConsumerWidget {
 
               return GestureDetector(
                 onTap: () {
+                  if(notification.isPlaceholder) {
+                    return;
+                  }
                   ref
                       .read(notificationsProvider.notifier)
                       .markAsRead(notification.id);
@@ -120,6 +123,7 @@ class NotificationsPage extends ConsumerWidget {
                       children: [
                         SizedBox(width: 2.w),
                         // Profile Picture
+                        if(!notification.isPlaceholder)
                         CircleAvatar(
                           backgroundImage: NetworkImage(
                             notification.profileImageUrl,
@@ -127,7 +131,7 @@ class NotificationsPage extends ConsumerWidget {
                           radius: 24,
                         ),
 
-                        SizedBox(width: 2.w),
+                        !notification.isPlaceholder ? SizedBox(width: 2.w) : SizedBox(width: 5.w),
 
                         // Notification Text (Username + Activity + Description)
                         Expanded(
@@ -143,6 +147,7 @@ class NotificationsPage extends ConsumerWidget {
                                             : Colors.black,
                                   ),
                                   children: [
+                                    if(!notification.isPlaceholder)
                                     TextSpan(
                                       text: "${notification.username} ",
                                       style: AppTextStyles.bodyText1.copyWith(
@@ -153,6 +158,7 @@ class NotificationsPage extends ConsumerWidget {
                                                 : Colors.black,
                                       ),
                                     ),
+                                    if(!notification.isPlaceholder)
                                     TextSpan(
                                       text: "${notification.activityType} ",
                                       style: AppTextStyles.bodyText1.copyWith(
@@ -162,10 +168,10 @@ class NotificationsPage extends ConsumerWidget {
                                                 : Colors.black,
                                       ),
                                     ),
-                                    if (notification
+                                    if (!notification.isPlaceholder && notification
                                         .secondUsername
                                         .isNotEmpty)
-                                      TextSpan(
+                                    TextSpan(
                                         text:
                                             "${notification.secondUsername} ",
                                         style: AppTextStyles.bodyText1
@@ -176,15 +182,40 @@ class NotificationsPage extends ConsumerWidget {
                                                       ? Colors.white
                                                       : Colors.black,
                                             ),
-                                      ),
+                                    ),
                                     TextSpan(
                                       text: notification.description,
                                       style: AppTextStyles.bodyText1.copyWith(
                                         color:
-                                            isDarkMode
-                                                ? Colors.white
-                                                : Colors.black,
+                                            notification.isPlaceholder
+                                                ? Colors.green[800]
+                                                : isDarkMode
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                        
                                       ),
+                                    ),
+                                    if(notification.isPlaceholder)
+                                    WidgetSpan(
+                                      alignment: PlaceholderAlignment.middle,
+                                      child: TextButton(
+                                                onPressed: () {
+                                                  ref.read(notificationsProvider.notifier).undoShowLessLikeThis();
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                                  }
+                                                },
+                                                style: TextButton.styleFrom(
+                                                  padding: EdgeInsets.zero,
+                                                ),
+                                                child: Text(
+                                                  'Undo',
+                                                  style: AppTextStyles.bodyText1.copyWith(
+                                                    color: Colors.green[800],
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
                                     ),
                                   ],
                                 ),
@@ -198,6 +229,7 @@ class NotificationsPage extends ConsumerWidget {
                         SizedBox(width: 2.w),
 
                         // Time Ago + More Options Button
+                        if(!notification.isPlaceholder)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [

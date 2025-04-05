@@ -185,7 +185,7 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
     if (deletedNotification != null && deletedNotificationIndex != null) {
       state.whenData((notifications) {
         // Create a new list with the deleted notification added back
-        final updatedNotifications = List<NotificationModel>.from(notifications);  
+        final updatedNotifications = List<NotificationModel>.from(notifications);
         updatedNotifications.insert(deletedNotificationIndex!, deletedNotification!);
         // Update the state with the new list
         state = AsyncValue.data(updatedNotifications);
@@ -195,6 +195,71 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
       });
     } else {
       //print("No notification to undo delete.");
+    }
+  }
+
+  void showLessLikeThis(int id) {
+    state.whenData((notifications) {
+      // Check if the notification exists
+      deletedNotification = notifications.firstWhere(
+        (notification) => notification.id == id,
+        orElse: () => NotificationModel(
+          id: -1,
+          username: '',
+          activityType: '',
+          description: '',
+          timeAgo: '',
+          profileImageUrl: '',
+          isRead: false,
+          isSeen: false,
+          secondUsername: '',
+        ),
+      );
+
+      // If the notification is found, delete it from the list
+      if (deletedNotification?.id != -1) {
+        deletedNotificationIndex = notifications.indexOf(deletedNotification!);
+
+        // Create a new list without the deleted notification
+        final updatedNotifications = notifications.where((notification) => notification.id != id).toList();
+        updatedNotifications.insert(deletedNotificationIndex!, NotificationModel(
+          id: -1, 
+          username: "", 
+          activityType: "", 
+          description: "Thanks. Your feedback helps us improve your notifications. ", 
+          additionalDescription: "Undo",
+          timeAgo: "0m",
+          profileImageUrl: "",
+          isPlaceholder: true));
+        // Update the state with the new list
+        state = AsyncValue.data(updatedNotifications);
+
+        // Optionally, you can also make an API call to delete the notification from the server
+        // final url = Uri.parse("$baseUrl/notifications/$id");
+        // await http.delete(url);
+      } else {
+        print("Notification with id $id not found.");
+      }
+    });
+  }
+
+  void undoShowLessLikeThis() {
+    if (deletedNotification != null && deletedNotificationIndex != null) {
+      state.whenData((notifications) {
+        // Create a new list with the deleted notification added back
+        if (notifications[deletedNotificationIndex!].isPlaceholder) {
+          final updatedNotifications = List<NotificationModel>.from(notifications);  
+          updatedNotifications.removeAt(deletedNotificationIndex!);
+          updatedNotifications.insert(deletedNotificationIndex!, deletedNotification!);
+          // Update the state with the new list
+          state = AsyncValue.data(updatedNotifications);
+          // ✅ Clear the deleted notification to prevent duplicate undo
+          deletedNotification = null;
+          deletedNotificationIndex = null;
+        }
+      });
+    } else {
+      //print("No notification to undo show less like this.");
     }
   }
 }

@@ -120,6 +120,7 @@ Widget buildBottomSheet(
           ),
           onTap: () {
             // Handle "Show less like this"
+            ref.read(notificationsProvider.notifier).showLessLikeThis(id);
             Navigator.pop(context);
           },
         ),
@@ -293,9 +294,6 @@ void showDeleteMessage(BuildContext context, VoidCallback onUndo, bool isDarkMod
         ),
         TextButton(
           onPressed: () {
-              // if(context.mounted) {
-              //   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-              // }
               onUndo();
               if(context.mounted) {
                 ScaffoldMessenger.of(context).hideCurrentSnackBar();
