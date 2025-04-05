@@ -102,7 +102,7 @@ Widget buildNotificationItem(dynamic notification, bool isDarkMode, WidgetRef re
                                 ..onTap = () {
                                   ref
                                       .read(notificationsProvider.notifier)
-                                      .undoShowLessLikeThis();
+                                      .undoShowLessLikeThis(notification.id);
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(
                                       context,

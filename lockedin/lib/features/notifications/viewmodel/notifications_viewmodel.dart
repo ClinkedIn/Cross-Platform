@@ -8,14 +8,18 @@ import 'package:lockedin/features/notifications/model/notification_model.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationModel>>> {
+class NotificationsViewModel
+    extends StateNotifier<AsyncValue<List<NotificationModel>>> {
   NotificationsViewModel() : super(AsyncValue.loading()) {
     fetchNotifications();
   }
   final baseUrl = "https://a5a7a475-1f05-430d-a300-01cdf67ccb7e.mock.pstmn.io";
 
-  NotificationModel? deletedNotification;
-  int? deletedNotificationIndex; // For undo deleting notification
+  NotificationModel? deletedNotification, showLessNotification;
+  int? deletedNotificationIndex, showLessNotificationIndex; // For undo deleting notification
+
+  Map<int, NotificationModel> showLessNotifications =
+      {}; // For show less like this
   //////// Needed to add a map for deleted notifications and show less to handle more than one ////////
 
   Future<void> fetchNotifications() async {
@@ -31,13 +35,21 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
             data
                 .map((notification) => NotificationModel.fromJson(notification))
                 .toList();
-        state = AsyncValue.data(notifications); // ✅ Update state correctly so UI rebuilds
+        state = AsyncValue.data(
+          notifications,
+        ); // ✅ Update state correctly so UI rebuilds
       } else {
-        state = AsyncValue.error("Error: ${response.statusCode}", StackTrace.current);
+        state = AsyncValue.error(
+          "Error: ${response.statusCode}",
+          StackTrace.current,
+        );
         print("Error: ${response.statusCode}");
       }
     } catch (error) {
-      state = AsyncValue.error("Error fetching notifications: $error", StackTrace.current);
+      state = AsyncValue.error(
+        "Error fetching notifications: $error",
+        StackTrace.current,
+      );
       print("Error fetching notifications: $error");
     }
   }
@@ -48,7 +60,9 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
     try {
       final response = await http.patch(url);
       if (response.statusCode == 200) {
-        final updatedNotifications = List<NotificationModel>.from(state.asData?.value ?? []);
+        final updatedNotifications = List<NotificationModel>.from(
+          state.asData?.value ?? [],
+        );
         final index = updatedNotifications.indexWhere(
           (notification) => notification.id == id,
         );
@@ -69,7 +83,9 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
           secondUsername: notification.secondUsername,
         );
 
-        state = AsyncValue.data(updatedNotifications); // Update the state with the modified list
+        state = AsyncValue.data(
+          updatedNotifications,
+        ); // Update the state with the modified list
         //print("✅ Notification $id marked as read.");
       } else {
         //print("❌ Failed to mark as read. Status: ${response.statusCode}");
@@ -122,46 +138,50 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
   AsyncValue<int> getUnseenNotificationsCount() {
     return state.when(
       data: (notifications) {
-        final unseenCount = notifications.where((notification) => !notification.isSeen).length;
+        final unseenCount =
+            notifications.where((notification) => !notification.isSeen).length;
         return AsyncValue.data(unseenCount);
       },
       loading: () => AsyncValue.data(0), // Default to 0 when loading
-      error: (error, stackTrace) => AsyncValue.data(0), // Default to 0 in case of error
+      error:
+          (error, stackTrace) =>
+              AsyncValue.data(0), // Default to 0 in case of error
     );
   }
-    // final url = Uri.parse("$baseUrl/notifications/unseenCount");
-    // try {
-    //   final response = await http.get(url);
-    //   if (response.statusCode == 200) {
-    //     final Map<String, dynamic> decoded = jsonDecode(response.body);
-    //     final int unseenCount = decoded['unseenCount'];
-    //     return unseenCount; // ✅ Return the unseen count
-    //   } else {
-    //     print("Error: ${response.statusCode}");
-    //     return 0; // ✅ Return 0 if there's an error
-    //   }
-    // }
-    // catch (error) {
-    //   print("Error fetching unseen notifications count: $error");
-    //   return 0; // ✅ Return 0 if there's an error
-    // }
+  // final url = Uri.parse("$baseUrl/notifications/unseenCount");
+  // try {
+  //   final response = await http.get(url);
+  //   if (response.statusCode == 200) {
+  //     final Map<String, dynamic> decoded = jsonDecode(response.body);
+  //     final int unseenCount = decoded['unseenCount'];
+  //     return unseenCount; // ✅ Return the unseen count
+  //   } else {
+  //     print("Error: ${response.statusCode}");
+  //     return 0; // ✅ Return 0 if there's an error
+  //   }
+  // }
+  // catch (error) {
+  //   print("Error fetching unseen notifications count: $error");
+  //   return 0; // ✅ Return 0 if there's an error
+  // }
 
   void deleteNotification(int id) {
     state.whenData((notifications) {
       // Check if the notification exists
       deletedNotification = notifications.firstWhere(
         (notification) => notification.id == id,
-        orElse: () => NotificationModel(
-          id: -1,
-          username: '',
-          activityType: '',
-          description: '',
-          timeAgo: '',
-          profileImageUrl: '',
-          isRead: false,
-          isSeen: false,
-          secondUsername: '',
-        ),
+        orElse:
+            () => NotificationModel(
+              id: -1,
+              username: '',
+              activityType: '',
+              description: '',
+              timeAgo: '',
+              profileImageUrl: '',
+              isRead: false,
+              isSeen: false,
+              secondUsername: '',
+            ),
       );
 
       // If the notification is found, delete it from the list
@@ -169,7 +189,10 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
         deletedNotificationIndex = notifications.indexOf(deletedNotification!);
 
         // Create a new list without the deleted notification
-        final updatedNotifications = notifications.where((notification) => notification.id != id).toList();
+        final updatedNotifications =
+            notifications
+                .where((notification) => notification.id != id)
+                .toList();
 
         // Update the state with the new list
         state = AsyncValue.data(updatedNotifications);
@@ -187,8 +210,13 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
     if (deletedNotification != null && deletedNotificationIndex != null) {
       state.whenData((notifications) {
         // Create a new list with the deleted notification added back
-        final updatedNotifications = List<NotificationModel>.from(notifications);
-        updatedNotifications.insert(deletedNotificationIndex!, deletedNotification!);
+        final updatedNotifications = List<NotificationModel>.from(
+          notifications,
+        );
+        updatedNotifications.insert(
+          deletedNotificationIndex!,
+          deletedNotification!,
+        );
         // Update the state with the new list
         state = AsyncValue.data(updatedNotifications);
         // ✅ Clear the deleted notification to prevent duplicate undo
@@ -203,35 +231,45 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
   void showLessLikeThis(int id) {
     state.whenData((notifications) {
       // Check if the notification exists
-      deletedNotification = notifications.firstWhere(
+      showLessNotification = notifications.firstWhere(
         (notification) => notification.id == id,
-        orElse: () => NotificationModel(
-          id: -1,
-          username: '',
-          activityType: '',
-          description: '',
-          timeAgo: '',
-          profileImageUrl: '',
-          isRead: false,
-          isSeen: false,
-          secondUsername: '',
-        ),
+        orElse:
+            () => NotificationModel(
+              id: -1,
+              username: '',
+              activityType: '',
+              description: '',
+              timeAgo: '',
+              profileImageUrl: '',
+              isRead: false,
+              isSeen: false,
+              secondUsername: '',
+            ),
       );
 
       // If the notification is found, delete it from the list
-      if (deletedNotification?.id != -1) {
-        deletedNotificationIndex = notifications.indexOf(deletedNotification!);
-
+      if (showLessNotification?.id != -1) {
+        showLessNotificationIndex = notifications.indexOf(
+          showLessNotification!,
+        );
+        showLessNotifications[showLessNotification!.id] = showLessNotification!;
         // Create a new list without the deleted notification
-        final updatedNotifications = notifications.where((notification) => notification.id != id).toList();
-        updatedNotifications.insert(deletedNotificationIndex!, NotificationModel(
-          id: -1, 
-          username: "", 
-          activityType: "", 
-          description: "", 
-          timeAgo: "0m",
-          profileImageUrl: "",
-          isPlaceholder: true));
+        final updatedNotifications =
+            notifications
+                .where((notification) => notification.id != id)
+                .toList();
+        updatedNotifications.insert(
+          showLessNotificationIndex!,
+          NotificationModel(
+            id: id,
+            username: "",
+            activityType: "",
+            description: "",
+            timeAgo: "0m",
+            profileImageUrl: "",
+            isPlaceholder: true,
+          ),
+        );
         // Update the state with the new list
         state = AsyncValue.data(updatedNotifications);
 
@@ -244,20 +282,21 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
     });
   }
 
-  void undoShowLessLikeThis() {
-    if (deletedNotification != null && deletedNotificationIndex != null) {
+  void undoShowLessLikeThis(int id) {
+    if (showLessNotifications.isNotEmpty) {
+      final originalNotification = showLessNotifications[id];
+      if (originalNotification == null) {
+        return;
+      }
       state.whenData((notifications) {
         // Create a new list with the deleted notification added back
-        if (notifications[deletedNotificationIndex!].isPlaceholder) {
-          final updatedNotifications = List<NotificationModel>.from(notifications);  
-          updatedNotifications.removeAt(deletedNotificationIndex!);
-          updatedNotifications.insert(deletedNotificationIndex!, deletedNotification!);
-          // Update the state with the new list
+        final updatedNotifications = List<NotificationModel>.from(notifications);
+        final index = updatedNotifications.indexWhere((n) => n.id == id && n.isPlaceholder);
+        if (index != -1) {
+          updatedNotifications[index] = originalNotification;
           state = AsyncValue.data(updatedNotifications);
-          // ✅ Clear the deleted notification to prevent duplicate undo
-          deletedNotification = null;
-          deletedNotificationIndex = null;
-        }
+          showLessNotifications.remove(id);
+        } // ✅ Remove only this one
       });
     } else {
       //print("No notification to undo show less like this.");
@@ -266,7 +305,7 @@ class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationM
 }
 
 // ✅ Riverpod Provider (no change)
-final notificationsProvider =
-    StateNotifierProvider<NotificationsViewModel, AsyncValue<List<NotificationModel>>>(
-      (ref) => NotificationsViewModel(),
-    );
+final notificationsProvider = StateNotifierProvider<
+  NotificationsViewModel,
+  AsyncValue<List<NotificationModel>>
+>((ref) => NotificationsViewModel());
