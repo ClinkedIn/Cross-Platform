@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/notifications/view/notifications_page.dart';
@@ -8,6 +9,157 @@ import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:sizer/sizer.dart';
+
+Widget buildNotificationItem(dynamic notification, bool isDarkMode, WidgetRef ref, BuildContext context) {
+  return SafeArea(
+    child: Container(
+      padding: EdgeInsets.all(2.w),
+      decoration: BoxDecoration(
+        color:
+            notification.isRead
+                ? Colors.transparent
+                : isDarkMode
+                ? Colors.grey[500]!
+                : Colors.blue[50], // ✅ Baby blue for unread
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[300]!, width: 0.5.w),
+        ),
+      ),
+
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(width: 2.w),
+          // Profile Picture
+          if (!notification.isPlaceholder)
+            CircleAvatar(
+              backgroundImage: NetworkImage(notification.profileImageUrl),
+              radius: 24,
+            ),
+
+          !notification.isPlaceholder
+              ? SizedBox(width: 2.w)
+              : SizedBox(width: 5.w),
+
+          // Notification Text (Username + Activity + Description)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RichText(
+                  text: TextSpan(
+                    style: AppTextStyles.headline2.copyWith(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                    children: [
+                      if (!notification.isPlaceholder)
+                        TextSpan(
+                          text: "${notification.username} ",
+                          style: AppTextStyles.bodyText1.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      if (!notification.isPlaceholder)
+                        TextSpan(
+                          text: "${notification.activityType} ",
+                          style: AppTextStyles.bodyText1.copyWith(
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      if (!notification.isPlaceholder &&
+                          notification.secondUsername.isNotEmpty)
+                        TextSpan(
+                          text: "${notification.secondUsername} ",
+                          style: AppTextStyles.bodyText1.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      TextSpan(
+                        text:
+                            notification.isPlaceholder
+                                ? "Thanks. Your feedback helps us improve your notifications. "
+                                : notification.description,
+                        style: AppTextStyles.bodyText1.copyWith(
+                          color:
+                              notification.isPlaceholder
+                                  ? Colors.green[800]
+                                  : isDarkMode
+                                  ? Colors.white
+                                  : Colors.black,
+                        ),
+                      ),
+                      if (notification.isPlaceholder)
+                        TextSpan(
+                          text: "Undo",
+                          style: AppTextStyles.bodyText1.copyWith(
+                            color: Colors.green[800],
+                            fontWeight: FontWeight.bold,
+                          ),
+                          recognizer:
+                              TapGestureRecognizer()
+                                ..onTap = () {
+                                  ref
+                                      .read(notificationsProvider.notifier)
+                                      .undoShowLessLikeThis();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(
+                                      context,
+                                    ).hideCurrentSnackBar();
+                                  }
+                                },
+                        ),
+                    ],
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(width: 2.w),
+
+          // Time Ago + More Options Button
+          if (!notification.isPlaceholder)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  notification.timeAgo,
+                  style: AppTextStyles.bodyText1.copyWith(
+                    color: isDarkMode ? Colors.white : Colors.grey[700],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.more_vert,
+                    size: 3.h,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                  ),
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      builder:
+                          (context) => buildBottomSheet(
+                            context,
+                            ref,
+                            isDarkMode,
+                            notification.username,
+                            notification.id,
+                          ),
+                    );
+                  },
+                  padding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+        ],
+      ),
+    ),
+  );
+}
 
 Widget buildCategoryButton(
   BuildContext context,
@@ -96,14 +248,10 @@ Widget buildBottomSheet(
           onTap: () {
             // Handle notification deletion
             ref.read(notificationsProvider.notifier).deleteNotification(id);
-            showDeleteMessage(
-              context,
-              () {
-                ref.read(notificationsProvider.notifier).undoDeleteNotification();
-                //Navigator.pop(context);
-              },
-              isDarkMode,
-            );
+            showDeleteMessage(context, () {
+              ref.read(notificationsProvider.notifier).undoDeleteNotification();
+              //Navigator.pop(context);
+            }, isDarkMode);
             Navigator.pop(context);
           },
         ),
@@ -281,27 +429,42 @@ void showToggleMessage(BuildContext context, String message, bool isDarkMode) {
   });
 }
 
-void showDeleteMessage(BuildContext context, VoidCallback onUndo, bool isDarkMode) {
+void showDeleteMessage(
+  BuildContext context,
+  VoidCallback onUndo,
+  bool isDarkMode,
+) {
   if (!context.mounted) return; // Prevent accessing a deactivated widget
   final snackBar = SnackBar(
     content: Row(
       children: [
-        Icon(Icons.delete, color: isDarkMode ? Colors.white : Colors.black), // Trash icon on the left
+        Icon(
+          Icons.delete,
+          color: isDarkMode ? Colors.white : Colors.black,
+        ), // Trash icon on the left
         SizedBox(width: 8.w),
         Expanded(
-          child: Text('Notification deleted.', style: AppTextStyles.bodyText1.copyWith(
-            color: isDarkMode ? Colors.white : Colors.black,)),
+          child: Text(
+            'Notification deleted.',
+            style: AppTextStyles.bodyText1.copyWith(
+              color: isDarkMode ? Colors.white : Colors.black,
+            ),
+          ),
         ),
         TextButton(
           onPressed: () {
-              onUndo();
-              if(context.mounted) {
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-              }
+            onUndo();
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            }
           },
-          child: Text('Undo', style: AppTextStyles.bodyText1.copyWith(
-            color: isDarkMode ? Colors.white : Colors.black,
-            decoration: TextDecoration.underline)),
+          child: Text(
+            'Undo',
+            style: AppTextStyles.bodyText1.copyWith(
+              color: isDarkMode ? Colors.white : Colors.black,
+              decoration: TextDecoration.underline,
+            ),
+          ),
         ),
       ],
     ),
@@ -309,15 +472,20 @@ void showDeleteMessage(BuildContext context, VoidCallback onUndo, bool isDarkMod
       label: '✖',
       textColor: isDarkMode ? Colors.white : Colors.black,
       onPressed: () {
-        if(context.mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
         }
       },
     ),
     duration: Duration(seconds: 3),
     behavior: SnackBarBehavior.floating, // Makes it float like in the image
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), // Smooth rounded edges
-    backgroundColor: isDarkMode ? Colors.grey[800] : Colors.white, // Background color similar to the image
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(10),
+    ), // Smooth rounded edges
+    backgroundColor:
+        isDarkMode
+            ? Colors.grey[800]
+            : Colors.white, // Background color similar to the image
   );
 
   ScaffoldMessenger.of(context).showSnackBar(snackBar);
