@@ -8,11 +8,18 @@ import 'package:lockedin/features/notifications/model/notification_model.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class NotificationsViewModel
-    extends StateNotifier<AsyncValue<List<NotificationModel>>> {
+/// A [StateNotifier] that manages notification state for the app.
+/// 
+/// Handles fetching, updating, deleting, and hiding notifications.
+/// 
+/// This ViewModel uses Riverpod's `AsyncValue` to manage async state.
+
+class NotificationsViewModel extends StateNotifier<AsyncValue<List<NotificationModel>>> {
+  /// Initializes the ViewModel by loading notifications from the API.
   NotificationsViewModel() : super(AsyncValue.loading()) {
     fetchNotifications();
   }
+  /// Base URL of the mock server.
   final baseUrl = "https://a5a7a475-1f05-430d-a300-01cdf67ccb7e.mock.pstmn.io";
 
   NotificationModel? deletedNotification, showLessNotification;
@@ -20,6 +27,7 @@ class NotificationsViewModel
 
   Map<int, NotificationModel> showLessNotifications = {}; // For show less like this
 
+  /// Fetches the list of notifications from the backend.
   Future<void> fetchNotifications() async {
     final url = Uri.parse("$baseUrl/notifications");
 
@@ -41,6 +49,9 @@ class NotificationsViewModel
     }
   }
 
+  /// Marks a specific notification as read.
+  ///
+  /// [id] is the ID of the notification to update.
   Future<void> markAsRead(int id) async {
     final url = Uri.parse("$baseUrl/$id/read");
 
@@ -76,6 +87,7 @@ class NotificationsViewModel
     }
   }
 
+  /// Navigates the user to the post related to a notification.
   void navigateToPost(BuildContext context) {
     //int index needed as well
 
@@ -106,7 +118,7 @@ class NotificationsViewModel
       ),
     );
   }
-
+  /// Marks all notifications as seen (for UI highlighting).
   void markAllAsSeen() {
     state = state.whenData((notifications) {
       for (var notification in notifications) {
@@ -115,7 +127,7 @@ class NotificationsViewModel
       return notifications;
     });
   }
-
+  /// Returns the count of unseen notifications.
   AsyncValue<int> getUnseenNotificationsCount() {
     return state.when(
       data: (notifications) {
@@ -143,6 +155,7 @@ class NotificationsViewModel
   //   return 0; // ✅ Return 0 if there's an error
   // }
 
+  /// Deletes a notification by its [id].
   void deleteNotification(int id) {
     state.whenData((notifications) {
       // Check if the notification exists
@@ -181,6 +194,7 @@ class NotificationsViewModel
     });
   }
 
+  /// Undoes the deletion of the most recently deleted notification.
   void undoDeleteNotification() {
     if (deletedNotification != null && deletedNotificationIndex != null) {
       state.whenData((notifications) {
@@ -198,6 +212,7 @@ class NotificationsViewModel
     }
   }
 
+  /// Replaces a notification with a "Show less like this" placeholder.
   void showLessLikeThis(int id) {
     state.whenData((notifications) {
       // Check if the notification exists
@@ -247,6 +262,7 @@ class NotificationsViewModel
     });
   }
 
+  /// Undoes the "show less like this" action and restores the original notification.
   void undoShowLessLikeThis(int id) {
     if (showLessNotifications.isNotEmpty) {
       final originalNotification = showLessNotifications[id];
@@ -270,5 +286,6 @@ class NotificationsViewModel
 }
 
 // ✅ Riverpod Provider (no change)
+/// A Riverpod provider that exposes the [NotificationsViewModel] to the app.
 final notificationsProvider = StateNotifierProvider<NotificationsViewModel, AsyncValue<List<NotificationModel>>>
 ((ref) => NotificationsViewModel());

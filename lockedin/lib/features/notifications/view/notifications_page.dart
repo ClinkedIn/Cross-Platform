@@ -8,16 +8,20 @@ import 'package:lockedin/shared/theme/text_styles.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:sizer/sizer.dart';
 
+/// State provider to manage the currently selected notification category
 final selectedCategoryProvider = StateProvider<String>((ref) => "All");
-
+/// Notifications page UI
 class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
+    /// Watch the overall notifications provider (async state)
     final allNotifications = ref.watch(notificationsProvider);
+    /// Currently selected notification category
     final selectedCategory = ref.watch(selectedCategoryProvider);
+    /// Filter notifications based on selected category
     final notifications = allNotifications.when(
       data: (notificationsData) {
         switch (selectedCategory) {
@@ -40,7 +44,7 @@ class NotificationsPage extends ConsumerWidget {
         title: Consumer(
           builder: (context, ref, child) {
             final selectedCategory = ref.watch(selectedCategoryProvider);
-
+            ///// Render category filter buttons in the app bar
             return Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
@@ -81,6 +85,7 @@ class NotificationsPage extends ConsumerWidget {
           if (notificationsData.isEmpty) {
             return Center(child: Text("No notifications available"));
           }
+          /// Display list of notifications
           return ListView.builder(
             itemCount: notifications.length,
             itemBuilder: (context, index) {
@@ -88,10 +93,12 @@ class NotificationsPage extends ConsumerWidget {
 
               return Slidable(
                 key: ValueKey(notification.id), 
+                /// Define actions when swiping from right to left
                 endActionPane: ActionPane(
                   motion: const ScrollMotion(),
                   extentRatio: 0.3,
                   children: [
+                    /// Action to show less of this type of notification
                     CustomSlidableAction(
                       onPressed: (_) {
                         ref.read(notificationsProvider.notifier).showLessLikeThis(notification.id);
@@ -119,6 +126,7 @@ class NotificationsPage extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    /// Action to delete the notification
                     CustomSlidableAction(
                       onPressed: (context) {
                         // Handle notification deletion
@@ -152,6 +160,7 @@ class NotificationsPage extends ConsumerWidget {
                     ),
                   ],
                 ),
+                /// When a notification is tapped
                 child: GestureDetector(
                   onTap: () {
                     if (notification.isPlaceholder) return;

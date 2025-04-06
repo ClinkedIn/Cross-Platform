@@ -10,6 +10,9 @@ import 'package:lockedin/shared/theme/text_styles.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:sizer/sizer.dart';
 
+/// This widget is used to build the notification item in the notifications page.
+/// When swiped left it shows 'Show less' and 'Delete' buttons.
+/// Applies a different background if the notification is unread.
 Widget buildNotificationItem(dynamic notification, bool isDarkMode, WidgetRef ref, BuildContext context) {
   return SafeArea(
     child: Container(
@@ -161,6 +164,9 @@ Widget buildNotificationItem(dynamic notification, bool isDarkMode, WidgetRef re
   );
 }
 
+/// This widget is used to build the category buttons in the filter section of the notifications page.
+/// Categories include 'All', 'Jobs', 'My posts', and 'Mentions'.
+/// The selected category is highlighted with a different color.
 Widget buildCategoryButton(
   BuildContext context,
   WidgetRef ref,
@@ -200,6 +206,9 @@ Widget buildCategoryButton(
   );
 }
 
+/// This widget is used to build the bottom sheet that appears when the user clicks on the more options button in a notification.
+/// It contains options to change notification preferences, delete the notification, and show less like this.
+/// The options are displayed as list tiles with icons.
 Widget buildBottomSheet(
   BuildContext context,
   WidgetRef ref,
@@ -277,6 +286,9 @@ Widget buildBottomSheet(
   );
 }
 
+/// This widget is used to build the notification preferences bottom sheet that appears when the user clicks on the change notification preferences option in a notification.
+/// It contains options to allow or disallow notifications about the user and updates from the network.
+/// The options are displayed as list tiles with switches.
 Widget buildNotificationPreferencesSheet(
   BuildContext context,
   bool isDarkMode,
@@ -369,6 +381,9 @@ Widget buildNotificationPreferencesSheet(
   );
 }
 
+/// This function shows a temporary overlay message when the user toggles notification settings.
+/// The message indicates whether the notifications are turned on or off.
+/// It disappears after 2 seconds or when the close button is pressed.
 void showToggleMessage(BuildContext context, String message, bool isDarkMode) {
   late OverlayEntry overlayEntry;
   overlayEntry = OverlayEntry(
@@ -429,6 +444,9 @@ void showToggleMessage(BuildContext context, String message, bool isDarkMode) {
   });
 }
 
+/// This function shows a temporary overlay message when the user deletes a notification.
+/// The message indicates that the notification has been deleted and provides an option to undo the action.
+/// It disappears after 3 seconds or when the close button is pressed.
 void showDeleteMessage(
   BuildContext context,
   VoidCallback onUndo,

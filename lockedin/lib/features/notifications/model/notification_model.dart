@@ -1,15 +1,27 @@
+/// A model representing a single notification in the app.
 class NotificationModel {
+  /// Unique identifier for the notification.
   final int id;
+  /// Username of the user who triggered the notification.
   final String username;
+  /// (Optional) A second username involved in the notification, if applicable.
   final String secondUsername;
-  final String activityType; // e.g., "posted", "commented on"
+  /// Type of activity that triggered the notification (e.g., "posted", "commented on").
+  final String activityType;
+  /// Description of the notification (e.g., "John Doe posted a new job").
   final String description;
-  final String timeAgo; // e.g., "15m", "45m", "4h"
+  /// Time elapsed since the notification was triggered (e.g., "15m", "45m", "4h").
+  final String timeAgo;
+  /// URL of the profile image of the user who triggered the notification.
   final String profileImageUrl;
+  /// Indicates whether the notification has been seen by the user.
   bool isSeen;
-  bool isRead; // Default value is false
+  /// Indicates whether the notification has been read by the user.
+  bool isRead;
+  /// Indicates whether the notification is a placeholder (e.g., after "show less like this").
   bool isPlaceholder;
 
+  /// Creates a [NotificationModel] instance with the given data.
   NotificationModel({
     required this.id,
     required this.username,
@@ -23,6 +35,7 @@ class NotificationModel {
     this.isPlaceholder = false,
   });
 
+  /// Factory constructor to create a [NotificationModel] from a JSON map.
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
       id: json['id'],
