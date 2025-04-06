@@ -3,23 +3,27 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:lockedin/features/auth/view/change_password_page.dart';
 
-// Provider for API service
+/// Provider for the [AuthService], responsible for making API calls.
 final authServiceProvider = Provider((ref) => AuthService());
 
-// ViewModel provider
+/// Provider for the [ChangePasswordViewModel], managing the state of the password change process.
 final changePasswordViewModelProvider =
     StateNotifierProvider<ChangePasswordViewModel, AsyncValue<bool>>((ref) {
       final authService = ref.read(authServiceProvider);
       return ChangePasswordViewModel(authService, ref);
     });
-
+/// ViewModel class that manages the logic for changing a user's password.
 class ChangePasswordViewModel extends StateNotifier<AsyncValue<bool>> {
   final AuthService authService;
   final Ref ref;
-
+  /// Initializes the state as not loading and not successful by default.
   ChangePasswordViewModel(this.authService, this.ref)
     : super(const AsyncValue.data(false));
 
+  /// Handles the entire change password process.
+  /// - Sends the change password request.
+  /// - Updates the state based on the result.
+  /// - Sets a status message using [passwordStateProvider].
   Future<void> changePassword(
     String newPassword,
     String currentPassword,
@@ -47,15 +51,17 @@ class ChangePasswordViewModel extends StateNotifier<AsyncValue<bool>> {
     }
   }
 }
-
+/// Service responsible for sending the change password request to the backend.
 class AuthService {
   final String _baseUrl =
       "https://a5a7a475-1f05-430d-a300-01cdf67ccb7e.mock.pstmn.io";
   final http.Client client; // Accepting the client as a constructor parameter
 
-  // Constructor with a default value for client
+  /// Accepts an optional HTTP client (useful for mocking in tests).
   AuthService({http.Client? client}) : client = client ?? http.Client();
 
+  /// Sends a PATCH request to change the user's password.
+  /// Returns `true` if the status code is 200, `false` otherwise.
   Future<bool> changePasswordRequest(ChangePasswordRequest request) async {
     try {
       final response = await client.patch(
@@ -75,7 +81,7 @@ class AuthService {
     }
   }
 }
-
+/// Model representing the request to change a user's password.
 class ChangePasswordRequest {
   final String newPassword;
   final String currentPassword;
@@ -86,7 +92,7 @@ class ChangePasswordRequest {
     required this.currentPassword,
     //this.requireSignIn = true,
   });
-
+  /// Converts the request to JSON format for the HTTP request body.
   Map<String, dynamic> toJson() {
     return {
       "newPassword": newPassword,
