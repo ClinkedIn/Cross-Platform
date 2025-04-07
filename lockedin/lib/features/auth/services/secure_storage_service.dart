@@ -5,6 +5,7 @@ class SecureStorageService {
 
   Future<void> saveCredentials(String email, String password) async {
     Future.microtask(() async {
+      //write to store
       await _secureStorage.write(key: 'email', value: email);
       await _secureStorage.write(key: 'password', value: password);
       print('✅ Credentials saved securely!');
@@ -12,6 +13,7 @@ class SecureStorageService {
   }
 
   Future<Map<String, String?>> loadCredentials() async {
+    //read to retrieve enctrypted data
     String? email = await _secureStorage.read(key: 'email');
     String? password = await _secureStorage.read(key: 'password');
     return {'email': email, 'password': password};
