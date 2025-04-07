@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/features/networks/widgets/connect_card.dart';
-import 'package:lockedin/shared/theme/colors.dart';
 
 class ConnectCardsGridView extends StatelessWidget {
   final List<ConnectCard> connectCards;

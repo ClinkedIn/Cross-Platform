@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lockedin/shared/theme/colors.dart';
 
 class ConnectCard extends StatelessWidget {
   final String backgroundImage;

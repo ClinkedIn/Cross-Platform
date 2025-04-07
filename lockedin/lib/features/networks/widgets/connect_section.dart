@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/features/networks/widgets/connect_card.dart';
 import 'package:lockedin/features/networks/widgets/connect_grid.dart';
-import 'package:lockedin/features/networks/widgets/invitation_card.dart';
-import 'package:lockedin/features/networks/widgets/profile_card.dart';
 
 class ConnectSection extends StatelessWidget {
   const ConnectSection({Key? key}) : super(key: key);
