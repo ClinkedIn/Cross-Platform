@@ -113,10 +113,8 @@ class LoginPage extends ConsumerWidget {
 
               style: AppButtonStyles.textButton,
               child: Text("Forgot password?",),
-
-              
+            ),
             
-
             const SizedBox(height: 24),
 
             ElevatedButton(

@@ -31,7 +31,7 @@ class MyApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       title: 'LockedIn',
       theme: theme,
-      home: LoginPage(),
+      home: MainPage(), // Change this to LoginPage() to show the login page
     );
   }
 }
