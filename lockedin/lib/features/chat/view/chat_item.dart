@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lockedin/features/chat/view/chat_provider.dart';
-import 'package:lockedin/features/chat/view/chats.dart';
-import 'package:lockedin/features/chat/view/chat_history_screen.dart';
+import 'package:lockedin/features/chat/model/chat_model.dart';
+import 'package:lockedin/features/chat/view/chat_conversation_page.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
@@ -90,7 +90,7 @@ class ChatItem extends ConsumerWidget {
 
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => ChatDetailScreen(chat: chat)),
+          MaterialPageRoute(builder: (context) => ChatConversationScreen(chat: chat)),
         );
       },
     );

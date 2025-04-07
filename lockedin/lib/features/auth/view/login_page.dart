@@ -48,26 +48,18 @@ class LoginPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text(
-                  "Locked ",
-                  style: AppTextStyles.headline1.copyWith(
-                    color: AppColors.primary,
-                  ),
-                ),
-                Image.network(
-                  "https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png",
-                  height: 30,
-                ),
-              ],
-            ),
+             
             const SizedBox(height: 42),
+
             Text("Sign in", style: theme.textTheme.headlineLarge),
+
             const SizedBox(height: 8),
             Row(
               children: [
                 Text("or ", style: AppTextStyles.bodyText2),
+
+                SizedBox(width: 1.w),
+                
                 TextButton(
                   onPressed: () {
                     Navigator.push(
@@ -75,16 +67,12 @@ class LoginPage extends ConsumerWidget {
                       MaterialPageRoute(builder: (context) => SignUpView()),
                     );
                   },
-                  child: Text(
-                    "Join lockedIn",
-                    style: AppTextStyles.buttonText.copyWith(
-                      color: AppColors.primary,
-                    ),
-                  ),
+                  style: AppButtonStyles.textButton,
+                  child: Text("Join lockedIn",),
                 ),
               ],
             ),
-            SizedBox(height: 4.h),
+
             TextField(
               controller: _emailController,
               decoration: InputDecoration(
@@ -96,6 +84,7 @@ class LoginPage extends ConsumerWidget {
                 ),
               ),
             ),
+
             SizedBox(height: 2.h),
             TextField(
               controller: _passwordController,
@@ -109,7 +98,9 @@ class LoginPage extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+
+            const SizedBox(height: 15),
+
             TextButton(
               onPressed: () {
                 Navigator.push(
@@ -119,14 +110,15 @@ class LoginPage extends ConsumerWidget {
                   ),
                 );
               },
-              child: Text(
-                "Forgot password?",
-                style: AppTextStyles.buttonText.copyWith(
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
+
+              style: AppButtonStyles.textButton,
+              child: Text("Forgot password?",),
+
+              
+            
+
             const SizedBox(height: 24),
+
             ElevatedButton(
               style: AppButtonStyles.elevatedButton,
               onPressed: () {
@@ -137,7 +129,9 @@ class LoginPage extends ConsumerWidget {
               },
               child: const Text("Sign in"),
             ),
+
             const SizedBox(height: 20),
+
             Row(
               children: const [
                 Expanded(child: Divider()),
@@ -148,6 +142,7 @@ class LoginPage extends ConsumerWidget {
                 Expanded(child: Divider()),
               ],
             ),
+
             SizedBox(height: 3.h),
             Column(
               children: [
