@@ -10,7 +10,6 @@ void main() {
   runApp(
     ProviderScope(
       child: Sizer(
-        // Wrap with Sizer for responsiveness
         builder: (context, orientation, deviceType) {
           return const MyApp();
         },

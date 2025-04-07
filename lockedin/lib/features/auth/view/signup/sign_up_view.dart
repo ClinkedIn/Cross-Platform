@@ -7,6 +7,7 @@ import 'package:lockedin/shared/theme/text_styles.dart';
 import 'package:lockedin/features/auth/view/signup/name_step.dart';
 import 'package:lockedin/features/auth/view/signup/password_step.dart';
 import 'package:lockedin/features/auth/view/signup/email_step.dart';
+import 'package:lockedin/shared/widgets/logo_appbar.dart';
 import 'package:sizer/sizer.dart';
 
 class SignUpView extends ConsumerStatefulWidget {
@@ -100,12 +101,12 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
               "Locked ",
               style: AppTextStyles.headline1.copyWith(
                 color: AppColors.primary,
-                fontSize: 3.h,
+                fontSize: 3.h, // Responsive font size
               ),
             ),
             Image.network(
               "https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png",
-              height: 4.h,
+              height: 4.h, // Responsive height
             ),
           ],
         ),
