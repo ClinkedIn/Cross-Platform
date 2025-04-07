@@ -91,7 +91,26 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
     });
 
     return Scaffold(
-      appBar: LogoAppbar(),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
+          children: [
+            Text(
+              "Locked ",
+              style: AppTextStyles.headline1.copyWith(
+                color: AppColors.primary,
+                fontSize: 3.h, // Responsive font size
+              ),
+            ),
+            Image.network(
+              "https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png",
+              height: 4.h, // Responsive height
+            ),
+          ],
+        ),
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -100,11 +119,9 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
             backgroundColor: Colors.grey[300],
             valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
           ),
-          SizedBox(height: 1.h), // Responsive spacing
+          SizedBox(height: 1.h),
           Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: 4.w,
-            ), // Responsive padding
+            padding: EdgeInsets.symmetric(horizontal: 4.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -121,7 +138,7 @@ class _SignUpViewState extends ConsumerState<SignUpView> {
                     ),
                   ],
                 ),
-                SizedBox(height: 2.h), // Responsive spacing
+                SizedBox(height: 2.h),
                 if (viewModel.isLoading)
                   const Center(child: CircularProgressIndicator())
                 else if (_currentStep == 1)
