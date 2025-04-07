@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "358685157127",
+    "project_id": "lockedin-7908a",
+    "storage_bucket": "lockedin-7908a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:358685157127:android:9d5b9b1691ec0323c007a2",
+        "android_client_info": {
+          "package_name": "com.example.lockedin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "358685157127-1odafkcmnb8357hng009h65fqv9rb8g4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.lockedin",
+            "certificate_hash": "0f47abc7636c130d8aabfd2d4ab0890424cd5358"
+          }
+        },
+        {
+          "client_id": "358685157127-9aj4rmqh1cb0jv9okidqndaiv873me0b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAh8dstNK28Cmmj4H-g0Xl7ZfXjk-n3zkk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "358685157127-9aj4rmqh1cb0jv9okidqndaiv873me0b.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "358685157127-oplqos63mi0069pr3sr7qn6md32b936d.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.lockedin"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
