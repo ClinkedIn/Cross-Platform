@@ -6,8 +6,9 @@ import 'package:sizer/sizer.dart';
 import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:lockedin/features/auth/view/main_page.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(
@@ -32,7 +33,7 @@ class MyApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       title: 'LockedIn',
       theme: theme,
-      home: MainPage(), // Change this to LoginPage() to show the login page
+      home: JobsPage(), // Change this to LoginPage() to show the login page
     );
   }
 }
