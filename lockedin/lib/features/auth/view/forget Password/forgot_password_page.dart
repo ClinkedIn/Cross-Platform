@@ -14,13 +14,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>(); // Form key for validation
   final TextEditingController emailOrPhoneController = TextEditingController();
 
-
-  //Check if the email is valid
-  bool _isValidEmail(String input) {
-    final emailRegex = RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");  
-    return emailRegex.hasMatch(input);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -35,8 +28,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+
+          // Wrap UI in Form
           child: Form(
-            key: _formKey, // Wrap UI in Form
+            key: _formKey, 
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -49,12 +44,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     labelStyle: theme.textTheme.bodyLarge?.copyWith(fontSize: 2.h),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Field cannot be empty";
-                    } else if (!_isValidEmail(value)) {
-                      return "Enter a valid email address";
-                    }
-                    return null;
+                    return forgotPasswordViewModel.validateEmailOrPhone(value);
                   },
                 ),
 
@@ -70,8 +60,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: forgotPasswordState.isLoading
-                        ? null
+                    onPressed: forgotPasswordState.isLoading ? null // Disable button if loading
                         : () async {
                             if (_formKey.currentState!.validate()) {
                               FocusScope.of(context).unfocus(); // Hide keyboard
