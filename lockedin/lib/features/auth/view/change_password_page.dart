@@ -10,20 +10,19 @@ import 'package:lockedin/features/auth/view/Forget password/forgot_password_page
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
 
+/// Navigation state provider
 final navigationProvider = StateProvider<String>((ref) => '/');
-
-
-final passwordVisibilityProvider = StateNotifierProvider<PasswordVisibilityNotifier, PasswordVisibilityState>(
-  (ref) => PasswordVisibilityNotifier(),
-);
-
-
-
+/// Visibility state provider for password fields
+final passwordVisibilityProvider =
+    StateNotifierProvider<PasswordVisibilityNotifier, PasswordVisibilityState>(
+      (ref) => PasswordVisibilityNotifier(),
+    );
+/// State provider for password-related form inputs and feedback messages
 final passwordStateProvider =
     StateNotifierProvider<PasswordStateNotifier, PasswordState>(
       (ref) => PasswordStateNotifier(),
     );
-
+/// Holds visibility states for all password fields and password guideline section
 class PasswordVisibilityState {
   final bool isCurrentPasswordVisible;
   final bool isNewPasswordVisible;
@@ -36,7 +35,7 @@ class PasswordVisibilityState {
     this.isConfirmPasswordVisible = false,
     this.showPasswordGuidelines = false,
   });
-
+  /// Returns a new copy of the state with updated fields
   PasswordVisibilityState copyWith({
     bool? isCurrentPasswordVisible,
     bool? isNewPasswordVisible,
@@ -54,7 +53,7 @@ class PasswordVisibilityState {
     );
   }
 }
-
+/// Notifier for managing visibility toggles of password fields and password guidelines section
 class PasswordVisibilityNotifier
     extends StateNotifier<PasswordVisibilityState> {
   PasswordVisibilityNotifier() : super(PasswordVisibilityState());
@@ -81,18 +80,22 @@ class PasswordVisibilityNotifier
     );
   }
 }
-
+/// State representing all password-related input fields and messages
 class PasswordState {
   final String currentPassword;
   final String newPassword;
   final String confirmPassword;
   final bool requireSignIn;
+  final String statusMessage;
+  final String errorMessage;
 
   PasswordState({
     this.currentPassword = '',
     this.newPassword = '',
     this.confirmPassword = '',
     this.requireSignIn = true,
+    this.statusMessage = '',
+    this.errorMessage = '',
   });
 
   bool get isSaveEnabled =>
@@ -103,16 +106,20 @@ class PasswordState {
     String? newPassword,
     String? confirmPassword,
     bool? requireSignIn,
+    String? statusMessage,
+    String? errorMessage,
   }) {
     return PasswordState(
       currentPassword: currentPassword ?? this.currentPassword,
       newPassword: newPassword ?? this.newPassword,
       confirmPassword: confirmPassword ?? this.confirmPassword,
       requireSignIn: requireSignIn ?? this.requireSignIn,
+      statusMessage: statusMessage ?? this.statusMessage,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 }
-
+/// StateNotifier that controls updates to the password fields and messages
 class PasswordStateNotifier extends StateNotifier<PasswordState> {
   PasswordStateNotifier() : super(PasswordState());
 
@@ -131,8 +138,23 @@ class PasswordStateNotifier extends StateNotifier<PasswordState> {
   void toggleRequireSignIn() {
     state = state.copyWith(requireSignIn: !state.requireSignIn);
   }
-}
 
+  void setStatusMessage(String message) {
+    state = state.copyWith(statusMessage: message);
+  }
+
+  void setErrorMessage(String message) {
+    state = state.copyWith(errorMessage: message);
+  }
+  /// Basic password validation using regex
+  void isValidPassword(String password) {
+    setErrorMessage("");
+    final regex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$');
+    if (!regex.hasMatch(password)) setErrorMessage("❌ Invalid password format");
+    return;
+  }
+}
+/// UI page for changing the user's password
 class ChangePasswordPage extends ConsumerWidget {
   const ChangePasswordPage({super.key});
 
@@ -140,10 +162,6 @@ class ChangePasswordPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final visibilityState = ref.watch(passwordVisibilityProvider);
     final passwordState = ref.watch(passwordStateProvider);
-
-    //final changePasswordState = ref.watch(changePasswordViewModelProvider);
-
-    //final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -268,28 +286,38 @@ class ChangePasswordPage extends ConsumerWidget {
               onPressed:
                   passwordState.isSaveEnabled
                       ? () {
-                        ref
-                            .read(changePasswordViewModelProvider.notifier)
-                            .changePassword(
-                              passwordState.newPassword,
-                              passwordState
-                                  .currentPassword, // Replace with actual input
-                            );
+                        ref.read(passwordStateProvider.notifier).isValidPassword(passwordState.newPassword);
+                        ref.read(changePasswordViewModelProvider.notifier).changePassword(
+                          passwordState.newPassword,passwordState.currentPassword);
                       }
                       : null,
               child: const Text("Save Password"),
             ),
-            // Success or error message display
-            // if (AuthService.successMessage != null)
-            //   Padding(
-            //     padding: const EdgeInsets.symmetric(vertical: 10),
-            //     child: Text(AuthService.successMessage, style: AppTextStyles.bodyText1.copyWith(color: Colors.green)),
-            //   ),
-            // if (AuthService.errorMessage != null)
-            //   Padding(
-            //     padding: const EdgeInsets.symmetric(vertical: 10),
-            //     child: Text(AuthService.errorMessage!, style: AppTextStyles.bodyText1.copyWith(color: Colors.red)),
-            //   ),
+
+            // Status message display
+            if (passwordState.statusMessage.isNotEmpty && passwordState.errorMessage.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  passwordState.statusMessage,
+                  style: AppTextStyles.bodyText1.copyWith(
+                    color:
+                        passwordState.statusMessage.contains("✅")
+                            ? Colors.green
+                            : Colors.red,
+                  ),
+                ),
+              ),
+            // Error message display
+            if (passwordState.errorMessage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  passwordState.errorMessage,
+                  style: AppTextStyles.bodyText1.copyWith(color: Colors.red),
+                ),
+              ),
+
             OutlinedButton(
               style: AppButtonStyles.outlinedButton,
               onPressed: () {
@@ -308,7 +336,7 @@ class ChangePasswordPage extends ConsumerWidget {
       ),
     );
   }
-
+  /// Reusable password input widget
   Widget _buildPasswordField(
     String label,
     bool isVisible,
