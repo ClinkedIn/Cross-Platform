@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:lockedin/shared/theme/colors.dart';
 
-class ProfileCard extends StatelessWidget {
-  final String profilePicture;
+class ConnectCard extends StatelessWidget {
+  final String backgroundImage;
+  final String profileImage;
   final String name;
   final String headline;
-  final int mutualConnections;
 
-  const ProfileCard({
-    required this.profilePicture,
+  const ConnectCard({
+    required this.backgroundImage,
+    required this.profileImage,
     required this.name,
     required this.headline,
-    required this.mutualConnections,
     Key? key,
   }) : super(key: key);
 
@@ -21,55 +20,102 @@ class ProfileCard extends StatelessWidget {
 
     return Card(
       elevation: 4.0,
-      margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            // Profile Picture
-            CircleAvatar(
-              radius: 30.0,
-              backgroundImage: AssetImage(
-                profilePicture,
-              ), // Replace with image URL
-            ),
-            SizedBox(width: 16.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          // Top portion with background and profile
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // Background image - reduced height
+              ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12.0)),
+                child: Image.asset(
+                  backgroundImage,
+                  height: 80, // Reduced height
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
 
-            // Name, Headline, and Mutual Connections
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: TextStyle(
-                      fontSize: 16.0,
-                      fontWeight: FontWeight.bold,
+              // Profile image - smaller and less overlap
+              Positioned(
+                top: 50, // Less overlap with the background
+                right: 0,
+                left: 0,
+                child: Center(
+                  child: CircleAvatar(
+                    radius: 30, // Smaller avatar
+                    backgroundColor: Colors.white,
+                    child: CircleAvatar(
+                      radius: 28,
+                      backgroundImage: AssetImage(profileImage),
                     ),
                   ),
-                  SizedBox(height: 4.0),
-                  Text(
-                    headline,
-                    style: TextStyle(fontSize: 14.0, color: Colors.grey[600]),
+                ),
+              ),
+            ],
+          ),
+
+          // Compact content area
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                8.0,
+                35.0,
+                8.0,
+                4.0,
+              ), // Top padding for profile image
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Name and headline in condensed format
+                  Column(
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(
+                          fontSize: 14.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 2.0),
+                      Text(
+                        headline,
+                        style: TextStyle(
+                          fontSize: 12.0,
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 8.0),
-                  Text(
-                    "$mutualConnections mutual connections",
-                    style: TextStyle(fontSize: 12.0, color: Colors.grey[600]),
+
+                  // Connect Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 35, // Fixed smaller height
+                    child: OutlinedButton(
+                      onPressed: () {},
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 0),
+                        textStyle: TextStyle(fontSize: 12),
+                      ).merge(theme.outlinedButtonTheme.style),
+                      child: Text('+ Connect'),
+                    ),
                   ),
                 ],
               ),
             ),
-
-            // Connect Button
-            OutlinedButton(
-              onPressed: () {},
-              style: theme.outlinedButtonTheme.style,
-              child: Text('+ Connect', style: TextStyle()),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
