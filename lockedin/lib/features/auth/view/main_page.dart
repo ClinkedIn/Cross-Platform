@@ -32,8 +32,8 @@ class _MainPageState extends ConsumerState<MainPage> {
   }
 
   Future<void> _checkAuthentication() async {
-    TokenService.deleteCookie();
-    print("Checking authentication... ${await TokenService.hasCookie()}");
+    // TokenService.deleteCookie();
+    // print("Checking authentication... ${await TokenService.hasCookie()}");
     if (await TokenService.hasCookie() == false) {
       if (mounted) {
         Navigator.pushReplacement(

@@ -10,4 +10,5 @@ class Constants {
   static const String registerEndpoint = '/user/';
   static const String createUserProfileEndpoint = '/user/profile';
   static const String logoutEndpoint = '/user/logout';
+  static const String feedEndpoint = '/posts';
 }
