@@ -21,23 +21,6 @@ class RequestService {
     };
   }
 
-  // /// Generic GET request with optional headers
-  // static Future<http.Response> get(
-  //   String endpoint, {
-  //   Map<String, String>? additionalHeaders,
-  // }) async {
-  //   final String url = '$_baseUrl$endpoint';
-  //   final headers = await _getHeaders(additionalHeaders: additionalHeaders);
-
-  //   try {
-  //     final response = await _client.get(Uri.parse(url), headers: headers);
-  //     _storeCookiesFromResponse(response);
-  //     return response;
-  //   } catch (e) {
-  //     throw Exception('GET request failed: $e');
-  //   }
-  // }
-  /// Generic GET request with optional headers and query parameters
   static Future<http.Response> get(
     String endpoint, {
     Map<String, String>? additionalHeaders,

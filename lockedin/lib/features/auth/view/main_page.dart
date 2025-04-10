@@ -37,6 +37,7 @@ class _MainPageState extends ConsumerState<MainPage> {
     if (!mounted) return;
 
     final hasCookie = await TokenService.hasCookie();
+    print("Has cookie: $hasCookie");
 
     if (!hasCookie) {
       if (!mounted) return;
