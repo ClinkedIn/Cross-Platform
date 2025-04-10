@@ -5,7 +5,10 @@ import 'package:lockedin/features/jobs/model/job_model.dart';
 class JobRepository {
   final String baseUrl;
 
-  JobRepository({this.baseUrl = 'http://localhost:3000/search'});
+  JobRepository({
+    this.baseUrl =
+        'https://lockedin-swagger-cncpa8fwhsbzgmcs.italynorth-01.azurewebsites.net/search',
+  });
 
   Future<List<JobModel>> fetchJobs({
     String q = '',
