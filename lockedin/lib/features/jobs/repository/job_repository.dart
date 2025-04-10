@@ -1,14 +1,10 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
+import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/features/jobs/model/job_model.dart';
 
 class JobRepository {
-  final String baseUrl;
-
-  JobRepository({
-    this.baseUrl =
-        'https://lockedin-swagger-cncpa8fwhsbzgmcs.italynorth-01.azurewebsites.net/search',
-  });
+  static const String _searchJobsEndpoint = '/search/jobs';
 
   Future<List<JobModel>> fetchJobs({
     String q = '',
@@ -19,29 +15,78 @@ class JobRepository {
     int page = 1,
     int limit = 10,
   }) async {
-    final uri = Uri.parse('$baseUrl/jobs').replace(
-      queryParameters: {
-        'q': q,
-        'location': location,
-        'industry': industry,
-        if (companyId != null) 'companyId': companyId,
-        'minExperience': minExperience.toString(),
-        'page': page.toString(),
-        'limit': limit.toString(),
-      },
-    );
+    final queryParams = {
+      if (q.length >= 2) 'q': q,
+      if (location.length >= 2) 'location': location,
+      if (industry.isNotEmpty) 'industry': industry,
+      if (companyId != null) 'companyId': companyId,
+      if (minExperience > 0) 'minExperience': minExperience.toString(),
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
 
-    final response = await http.get(
-      uri,
-      headers: {'accept': 'application/json'},
-    );
+    final uri = Uri(path: _searchJobsEndpoint, queryParameters: queryParams);
+
+    final response = await RequestService.get(uri.toString());
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      print('Fetched job data: ${jsonEncode(data)}');
       final List jobs = data['jobs'];
       return jobs.map((job) => JobModel.fromJson(job)).toList();
     } else {
       throw Exception('Failed to load jobs: ${response.statusCode}');
     }
+  }
+
+  /// Save Job Functionality
+  Future<void> saveJob(String jobId) async {
+    final uri = Uri(path: '/jobs/$jobId/save');
+
+    final response = await RequestService.post(
+      uri.toString(),
+      body: {}, // Empty body
+    );
+
+    if (response.statusCode != 200) {
+      final data = json.decode(response.body);
+      throw Exception(data['message'] ?? 'Failed to save job');
+    }
+  }
+
+  Future<void> unsaveJob(String jobId) async {
+    final uri = Uri(path: '/jobs/$jobId/save');
+    final response = await RequestService.delete(uri.toString());
+
+    if (response.statusCode != 200) {
+      final data = json.decode(response.body);
+      throw Exception(data['message'] ?? 'Failed to unsave job');
+    }
+  }
+
+  Future<void> applyForJob({
+    required String jobId,
+    required String contactEmail,
+    required String contactPhone,
+    required List<Map<String, String>> answers,
+  }) async {
+    final uri = Uri(path: '/jobs/$jobId/apply');
+
+    final response = await RequestService.post(
+      uri.toString(),
+      body: {
+        'contactEmail': contactEmail,
+        'contactPhone': contactPhone,
+        'answers': answers,
+      },
+    );
+
+    final data = json.decode(response.body);
+
+    if (response.statusCode != 200) {
+      throw Exception(data['message'] ?? 'Failed to apply for job');
+    }
+
+    debugPrint('Application response: ${jsonEncode(data)}');
   }
 }

@@ -14,6 +14,8 @@ class JobViewModel extends ChangeNotifier {
   String? get selectedIndustry => _selectedIndustry;
   String? get selectedCompanyId => _selectedCompanyId;
   int get minExperience => _minExperience;
+  final Set<String> _savedJobIds = {};
+  List<String> get savedJobs => _savedJobIds.toList();
 
   /// Riverpod provider for JobViewModel
   static final provider = ChangeNotifierProvider<JobViewModel>((ref) {
@@ -67,5 +69,50 @@ class JobViewModel extends ChangeNotifier {
     _selectedCompanyId = companyId;
     _minExperience = minExperience ?? 0;
     fetchJobs();
+  }
+
+  void saveJob(String jobId) async {
+    try {
+      _savedJobIds.add(jobId);
+      debugPrint('Saved Job IDs: $_savedJobIds');
+      await _repository.saveJob(jobId);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving job: $e');
+    }
+  }
+
+  void unsaveJob(String jobId) async {
+    try {
+      await _repository.unsaveJob(jobId);
+      _savedJobIds.remove(jobId);
+      debugPrint('Unsave successful: $jobId');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error unsaving job: $e');
+    }
+  }
+
+  bool isJobSaved(String jobId) {
+    return _savedJobIds.contains(jobId);
+  }
+
+  Future<void> applyToJob({
+    required String jobId,
+    required String contactEmail,
+    required String contactPhone,
+    required List<Map<String, String>> answers,
+  }) async {
+    try {
+      await _repository.applyForJob(
+        jobId: jobId,
+        contactEmail: contactEmail,
+        contactPhone: contactPhone,
+        answers: answers,
+      );
+      debugPrint('Application submitted successfully');
+    } catch (e) {
+      debugPrint('Error applying to job: $e');
+    }
   }
 }

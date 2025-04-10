@@ -4,6 +4,7 @@ import 'package:lockedin/features/auth/view/main_page.dart';
 import 'package:lockedin/features/auth/viewmodel/login_in_viewmodel.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
 import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
+import 'package:lockedin/features/jobs/view/jobs_page.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
@@ -26,14 +27,14 @@ class LoginPage extends ConsumerWidget {
           // Success case: Navigate to MainPage
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => MainPage()),
+            MaterialPageRoute(builder: (context) => JobsPage()),
           );
         },
         error: (error, stackTrace) {
           // Error case: Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $error')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $error')));
         },
         loading: () {
           // Optional: Show loading indicator (handled below if needed)
@@ -48,7 +49,6 @@ class LoginPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-             
             const SizedBox(height: 42),
 
             Text("Sign in", style: theme.textTheme.headlineLarge),
@@ -59,7 +59,7 @@ class LoginPage extends ConsumerWidget {
                 Text("or ", style: AppTextStyles.bodyText2),
 
                 SizedBox(width: 1.w),
-                
+
                 TextButton(
                   onPressed: () {
                     Navigator.push(
@@ -68,7 +68,7 @@ class LoginPage extends ConsumerWidget {
                     );
                   },
                   style: AppButtonStyles.textButton,
-                  child: Text("Join lockedIn",),
+                  child: Text("Join lockedIn"),
                 ),
               ],
             ),
@@ -112,18 +112,17 @@ class LoginPage extends ConsumerWidget {
               },
 
               style: AppButtonStyles.textButton,
-              child: Text("Forgot password?",),
+              child: Text("Forgot password?"),
             ),
-            
+
             const SizedBox(height: 24),
 
             ElevatedButton(
               style: AppButtonStyles.elevatedButton,
               onPressed: () {
-                ref.read(loginViewModelProvider.notifier).login(
-                      _emailController.text,
-                      _passwordController.text,
-                    );
+                ref
+                    .read(loginViewModelProvider.notifier)
+                    .login(_emailController.text, _passwordController.text);
               },
               child: const Text("Sign in"),
             ),
@@ -154,7 +153,9 @@ class LoginPage extends ConsumerWidget {
                   text: "Sign in with Google",
                   icon: Icons.g_mobiledata,
                   onPressed: () {
-                    ref.read(loginViewModelProvider.notifier).signInWithGoogle();
+                    ref
+                        .read(loginViewModelProvider.notifier)
+                        .signInWithGoogle();
                   },
                 ),
               ],

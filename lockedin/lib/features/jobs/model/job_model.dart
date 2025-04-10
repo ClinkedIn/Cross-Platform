@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 class JobModel {
   final String title;
+  final String id;
   final String company;
   final String location;
   final String description;
@@ -7,10 +10,11 @@ class JobModel {
   final String salaryRange;
   final bool isRemote;
   final String? logoUrl;
-  final String? industry; // Add this field
+  final String? industry;
 
   JobModel({
     required this.title,
+    required this.id,
     required this.company,
     required this.location,
     required this.description,
@@ -18,13 +22,21 @@ class JobModel {
     required this.salaryRange,
     required this.isRemote,
     this.logoUrl,
-    this.industry, // Include it in the constructor
+    this.industry,
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
     final company = json['company'] ?? {};
 
+    // Debug: log the raw job data to investigate structure
+    print("Raw job JSON: ${jsonEncode(json)}");
+
+    // Attempt to extract the job ID safely
+    final parsedId = json['_id'] ?? json['id'] ?? json['jobId'];
+    print("Parsed job ID: $parsedId");
+
     return JobModel(
+      id: parsedId?.toString() ?? '',
       title: json['title'] ?? 'Unknown Position',
       company: company['name'] ?? 'Unknown Company',
       location: json['jobLocation'] ?? 'Unknown Location',
@@ -34,10 +46,11 @@ class JobModel {
                   json['screeningQuestions'].isNotEmpty
               ? json['screeningQuestions'][0]['specification'] ?? 'Unknown'
               : 'Unknown',
-      salaryRange: 'N/A', // Adjust if your API includes this
+      salaryRange:
+          'N/A', // You can update this if your API provides salary info
       isRemote: (json['workplaceType']?.toLowerCase() ?? '') == 'remote',
       logoUrl: company['logo'],
-      industry: json['industry'], // Parse industry from the response
+      industry: json['industry'],
     );
   }
 }
