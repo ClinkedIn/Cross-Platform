@@ -1,20 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/notifications/model/notification_model.dart';
+import 'package:lockedin/features/notifications/viewmodel/notifications_viewmodel.dart';
+import 'package:sizer/sizer.dart';
+///////
+//CAN IT BE ASYNC TO LOAD UNSEEN NOTIFICATIONS COUNT AND CONNECTION REQUESTS COUNT? 
+///////
+final notificationsProvider =
+    StateNotifierProvider<NotificationsViewModel, AsyncValue<List<NotificationModel>>>(
+      (ref) => NotificationsViewModel(),
+    );
 
-class BottomNavBar extends StatelessWidget {
+class BottomNavBar extends ConsumerWidget {
   final int currentIndex;
   final Function(int) onTap;
 
   const BottomNavBar({
-    Key? key,
+    super.key,
     required this.currentIndex,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final navBarTheme = theme.bottomNavigationBarTheme;
+    final unseenNotifications = ref.watch(notificationsProvider.notifier).getUnseenNotificationsCount();
 
     return Container(
       color: navBarTheme.backgroundColor,
@@ -23,11 +34,25 @@ class BottomNavBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavItem(context, 0, Icons.home, 'Home'),
-            _buildNavItem(context, 1, Icons.group, 'My Network'),
-            _buildNavItem(context, 2, Icons.add_box_outlined, 'Post'),
-            _buildNavItem(context, 3, Icons.notifications, 'Notifications'),
-            _buildNavItem(context, 4, Icons.work, 'Jobs'),
+            _buildNavItem(context, 0, Icons.home, 'Home', onTap: () => onTap(0)),
+            _buildNavItem(context, 1, Icons.group, 'My Network', onTap: () => onTap(1)),
+            _buildNavItem(context, 2, Icons.add_box_outlined, 'Post', onTap: () => onTap(2)),
+            _buildNavItem(
+              context,
+              3,
+              Icons.notifications,
+              'Notifications',
+              unseenNotificationsCount: unseenNotifications.when(
+                data: (count) => count,
+                loading: () => null,
+                error: (err, stack) => null,
+              ),
+              onTap: () {
+                ref.read(notificationsProvider.notifier).markAllAsSeen();
+                onTap(3); // Navigate to the Notifications page
+              }
+            ),
+            _buildNavItem(context, 4, Icons.work, 'Jobs', onTap: () => onTap(4)),
           ],
         ),
       ),
@@ -38,8 +63,10 @@ class BottomNavBar extends StatelessWidget {
     BuildContext context,
     int index,
     IconData icon,
-    String label,
-  ) {
+    String label, {
+    int? unseenNotificationsCount,
+    VoidCallback? onTap,
+  }) {
     final theme = Theme.of(context);
     final navBarTheme = theme.bottomNavigationBarTheme;
     final bool isSelected = currentIndex == index;
@@ -72,11 +99,39 @@ class BottomNavBar extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 5),
         ),
         InkWell(
-          onTap: () => onTap(index),
+          onTap: onTap,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: iconColor, size: iconSize),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(icon, color: iconColor, size: iconSize),
+                  if (index == 3 &&
+                      unseenNotificationsCount != null &&
+                      unseenNotificationsCount >
+                          0) // Only add badge for Notifications tab
+                    Positioned(
+                      top: -5,
+                      right: -10,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          unseenNotificationsCount.toString(), // Replace with dynamic value if needed
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 4),
               Text(label, style: textStyle),
             ],

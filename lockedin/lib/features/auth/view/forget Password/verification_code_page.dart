@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/new_password_page.dart';
+import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/widgets/logo_appbar.dart';
 import 'package:sizer/sizer.dart';
 
@@ -56,27 +57,26 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
         
                 SizedBox(height: 1.5.h),
         
-                Text(
-                  'Check *****@gmail.com for a verification code.',
-                  style: theme.textTheme.bodyMedium?.copyWith(fontSize: 1.8.h),
-                ),
-        
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
-                    );
-                  },
-                  style: theme.textButtonTheme.style,
-                  child: Text(
-                    'Change',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontSize: 2.h,
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
+                Row(
+                  children: [
+                    Text(
+                      'Check your email for a verification code.',
+                      style: theme.textTheme.bodyMedium?.copyWith(fontSize: 1.8.h),
                     ),
-                  ),
+
+                    SizedBox(width: 1.w),
+                            
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+                        );
+                      },
+                      style: AppButtonStyles.textButton,
+                      child: Text('Change',),
+                    ),
+                  ],
                 ),
         
                 SizedBox(height: 2.h),
@@ -106,15 +106,8 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
                       SnackBar(content: Text("Resending code...")),
                     );
                   },
-                  style: theme.textButtonTheme.style,
-                  child: Text(
-                    'Resend code',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontSize: 2.h,
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  style: AppButtonStyles.textButton,
+                  child: Text('Resend code',),
                 ),
         
                 SizedBox(height: 2.h),
@@ -140,15 +133,8 @@ class _VerificationCodeScreenState extends State<VerificationCodeScreen> {
         
                 TextButton(
                   onPressed: () {},
-                  style: theme.textButtonTheme.style,
-                  child: Text(
-                    "Can't access this email?",
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontSize: 2.h,
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  style: AppButtonStyles.textButton,
+                  child: Text("Can't access this email?",),
                 ),
               ],
             ),

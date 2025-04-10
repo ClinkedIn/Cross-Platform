@@ -26,29 +26,40 @@ class _MainPageState extends ConsumerState<MainPage> {
   @override
   void initState() {
     super.initState();
-    _checkAuthentication();
-    _fetchUserProfile();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthentication();
+      _fetchUserProfile();
+    });
   }
 
   Future<void> _checkAuthentication() async {
-    if (await TokenService.hasToken() == false) {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginPage()),
-        );
-      }
+    if (!mounted) return;
+
+    final hasCookie = await TokenService.hasCookie();
+
+    if (!hasCookie) {
+      if (!mounted) return;
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => LoginPage()));
     }
   }
 
   void _fetchUserProfile() {
-    ref.read(profileViewModelProvider).fetchUser();
+    if (!mounted) return;
+    ref.read(profileViewModelProvider).fetchUser(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(navProvider);
     final currentUser = ref.watch(userProvider);
+
+    // Just in case currentUser is still null
+    if (currentUser == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final List<Widget> pages = [
       HomePage(),
@@ -64,10 +75,7 @@ class _MainPageState extends ConsumerState<MainPage> {
         leftIcon: CircleAvatar(
           radius: 20,
           backgroundColor: Colors.transparent,
-          backgroundImage:
-              currentUser?.profilePicture.isNotEmpty == true
-                  ? AssetImage(currentUser!.profilePicture)
-                  : AssetImage('assets/images/default_profile_photo.png'),
+          backgroundImage: NetworkImage(currentUser.profilePicture),
         ),
         leftOnPress: () {
           _scaffoldKey.currentState?.openDrawer();

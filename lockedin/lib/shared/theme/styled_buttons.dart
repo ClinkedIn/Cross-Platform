@@ -25,6 +25,18 @@ class AppButtonStyles {
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(90)),
   );
 
+  static final ButtonStyle textButton = TextButton.styleFrom(
+    foregroundColor: AppColors.primary,
+    padding: EdgeInsets.symmetric(vertical: 1.h, horizontal: 0.w),
+    minimumSize: Size(0, 0),
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    textStyle: AppTextStyles.buttonText.copyWith(
+      fontSize: 2.h,
+      color: AppColors.primary,
+      fontWeight: FontWeight.bold,
+      ),
+  );
+
   static Widget outlinedIconButton({
     required VoidCallback onPressed,
     required IconData icon,

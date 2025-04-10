@@ -7,7 +7,7 @@ import 'dart:convert';
 class SignupViewModel extends Notifier<SignupState> {
   final SignupRepository _repository = SignupRepository();
   final _secureStorage = const FlutterSecureStorage();
-
+  //manage reactive state
   @override
   SignupState build() {
     return const SignupState(
@@ -20,6 +20,7 @@ class SignupViewModel extends Notifier<SignupState> {
       success: false,
     );
   }
+  //update state
 
   void setFirstName(String value) => state = state.copyWith(firstName: value);
   void setLastName(String value) => state = state.copyWith(lastName: value);
@@ -46,8 +47,8 @@ class SignupViewModel extends Notifier<SignupState> {
       return null;
     }
 
-    print("❌ Invalid email or phone");
-    return "❌ Invalid input. Please enter a valid email or phone number.";
+    print("❌ Invalid email ");
+    return "❌ Invalid input. Please enter a valid email.";
   }
 
   bool get isFormValid =>
