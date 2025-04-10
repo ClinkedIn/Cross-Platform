@@ -1,5 +1,7 @@
 import 'post_repository.dart';
 import '../../model/post_model.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class PostTest implements PostRepository {
   // In-memory collection of posts for testing
@@ -100,6 +102,23 @@ class PostTest implements PostRepository {
     return filteredPosts.length > limit 
         ? filteredPosts.sublist(0, limit) 
         : filteredPosts;
+  }
+    @override
+  Future<void> savePostById(String postId) async {
+    // Implementation to call backend API
+    // Example:
+    final response = await http.post(
+      Uri.parse('https://your-api.com/posts/save'),
+      headers: {
+        'Content-Type': 'application/json',
+       // 'Authorization': 'Bearer ${await TokenService.getToken()}',
+      },
+      body: jsonEncode({'postId': postId}),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Failed to save post: ${response.body}');
+    }
   }
 
 }

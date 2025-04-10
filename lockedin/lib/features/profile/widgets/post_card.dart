@@ -144,26 +144,6 @@ class PostCard extends StatelessWidget {
                         ),
                       ),
                       PopupMenuItem(
-                        value: 'not_interested',
-                        height: 5.h,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.not_interested,
-                              size: 2.h,
-                              color: theme.iconTheme.color,
-                            ),
-                            SizedBox(width: 2.w),
-                            Text(
-                              'Not interested',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontSize: 15.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
                         value: 'report',
                         height: 5.h,
                         child: Row(
@@ -187,7 +167,6 @@ class PostCard extends StatelessWidget {
                   ),
                 ],
               ),
-
               // Content with null safety
               SizedBox(height: 1.5.h),
               Text(

@@ -5,7 +5,7 @@ import 'package:lockedin/features/home_page/model/post_model.dart';
 import 'post_repository.dart';
 
 class PostApi implements PostRepository {
-  final String apiUrl = "https://39824696-46ba-4401-89d7-26ca4a77d541.mock.pstmn.io/feed";
+  final String apiUrl = "https://lockedin-swagger-cncpa8fwhsbzgmcs.italynorth-01.azurewebsites.net/posts?pageNumber=1&limit=10";
 
   @override
   Future<List<PostModel>> fetchHomeFeed() async {
@@ -94,6 +94,23 @@ class PostApi implements PostRepository {
       }
     } catch (e) {
       return '';
+    }
+  }
+   @override
+  Future<void> savePostById(String postId) async {
+    // Implementation to call backend API
+    // Example:
+    final response = await http.post(
+      Uri.parse('https://lockedin-swagger-cncpa8fwhsbzgmcs.italynorth-01.azurewebsites.net/save'),
+      headers: {
+        'Content-Type': 'application/json',
+        //'Authorization': 'Bearer ${await TokenService.getToken()}',
+      },
+      body: jsonEncode({'postId': postId}),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Failed to save post: ${response.body}');
     }
   }
 }

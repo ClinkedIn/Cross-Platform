@@ -48,4 +48,27 @@ class HomeViewModel extends StateNotifier<HomeState> {
   Future<void> refreshFeed() async {
     await fetchHomeFeed();
   }
+
+  
+  /// Save post for later reading using post ID
+    Future<void> savePostById(String postId) async {
+      try {
+        // Set loading state
+        state = state.copyWith(isLoading: true, error: null);
+        
+        // Send post ID to repository
+        await repository.savePostById(postId);
+        
+        // Update state after successfully saving
+        state = state.copyWith(
+          isLoading: false,
+        );
+      } catch (e) {
+        // Handle errors
+        state = state.copyWith(
+          isLoading: false,
+          error: e.toString(),
+        );
+      }
+    }
 }
