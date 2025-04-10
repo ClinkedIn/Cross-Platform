@@ -2,25 +2,25 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class TokenService {
   static const _storage = FlutterSecureStorage();
-  static const _tokenKey = 'auth_token';
+  static const _cookieKey = 'auth_cookie';
 
-  /// Save token securely
-  static Future<void> saveToken(String token) async {
-    await _storage.write(key: _tokenKey, value: token);
+  /// Save cookie securely
+  static Future<void> saveCookie(String cookie) async {
+    await _storage.write(key: _cookieKey, value: cookie);
   }
 
-  /// Retrieve token
-  static Future<String?> getToken() async {
-    return await _storage.read(key: _tokenKey);
+  /// Retrieve cookie
+  static Future<String?> getCookie() async {
+    return await _storage.read(key: _cookieKey);
   }
 
-  /// Remove token (Logout)
-  static Future<void> deleteToken() async {
-    await _storage.delete(key: _tokenKey);
+  /// Remove cookie (Logout)
+  static Future<void> deleteCookie() async {
+    await _storage.delete(key: _cookieKey);
   }
 
-  /// Check if token exists
-  static Future<bool> hasToken() async {
-    return await _storage.containsKey(key: _tokenKey);
+  /// Check if cookie exists
+  static Future<bool> hasCookie() async {
+    return await _storage.containsKey(key: _cookieKey);
   }
 }

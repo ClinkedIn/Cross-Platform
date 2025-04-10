@@ -4,98 +4,212 @@ import 'package:lockedin/features/profile/state/user_state.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
 
 class SidebarDrawer extends ConsumerWidget {
-  SidebarDrawer({Key? key}) : super(key: key);
+  const SidebarDrawer({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentUserAsync = ref.watch(userProvider);
+    final currentUser = ref.watch(userProvider);
+
     return Drawer(
-      backgroundColor: Colors.black, // Dark background like LinkedIn
-      child: ListView(
-        padding: EdgeInsets.zero,
+      backgroundColor: Color(0xFF1D1E20), // Dark background
+      child: Column(
         children: [
-          DrawerHeader(
-            decoration: BoxDecoration(color: Colors.black),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          SizedBox(height: 60), // Top padding to avoid notch
+          /// Profile Row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
               children: [
                 GestureDetector(
-                  onTap: () {
-                    // Handle tap action here, e.g., navigate to the profile page
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => ProfilePage()),
-                    );
-                  },
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ProfilePage()),
+                      ),
                   child: CircleAvatar(
-                    radius: 30,
+                    radius: 28,
                     backgroundImage:
-                        currentUserAsync != null
-                            ? AssetImage(currentUserAsync.profilePicture)
+                        currentUser != null
+                            ? NetworkImage(currentUser.profilePicture)
                             : AssetImage(
-                              'assets/images/default_profile_photo.png',
-                            ),
+                                  'assets/images/default_profile_photo.png',
+                                )
+                                as ImageProvider,
                   ),
                 ),
-                SizedBox(height: 8),
-                Text(
-                  "Omar Refaat",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    currentUser != null
+                        ? "${currentUser.firstName} ${currentUser.lastName}"
+                        : "Name",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                Text(
-                  "Backend Intern @ Lab Digital Systems",
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
             ),
           ),
-          ListTile(
-            title: Text(
-              "Profile viewers",
-              style: TextStyle(color: Colors.white),
+
+          /// Bio and location
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  currentUser?.bio ??
+                      "Senior 1 Biomedical and healthcare Data Engineering Student @ Cairo University",
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                  maxLines: 3,
+                ),
+                SizedBox(height: 4),
+                Text(
+                  currentUser?.location ?? "Cairo, Cairo, Egypt",
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+              ],
             ),
-            onTap: () {},
           ),
-          ListTile(
-            title: Text(
-              "Post impressions",
-              style: TextStyle(color: Colors.white),
+
+          /// Career Center
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+            child: Row(
+              children: [
+                Image.asset(
+                  'assets/images/aman_logo.jpg',
+                  width: 24,
+                  height: 24,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  currentUser?.lastJobTitle ?? "Career Center",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-            onTap: () {},
           ),
-          Divider(color: Colors.grey),
-          ListTile(
-            title: Text("Puzzle games", style: TextStyle(color: Colors.white)),
-            onTap: () {},
-          ),
-          ListTile(
-            title: Text("Saved posts", style: TextStyle(color: Colors.white)),
-            onTap: () {},
-          ),
-          ListTile(
-            title: Text("Groups", style: TextStyle(color: Colors.white)),
-            onTap: () {},
-          ),
-          Divider(color: Colors.grey),
-          ListTile(
-            leading: Icon(Icons.star, color: Colors.amber),
-            title: Text(
-              "Try Premium for EGP0",
-              style: TextStyle(color: Colors.white),
+
+          SizedBox(height: 12),
+          Divider(color: Colors.grey.shade700),
+
+          /// View counts
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              children: [
+                _buildStatRow("27", "profile viewers"),
+                SizedBox(height: 8),
+                _buildStatRow("3", "post impressions"),
+              ],
             ),
-            onTap: () {},
           ),
+
+          SizedBox(height: 12),
+          Divider(color: Colors.grey.shade700),
+
+          /// Menu Items
+          _buildMenuItem("Puzzle games"),
+          _buildMenuItem("Saved posts"),
+          _buildMenuItem("Groups"),
+
+          SizedBox(height: 12),
+          Divider(color: Colors.grey.shade700),
+
+          /// Premium Promo
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Color(0xFF8B5700), // Golden brown
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Stack(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "4x",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        "Premium members get 4x more profile views on average.",
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        "🔶 Try Premium for EGP0",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Icon(Icons.close, color: Colors.white, size: 20),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          Spacer(),
+
+          /// Settings
           ListTile(
             leading: Icon(Icons.settings, color: Colors.white),
-            title: Text("Settings", style: TextStyle(color: Colors.white)),
+            title: Text(
+              "Settings",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+                fontSize: 16,
+              ),
+            ),
             onTap: () {},
           ),
+
+          SizedBox(height: 16),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatRow(String number, String label) {
+    return Row(
+      children: [
+        Text(number, style: TextStyle(color: Colors.blue, fontSize: 14)),
+        SizedBox(width: 4),
+        Text(label, style: TextStyle(color: Colors.white, fontSize: 14)),
+      ],
+    );
+  }
+
+  Widget _buildMenuItem(String title) {
+    return ListTile(
+      title: Text(
+        title,
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+      ),
+      onTap: () {},
     );
   }
 }

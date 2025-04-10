@@ -1,4 +1,5 @@
 class UserModel {
+  final String id;
   final String firstName;
   final String lastName;
   final String email;
@@ -8,24 +9,18 @@ class UserModel {
   final String bio;
   final String location;
   final String lastJobTitle;
+  final String industry;
+  final String mainEducation;
+  final String profilePrivacySettings;
   final List<WorkExperience> workExperience;
   final List<Skill> skills;
   final List<Education> education;
-  final String profilePrivacySettings;
-  final String connectionRequestPrivacySetting;
-  final List<String> following;
-  final List<String> followers;
+  final List<FollowEntity> following;
+  final List<FollowEntity> followers;
   final List<String> connectionList;
-  final List<String> blockedUsers;
-  final List<String> profileViews;
-  final List<String> savedPosts;
-  final List<String> savedJobs;
-  final List<AppliedJob> appliedJobs;
-  final List<String> jobListings;
-  final String defaultMode;
-  final bool isActive;
 
   UserModel({
+    required this.id,
     required this.firstName,
     required this.lastName,
     required this.email,
@@ -35,35 +30,34 @@ class UserModel {
     this.bio = "",
     this.location = "Unknown",
     this.lastJobTitle = "",
+    this.industry = "Unknown",
+    this.mainEducation = "Unknown",
+    this.profilePrivacySettings = "public",
     this.workExperience = const [],
     this.skills = const [],
     this.education = const [],
-    this.profilePrivacySettings = "public",
-    this.connectionRequestPrivacySetting = "everyone",
     this.following = const [],
     this.followers = const [],
     this.connectionList = const [],
-    this.blockedUsers = const [],
-    this.profileViews = const [],
-    this.savedPosts = const [],
-    this.savedJobs = const [],
-    this.appliedJobs = const [],
-    this.jobListings = const [],
-    this.defaultMode = "light",
-    this.isActive = true,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
+      id: json['_id'] ?? "Unknown",
       firstName: json['firstName'] ?? "Unknown",
       lastName: json['lastName'] ?? "Unknown",
       email: json['email'] ?? "Unknown",
-      profilePicture: "assets/images/default_profile_photo.png",
-      coverPicture: "assets/images/default_cover_photo.jpeg",
+      profilePicture:
+          json['profilePicture'] ?? "assets/images/default_profile_photo.png",
+      coverPicture:
+          json['coverPicture'] ?? "assets/images/default_cover_photo.jpeg",
       resume: json['resume'] ?? "",
-      bio: json['bio'] ?? "",
+      bio: json['about']["description"] ?? "",
       location: json['location'] ?? "Unknown",
       lastJobTitle: json['lastJobTitle'] ?? "",
+      industry: json['industry'] ?? "Unknown",
+      mainEducation: json['mainEducation'] ?? "Unknown",
+      profilePrivacySettings: json['profilePrivacySettings'] ?? "public",
       workExperience:
           (json['workExperience'] as List?)
               ?.map((e) => WorkExperience.fromJson(e))
@@ -77,24 +71,17 @@ class UserModel {
               ?.map((e) => Education.fromJson(e))
               .toList() ??
           [],
-      profilePrivacySettings: json['profilePrivacySettings'] ?? "public",
-      connectionRequestPrivacySetting:
-          json['connectionRequestPrivacySetting'] ?? "everyone",
-      following: List<String>.from(json['following'] ?? []),
-      followers: List<String>.from(json['followers'] ?? []),
-      connectionList: List<String>.from(json['connectionList'] ?? []),
-      blockedUsers: List<String>.from(json['blockedUsers'] ?? []),
-      profileViews: List<String>.from(json['profileViews'] ?? []),
-      savedPosts: List<String>.from(json['savedPosts'] ?? []),
-      savedJobs: List<String>.from(json['savedJobs'] ?? []),
-      appliedJobs:
-          (json['appliedJobs'] as List?)
-              ?.map((e) => AppliedJob.fromJson(e))
+      following:
+          (json['following'] as List?)
+              ?.map((e) => FollowEntity.fromJson(e))
               .toList() ??
           [],
-      jobListings: List<String>.from(json['jobListings'] ?? []),
-      defaultMode: json['defaultMode'] ?? "light",
-      isActive: json['isActive'] ?? true,
+      followers:
+          (json['followers'] as List?)
+              ?.map((e) => FollowEntity.fromJson(e))
+              .toList() ??
+          [],
+      connectionList: List<String>.from(json['connectionList'] ?? []),
     );
   }
 }
@@ -102,56 +89,50 @@ class UserModel {
 class WorkExperience {
   final String jobTitle;
   final String companyName;
-  final String from;
-  final String to;
+  final String fromDate;
+  final String toDate;
   final String employmentType;
   final String location;
   final String locationType;
   final String description;
-  final String jobSource;
   final List<String> skills;
-  final String media;
 
   WorkExperience({
     required this.jobTitle,
     required this.companyName,
-    required this.from,
-    required this.to,
+    required this.fromDate,
+    required this.toDate,
     required this.employmentType,
     required this.location,
     required this.locationType,
     required this.description,
-    required this.jobSource,
     required this.skills,
-    required this.media,
   });
 
   factory WorkExperience.fromJson(Map<String, dynamic> json) {
     return WorkExperience(
       jobTitle: json['jobTitle'] ?? "Unknown",
       companyName: json['companyName'] ?? "Unknown",
-      from: json['from'] ?? "",
-      to: json['to'] ?? "",
-      employmentType: json['employmentType'] ?? "",
+      fromDate: json['fromDate'] ?? "",
+      toDate: json['toDate'] ?? "",
+      employmentType: json['employmentType'] ?? "Unknown",
       location: json['location'] ?? "Unknown",
-      locationType: json['locationType'] ?? "",
+      locationType: json['locationType'] ?? "Unknown",
       description: json['description'] ?? "",
-      jobSource: json['jobSource'] ?? "",
       skills: List<String>.from(json['skills'] ?? []),
-      media: json['media'] ?? "",
     );
   }
 }
 
 class Skill {
-  final String name;
+  final String skillName;
   final List<String> endorsements;
 
-  Skill({required this.name, required this.endorsements});
+  Skill({required this.skillName, required this.endorsements});
 
   factory Skill.fromJson(Map<String, dynamic> json) {
     return Skill(
-      name: json['name'] ?? "Unknown",
+      skillName: json['skillName'] ?? "Unknown",
       endorsements: List<String>.from(json['endorsements'] ?? []),
     );
   }
@@ -164,10 +145,8 @@ class Education {
   final String startDate;
   final String endDate;
   final String grade;
-  final String activitiesAndSocieties;
   final String description;
   final List<String> skills;
-  final String media;
 
   Education({
     required this.school,
@@ -176,10 +155,8 @@ class Education {
     required this.startDate,
     required this.endDate,
     required this.grade,
-    required this.activitiesAndSocieties,
     required this.description,
     required this.skills,
-    required this.media,
   });
 
   factory Education.fromJson(Map<String, dynamic> json) {
@@ -189,25 +166,29 @@ class Education {
       fieldOfStudy: json['fieldOfStudy'] ?? "Unknown",
       startDate: json['startDate'] ?? "",
       endDate: json['endDate'] ?? "",
-      grade: json['grade'] ?? "",
-      activitiesAndSocieties: json['activitiesAndSocieties'] ?? "",
+      grade: json['grade'] ?? "Unknown",
       description: json['description'] ?? "",
       skills: List<String>.from(json['skills'] ?? []),
-      media: json['media'] ?? "",
     );
   }
 }
 
-class AppliedJob {
-  final String jobId;
-  final String status;
+class FollowEntity {
+  final String entity;
+  final String entityType;
+  final String followedAt;
 
-  AppliedJob({required this.jobId, required this.status});
+  FollowEntity({
+    required this.entity,
+    required this.entityType,
+    required this.followedAt,
+  });
 
-  factory AppliedJob.fromJson(Map<String, dynamic> json) {
-    return AppliedJob(
-      jobId: json['jobId'] ?? "Unknown",
-      status: json['status'] ?? "pending",
+  factory FollowEntity.fromJson(Map<String, dynamic> json) {
+    return FollowEntity(
+      entity: json['entity'] ?? "Unknown",
+      entityType: json['entityType'] ?? "Unknown",
+      followedAt: json['followedAt'] ?? "",
     );
   }
 }

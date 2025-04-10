@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart';
 import 'package:lockedin/core/services/token_services.dart';
 import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/features/profile/state/user_state.dart';
@@ -31,7 +32,9 @@ class _MainPageState extends ConsumerState<MainPage> {
   }
 
   Future<void> _checkAuthentication() async {
-    if (await TokenService.hasToken() == false) {
+    // TokenService.deleteCookie();
+    // print("Checking authentication... ${await TokenService.hasCookie()}");
+    if (await TokenService.hasCookie() == false) {
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -64,10 +67,7 @@ class _MainPageState extends ConsumerState<MainPage> {
         leftIcon: CircleAvatar(
           radius: 20,
           backgroundColor: Colors.transparent,
-          backgroundImage:
-              currentUser?.profilePicture.isNotEmpty == true
-                  ? AssetImage(currentUser!.profilePicture)
-                  : AssetImage('assets/images/default_profile_photo.png'),
+          backgroundImage: NetworkImage(currentUser!.profilePicture),
         ),
         leftOnPress: () {
           _scaffoldKey.currentState?.openDrawer();

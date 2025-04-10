@@ -43,7 +43,7 @@ class ProfilePage extends ConsumerWidget {
                           width: double.infinity,
                           decoration: BoxDecoration(
                             image: DecorationImage(
-                              image: AssetImage(user.coverPicture),
+                              image: NetworkImage(user.coverPicture),
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -84,7 +84,7 @@ class ProfilePage extends ConsumerWidget {
                               },
                               child: CircleAvatar(
                                 radius: 40,
-                                backgroundImage: AssetImage(
+                                backgroundImage: NetworkImage(
                                   user.profilePicture,
                                 ),
                               ),
