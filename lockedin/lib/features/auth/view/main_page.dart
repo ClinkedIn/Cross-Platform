@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart';
 import 'package:lockedin/core/services/token_services.dart';
 import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/features/profile/state/user_state.dart';
@@ -27,31 +26,40 @@ class _MainPageState extends ConsumerState<MainPage> {
   @override
   void initState() {
     super.initState();
-    _checkAuthentication();
-    _fetchUserProfile();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthentication();
+      _fetchUserProfile();
+    });
   }
 
   Future<void> _checkAuthentication() async {
-    // TokenService.deleteCookie();
-    // print("Checking authentication... ${await TokenService.hasCookie()}");
-    if (await TokenService.hasCookie() == false) {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginPage()),
-        );
-      }
+    if (!mounted) return;
+
+    final hasCookie = await TokenService.hasCookie();
+
+    if (!hasCookie) {
+      if (!mounted) return;
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => LoginPage()));
     }
   }
 
   void _fetchUserProfile() {
-    ref.read(profileViewModelProvider).fetchUser();
+    if (!mounted) return;
+    ref.read(profileViewModelProvider).fetchUser(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(navProvider);
     final currentUser = ref.watch(userProvider);
+
+    // Just in case currentUser is still null
+    if (currentUser == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final List<Widget> pages = [
       HomePage(),
@@ -67,7 +75,7 @@ class _MainPageState extends ConsumerState<MainPage> {
         leftIcon: CircleAvatar(
           radius: 20,
           backgroundColor: Colors.transparent,
-          backgroundImage: NetworkImage(currentUser!.profilePicture),
+          backgroundImage: NetworkImage(currentUser.profilePicture),
         ),
         leftOnPress: () {
           _scaffoldKey.currentState?.openDrawer();

@@ -21,16 +21,36 @@ class RequestService {
     };
   }
 
-  /// Generic GET request with optional headers
+  // /// Generic GET request with optional headers
+  // static Future<http.Response> get(
+  //   String endpoint, {
+  //   Map<String, String>? additionalHeaders,
+  // }) async {
+  //   final String url = '$_baseUrl$endpoint';
+  //   final headers = await _getHeaders(additionalHeaders: additionalHeaders);
+
+  //   try {
+  //     final response = await _client.get(Uri.parse(url), headers: headers);
+  //     _storeCookiesFromResponse(response);
+  //     return response;
+  //   } catch (e) {
+  //     throw Exception('GET request failed: $e');
+  //   }
+  // }
+  /// Generic GET request with optional headers and query parameters
   static Future<http.Response> get(
     String endpoint, {
     Map<String, String>? additionalHeaders,
+    Map<String, String>? queryParameters,
   }) async {
-    final String url = '$_baseUrl$endpoint';
+    final Uri uri = Uri.parse(
+      '$_baseUrl$endpoint',
+    ).replace(queryParameters: queryParameters);
+
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
 
     try {
-      final response = await _client.get(Uri.parse(url), headers: headers);
+      final response = await _client.get(uri, headers: headers);
       _storeCookiesFromResponse(response);
       return response;
     } catch (e) {
