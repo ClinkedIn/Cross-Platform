@@ -45,7 +45,7 @@ class PostViewModel extends StateNotifier<PostState> {
   }
 
   /// Submit the post
-// Future<bool> submitPost() async {
+ Future<bool> submitPost() async {
 //   state = state.copyWith(isSubmitting: true);
 //     try {
 //       // Include visibility in the parameters
@@ -65,6 +65,8 @@ class PostViewModel extends StateNotifier<PostState> {
 //       return false;
 //     }
 //   }
+    return false; // Ensure a boolean value is always returned
+  }
 
   /// Clear any error
   void clearError() {
