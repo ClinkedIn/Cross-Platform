@@ -27,7 +27,7 @@ class LoginPage extends ConsumerWidget {
           // Success case: Navigate to MainPage
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => JobsPage()),
+            MaterialPageRoute(builder: (context) => MainPage()),
           );
         },
         error: (error, stackTrace) {

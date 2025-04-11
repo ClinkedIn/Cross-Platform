@@ -4,7 +4,7 @@ import 'package:lockedin/core/services/token_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
 
 class RequestService {
-  static const String _baseUrl = Constants.baseUrl;
+  static final String _baseUrl = Constants.baseUrl;
   static final http.Client _client = http.Client();
 
   /// Prepares request headers, including stored cookies if available.

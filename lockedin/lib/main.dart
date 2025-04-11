@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/core/utils/constants.dart';
 import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/features/auth/view/main_page.dart';
 import 'package:sizer/sizer.dart';
@@ -10,6 +11,8 @@ import 'package:lockedin/features/jobs/view/jobs_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Initialize the base URL before the app starts
+  await Constants.initializeBaseUrl();
   await Firebase.initializeApp();
   runApp(
     ProviderScope(
