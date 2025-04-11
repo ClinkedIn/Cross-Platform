@@ -52,9 +52,7 @@ class EditProfilePhoto extends ConsumerWidget {
                       padding: const EdgeInsets.all(4),
                       child: CircleAvatar(
                         radius: 120,
-                        backgroundImage: const AssetImage(
-                          'assets/images/default_profile_photo.png',
-                        ),
+                        backgroundImage: NetworkImage(user.profilePicture),
                       ),
                     ),
                     const SizedBox(height: 80),
