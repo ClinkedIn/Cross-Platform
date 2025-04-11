@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/profile/state/user_state.dart';
-import 'package:lockedin/features/profile/view/profile_page.dart';
 
 class SidebarDrawer extends ConsumerWidget {
   const SidebarDrawer({Key? key}) : super(key: key);
@@ -21,11 +21,7 @@ class SidebarDrawer extends ConsumerWidget {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap:
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => ProfilePage()),
-                      ),
+                  onTap: () => context.push("/profile"),
                   child: CircleAvatar(
                     radius: 28,
                     backgroundImage:

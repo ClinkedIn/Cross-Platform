@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/auth/view/main_page.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/auth/viewmodel/login_in_viewmodel.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
 import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
-import 'package:lockedin/features/jobs/view/jobs_page.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
@@ -21,26 +20,6 @@ class LoginPage extends ConsumerWidget {
     final isDarkMode = theme.brightness == Brightness.dark;
 
     // Listen to login state
-    ref.listen<AsyncValue<void>>(loginViewModelProvider, (previous, next) {
-      next.when(
-        data: (_) {
-          // Success case: Navigate to MainPage
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => JobsPage()),
-          );
-        },
-        error: (error, stackTrace) {
-          // Error case: Show error message
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: $error')));
-        },
-        loading: () {
-          // Optional: Show loading indicator (handled below if needed)
-        },
-      );
-    });
 
     return Scaffold(
       appBar: LogoAppbar(),
@@ -62,10 +41,7 @@ class LoginPage extends ConsumerWidget {
 
                 TextButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => SignUpView()),
-                    );
+                    context.push('/sign-up');
                   },
                   style: AppButtonStyles.textButton,
                   child: Text("Join lockedIn"),
@@ -102,15 +78,7 @@ class LoginPage extends ConsumerWidget {
             const SizedBox(height: 15),
 
             TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ForgotPasswordScreen(),
-                  ),
-                );
-              },
-
+              onPressed: () => context.push('/forget-password'),
               style: AppButtonStyles.textButton,
               child: Text("Forgot password?"),
             ),
@@ -119,10 +87,17 @@ class LoginPage extends ConsumerWidget {
 
             ElevatedButton(
               style: AppButtonStyles.elevatedButton,
-              onPressed: () {
-                ref
+              onPressed: () async {
+                bool isLoggedIn = await ref
                     .read(loginViewModelProvider.notifier)
-                    .login(_emailController.text, _passwordController.text);
+                    .login(
+                      _emailController.text,
+                      _passwordController.text,
+                      context,
+                    );
+                if (isLoggedIn) {
+                  context.go('/home');
+                }
               },
               child: const Text("Sign in"),
             ),
