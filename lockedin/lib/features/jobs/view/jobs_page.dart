@@ -16,112 +16,111 @@ class JobsPage extends ConsumerWidget {
     final jobViewModel = ref.watch(JobViewModel.provider);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
+        backgroundColor: AppColors.primary,
+        elevation: 4,
+        titleSpacing: 16,
+      ),
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Locked ",
-              style: AppTextStyles.headline1.copyWith(
+              'Find your next opportunity',
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w600,
                 color: AppColors.primary,
-                fontSize: 2.h,
               ),
             ),
-            Image.network(
-              "https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png",
-              height: 2.h,
+            SizedBox(height: 1.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 2.h),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade300,
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  SearchBarWidget(
+                    hintText: 'Search for jobs...',
+                    onChanged: (value) {
+                      jobViewModel.updateSearchQuery(value);
+                    },
+                  ),
+                  SizedBox(height: 2.h),
+                  JobFiltersWidget(
+                    locations:
+                        jobViewModel.jobs
+                            .map((job) => job.location)
+                            .toSet()
+                            .toList(),
+                    industries:
+                        jobViewModel.jobs
+                            .map((job) => job.industry)
+                            .whereType<String>()
+                            .toSet()
+                            .toList(),
+                    companies:
+                        jobViewModel.jobs
+                            .map((job) => job.company)
+                            .toSet()
+                            .toList(),
+                    experienceLevels: ['Entry-Level', 'Mid-Level', 'Senior'],
+                    selectedLocation: jobViewModel.selectedLocation,
+                    selectedIndustry: jobViewModel.selectedIndustry,
+                    selectedCompany: jobViewModel.selectedCompanyId,
+                    selectedExperienceLevel: jobViewModel.minExperience,
+                    onFiltersChanged: (
+                      location,
+                      industry,
+                      company,
+                      experience,
+                    ) {
+                      jobViewModel.updateFilters(
+                        location: location,
+                        industry: industry,
+                        companyId: company,
+                        minExperience: experience,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 2.h),
+            Expanded(
+              child:
+                  jobViewModel.jobs.isNotEmpty
+                      ? ListView.separated(
+                        itemCount: jobViewModel.jobs.length,
+                        separatorBuilder: (_, __) => SizedBox(height: 2.h),
+                        itemBuilder: (context, index) {
+                          final job = jobViewModel.jobs[index];
+                          return JobCardWidget(job: job);
+                        },
+                      )
+                      : Center(
+                        child: Text(
+                          'No jobs found.',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
             ),
           ],
         ),
-        centerTitle: false,
-        actions: [
-          TextButton(
-            onPressed: () {
-              // TODO: Navigate to Preferences
-            },
-            child: const Text(
-              'Preferences',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              // TODO: Navigate to My jobs
-            },
-            child: const Text('My jobs', style: TextStyle(color: Colors.white)),
-          ),
-          TextButton(
-            onPressed: () {
-              // TODO: Post a free job
-            },
-            child: const Text(
-              'Post a free job',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start, // Align to the left
-              children: [
-                Text(
-                  'Search for jobs',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SearchBarWidget(
-                  hintText: 'Search for jobs...',
-                  onChanged: (value) {
-                    jobViewModel.updateSearchQuery(value);
-                  },
-                ),
-                const SizedBox(height: 10),
-                JobFiltersWidget(
-                  experienceLevels: ['Entry-Level', 'Mid-Level', 'Senior'],
-                  companies:
-                      jobViewModel.jobs
-                          .map((job) => job.company)
-                          .toSet()
-                          .toList(),
-                  salaryRanges:
-                      jobViewModel.jobs
-                          .map((job) => job.salaryRange)
-                          .toSet()
-                          .toList(),
-                  selectedExperienceLevel: jobViewModel.selectedExperienceLevel,
-                  selectedCompany: jobViewModel.selectedCompany,
-                  selectedSalaryRange: jobViewModel.selectedSalaryRange,
-                  onFiltersChanged: (experience, company, salary) {
-                    jobViewModel.updateFilters(
-                      experienceLevel: experience,
-                      company: company,
-                      salaryRange: salary,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          if (jobViewModel.filteredJobs.isNotEmpty)
-            Expanded(
-              child: ListView.builder(
-                itemCount: jobViewModel.filteredJobs.length,
-                itemBuilder: (context, index) {
-                  final job = jobViewModel.filteredJobs[index];
-                  return JobCardWidget(job: job);
-                },
-              ),
-            )
-          else
-            const Expanded(child: Center(child: Text('No jobs found.'))),
-        ],
       ),
     );
   }
