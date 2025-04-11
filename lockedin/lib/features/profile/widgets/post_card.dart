@@ -261,9 +261,6 @@ class PostCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                  
-                 
-                  
                   if (post.reposts > 0) ...[
                     Text(
                       '${post.reposts} reposts',
@@ -291,30 +288,31 @@ class PostCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Like button
-                    TextButton(
-                      onPressed: onLike,
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(horizontal: 2.w),
-                        minimumSize: Size(0, 4.h),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.thumb_up_alt_outlined,
-                            size: 2.5.h,
-                            color: theme.iconTheme.color,
-                          ),
-                          SizedBox(height: 0.3.h),
-                          Text(
-                            'Like',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontSize: 15.sp,
-                            ),
-                          ),
-                        ],
-                      ),
+                  TextButton(
+                    onPressed: onLike,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(horizontal: 2.w),
+                      minimumSize: Size(0, 4.h),
                     ),
-
+                    child: Column(
+                      children: [
+                        Icon(
+                          // Use == true to safely handle potential null values
+                          post.isLiked == true ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
+                          size: 2.5.h,
+                          color: post.isLiked == true ? AppColors.primary : theme.iconTheme.color,
+                        ),
+                        SizedBox(height: 0.3.h),
+                        Text(
+                          'Like',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: 15.sp,
+                            color: post.isLiked == true ? AppColors.primary : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                     // Comment button
                     TextButton(
                       onPressed: onComment,

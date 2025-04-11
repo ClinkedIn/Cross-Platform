@@ -13,21 +13,8 @@ class HomePage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Feed',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            fontSize: 18.sp,
-          ),
-        ),
         elevation: 0,
         backgroundColor: theme.scaffoldBackgroundColor,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () => ref.read(homeViewModelProvider.notifier).refreshFeed(),
-          ),
-        ],
       ),
       body: homeState.isLoading 
           ? Center(child: CircularProgressIndicator(color: AppColors.primary))
