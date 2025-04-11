@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/verification_code_page.dart';
+import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/features/auth/viewmodel/forgot_password_viewmodel.dart';
 import 'package:lockedin/shared/widgets/logo_appbar.dart';
 import 'package:sizer/sizer.dart';
@@ -90,7 +91,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => VerificationCodeScreen(),
+                                    builder: (context) => LoginPage(),
                                   ),
                                 );
                               }

@@ -8,10 +8,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   AuthRepositoryImpl(this._authService);
 
-  @override
-  Future<void> login(String email, String password) async {
-    await _authService.login(email, password);
-  }
+
 
   @override
   Future<void> forgotPassword(String emailOrPhone) async {
@@ -22,12 +19,6 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  @override
-  Future<void> resetPassword(String newPassword, bool requireSignIn) async {
-    try {
-      await _authService.resetPassword(newPassword, requireSignIn);
-    } catch (e) {
-      throw Exception("Failed to reset password: ${e.toString()}");
-    }
-  }
+ 
+  
 }
