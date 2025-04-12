@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:lockedin/core/services/token_services.dart';
 import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/features/profile/repository/profile/profile_api.dart';
@@ -28,6 +30,16 @@ class ProfileViewModel {
         }
       }
     }
+  }
+
+  Future<File?> pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: source);
+
+    if (pickedFile != null) {
+      return File(pickedFile.path);
+    }
+    return null;
   }
 }
 

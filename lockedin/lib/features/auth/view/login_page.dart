@@ -78,7 +78,12 @@ class LoginPage extends ConsumerWidget {
             const SizedBox(height: 15),
 
             TextButton(
-              onPressed: () => context.push('/forget-password'),
+              onPressed: () {
+                print("Navigating to forgot password"); // Debug print
+                context.push(
+                  '/forgot-password',
+                ); // Make sure this matches your route definition
+              },
               style: AppButtonStyles.textButton,
               child: Text("Forgot password?"),
             ),

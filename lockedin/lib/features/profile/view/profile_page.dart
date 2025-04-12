@@ -81,9 +81,15 @@ class ProfilePage extends ConsumerWidget {
                               },
                               child: CircleAvatar(
                                 radius: 40,
-                                backgroundImage: NetworkImage(
-                                  user.profilePicture,
-                                ),
+                                backgroundImage:
+                                    user != null &&
+                                            user.profilePicture != null &&
+                                            user.profilePicture.isNotEmpty
+                                        ? NetworkImage(user.profilePicture)
+                                        : const AssetImage(
+                                              'assets/images/default_profile_photo.png',
+                                            )
+                                            as ImageProvider,
                               ),
                             ),
                           ),

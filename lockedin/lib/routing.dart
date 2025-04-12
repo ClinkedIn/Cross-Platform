@@ -13,9 +13,9 @@ import 'package:lockedin/features/networks/view/network_page.dart';
 import 'package:lockedin/features/notifications/view/notifications_page.dart';
 import 'package:lockedin/features/post/view/post_page.dart';
 import 'package:lockedin/features/profile/state/user_state.dart';
+import 'package:lockedin/features/profile/view/add_education_page.dart';
 import 'package:lockedin/features/profile/view/add_section_window.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
-import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
 import 'package:lockedin/shared/widgets/side_bar.dart';
 import 'package:lockedin/shared/widgets/upper_navbar.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
@@ -29,29 +29,28 @@ final scaffoldKeyProvider = Provider((ref) => GlobalKey<ScaffoldState>());
 final goRouterProvider = Provider<GoRouter>((ref) {
   final globalKey = ref.watch(scaffoldKeyProvider);
   final currentUser = ref.watch(userProvider);
-  final userDataLoaded = ref.watch(userDataLoadedProvider);
 
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) async {
       // Define public routes that don't require authentication
-      final publicRoutes = ['/login', '/forget-password', '/sign-up'];
+      final publicRoutes = ['/login', '/forgot-password', '/sign-up'];
 
       // Get authentication status
       final isAuthenticated = await TokenService.hasCookie();
 
       // Don't redirect when navigating to the root page, let MainPage handle it
-      if (state.path == '/') {
+      if (state.fullPath == '/') {
         return null;
       }
 
       // Going to a public route while authenticated
-      if (isAuthenticated && publicRoutes.contains(state.path)) {
+      if (isAuthenticated && publicRoutes.contains(state.fullPath)) {
         return '/home';
       }
 
       // Going to a protected route while not authenticated
-      if (!isAuthenticated && !publicRoutes.contains(state.path)) {
+      if (!isAuthenticated && !publicRoutes.contains(state.fullPath)) {
         return '/login';
       }
 
@@ -77,14 +76,24 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => LoginPage(),
       ),
       GoRoute(
-        path: '/forget-password',
-        name: 'forget-password',
+        path: '/forgot-password',
+        name: 'forgot-password',
         builder: (context, state) => ForgotPasswordScreen(),
       ),
       GoRoute(
         path: "/sign-up",
         name: "sign-up",
         builder: (context, state) => SignUpView(),
+      ),
+      GoRoute(
+        path: "/add-section",
+        name: "add-section",
+        builder: (context, state) => AddToProfilePage(),
+      ),
+      GoRoute(
+        path: "/add-education",
+        name: "add-education",
+        builder: (context, state) => AddEducationPage(),
       ),
 
       StatefulShellRoute.indexedStack(
