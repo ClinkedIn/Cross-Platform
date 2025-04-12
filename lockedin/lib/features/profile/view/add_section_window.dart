@@ -6,20 +6,14 @@ class AddToProfilePage extends ConsumerWidget {
   final List<String> coreItems = [
     "education",
     "position",
-    "services",
-    "career break",
+    // "services",
+    // "career break",
     "skills",
   ];
 
-  final List<String> recommendedItems = [
-    "Example recommended item 1",
-    "Example recommended item 2",
-  ];
+  final List<String> recommendedItems = ["item 1", "item 2"];
 
-  final List<String> additionalItems = [
-    "Example additional item 1",
-    "Example additional item 2",
-  ];
+  final List<String> additionalItems = ["item 1", "item 2"];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

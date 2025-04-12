@@ -26,7 +26,6 @@ class SidebarDrawer extends ConsumerWidget {
                     radius: 28,
                     backgroundImage:
                         currentUser != null &&
-                                currentUser.profilePicture != null &&
                                 currentUser.profilePicture.isNotEmpty
                             ? NetworkImage(currentUser.profilePicture)
                             : const AssetImage(

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/features/auth/view/change_password_page.dart';
 
 /// Provider for the [AuthService], responsible for making API calls.
@@ -12,10 +13,12 @@ final changePasswordViewModelProvider =
       final authService = ref.read(authServiceProvider);
       return ChangePasswordViewModel(authService, ref);
     });
+
 /// ViewModel class that manages the logic for changing a user's password.
 class ChangePasswordViewModel extends StateNotifier<AsyncValue<bool>> {
   final AuthService authService;
   final Ref ref;
+
   /// Initializes the state as not loading and not successful by default.
   ChangePasswordViewModel(this.authService, this.ref)
     : super(const AsyncValue.data(false));
@@ -51,6 +54,7 @@ class ChangePasswordViewModel extends StateNotifier<AsyncValue<bool>> {
     }
   }
 }
+
 /// Service responsible for sending the change password request to the backend.
 class AuthService {
   final String _baseUrl =
@@ -64,10 +68,11 @@ class AuthService {
   /// Returns `true` if the status code is 200, `false` otherwise.
   Future<bool> changePasswordRequest(ChangePasswordRequest request) async {
     try {
-      final response = await client.patch(
-        Uri.parse("$_baseUrl/users/update-password"),
-        body: jsonEncode(request.toJson()),
+      final response = await RequestService.patch(
+        "/user/update-password",
+        body: request.toJson(),
       );
+
       if (response.statusCode == 200) {
         print("✅ Success: ${response.body}");
         return true; // Password changed successfully
@@ -81,6 +86,7 @@ class AuthService {
     }
   }
 }
+
 /// Model representing the request to change a user's password.
 class ChangePasswordRequest {
   final String newPassword;
@@ -92,6 +98,7 @@ class ChangePasswordRequest {
     required this.currentPassword,
     //this.requireSignIn = true,
   });
+
   /// Converts the request to JSON format for the HTTP request body.
   Map<String, dynamic> toJson() {
     return {

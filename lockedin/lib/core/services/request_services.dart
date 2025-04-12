@@ -110,6 +110,28 @@ class RequestService {
     }
   }
 
+  // PATCH request
+  static Future<http.Response> patch(
+    String endpoint, {
+    required Map<String, dynamic> body,
+    Map<String, String>? additionalHeaders,
+  }) async {
+    final String url = '$_baseUrl$endpoint';
+    final headers = await _getHeaders(additionalHeaders: additionalHeaders);
+
+    try {
+      final response = await _client.patch(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(body),
+      );
+      _storeCookiesFromResponse(response);
+      return response;
+    } catch (e) {
+      throw Exception('PATCH request failed: $e');
+    }
+  }
+
   /// PUT request
   static Future<http.Response> put(
     String endpoint, {

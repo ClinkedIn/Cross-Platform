@@ -43,4 +43,21 @@ class Position {
       if (media != null) 'media': media,
     };
   }
+
+  factory Position.fromJson(Map<String, dynamic> json) {
+    return Position(
+      jobTitle: json['jobTitle'] ?? '',
+      companyName: json['companyName'] ?? '',
+      fromDate: json['fromDate'],
+      toDate: json['toDate'],
+      currentlyWorking: json['currentlyWorking'] ?? false,
+      employmentType: json['employmentType'],
+      location: json['location'],
+      locationType: json['locationType'],
+      description: json['description'],
+      foundVia: json['foundVia'],
+      skills: json['skills'] != null ? List<String>.from(json['skills']) : null,
+      media: json['media'],
+    );
+  }
 }

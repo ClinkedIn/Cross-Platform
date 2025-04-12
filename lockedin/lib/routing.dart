@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/core/services/token_services.dart';
+import 'package:lockedin/features/auth/view/change_password_page.dart';
+import 'package:lockedin/features/auth/view/edit_email_view.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
 import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/features/auth/view/main_page.dart';
@@ -16,7 +18,9 @@ import 'package:lockedin/features/profile/state/user_state.dart';
 import 'package:lockedin/features/profile/view/add_education_page.dart';
 import 'package:lockedin/features/profile/view/add_position_page.dart';
 import 'package:lockedin/features/profile/view/add_section_window.dart';
+import 'package:lockedin/features/profile/view/add_skill_page.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
+import 'package:lockedin/features/profile/view/setting_page.dart';
 import 'package:lockedin/shared/widgets/side_bar.dart';
 import 'package:lockedin/shared/widgets/upper_navbar.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
@@ -100,6 +104,26 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: "/add-position",
         name: "add-position",
         builder: (context, state) => AddPositionPage(),
+      ),
+      GoRoute(
+        path: "/add-skills",
+        name: "add-skills",
+        builder: (context, state) => AddSkillPage(),
+      ),
+      GoRoute(
+        path: "/settings",
+        name: "settings",
+        builder: (context, state) => SettingsPage(),
+      ),
+      GoRoute(
+        path: "/update-email",
+        name: "update-email",
+        builder: (context, state) => EditEmailView(),
+      ),
+      GoRoute(
+        path: "/update-password",
+        name: "update-password",
+        builder: (context, state) => ChangePasswordPage(),
       ),
 
       StatefulShellRoute.indexedStack(
