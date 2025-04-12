@@ -124,37 +124,39 @@ class PostCard extends StatelessWidget {
                           break;
                       }
                     },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'save',
-                        height: 5.h,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.bookmark_border,
-                              size: 2.h,
-                              color: theme.iconTheme.color,
+                    itemBuilder:
+                        (context) => [
+                          PopupMenuItem(
+                            value: 'save',
+                            height: 5.h,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.bookmark_border,
+                                  size: 2.h,
+                                  color: theme.iconTheme.color,
+                                ),
+                                SizedBox(width: 2.w),
+                                Text(
+                                  'Save for later',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontSize: 15.sp,
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(width: 2.w),
-                            Text(
-                              'Save for later',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontSize: 15.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'report',
-                        height: 5.h,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.flag_outlined,
-                              size: 2.h,
-                              color: theme.iconTheme.color,
-
+                          ),
+                          PopupMenuItem(
+                            value: 'report',
+                            height: 5.h,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.flag_outlined,
+                                  size: 2.h,
+                                  color: theme.iconTheme.color,
+                                ),
+                              ],
                             ),
                           ),
                           PopupMenuItem(
@@ -304,31 +306,39 @@ class PostCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Like button
-                  TextButton(
-                    onPressed: onLike,
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.symmetric(horizontal: 2.w),
-                      minimumSize: Size(0, 4.h),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          // Use == true to safely handle potential null values
-                          post.isLiked == true ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
-                          size: 2.5.h,
-                          color: post.isLiked == true ? AppColors.primary : theme.iconTheme.color,
-                        ),
-                        SizedBox(height: 0.3.h),
-                        Text(
-                          'Like',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontSize: 15.sp,
-                            color: post.isLiked == true ? AppColors.primary : null,
+                    TextButton(
+                      onPressed: onLike,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 2.w),
+                        minimumSize: Size(0, 4.h),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            // Use == true to safely handle potential null values
+                            post.isLiked == true
+                                ? Icons.thumb_up
+                                : Icons.thumb_up_alt_outlined,
+                            size: 2.5.h,
+                            color:
+                                post.isLiked == true
+                                    ? AppColors.primary
+                                    : theme.iconTheme.color,
                           ),
-                        ),
-                      ],
+                          SizedBox(height: 0.3.h),
+                          Text(
+                            'Like',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontSize: 15.sp,
+                              color:
+                                  post.isLiked == true
+                                      ? AppColors.primary
+                                      : null,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                     // Comment button
                     TextButton(
                       onPressed: onComment,

@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 
 import 'dart:io';
 
-
 import 'package:http/http.dart' as http;
 import 'package:lockedin/core/services/token_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
@@ -28,53 +27,6 @@ class RequestService {
     };
   }
 
-
-  static Future<http.Response> postMultipart(
-    String endpoint,
-    File file, {
-    Map<String, String>? additionalFields,
-    Map<String, String>? additionalHeaders,
-  }) async {
-    final uri = Uri.parse('$_baseUrl$endpoint');
-    final String? storedCookie = await TokenService.getCookie();
-
-    var request = http.MultipartRequest('POST', uri);
-
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'file',
-        file.path,
-        contentType: MediaType('image', 'jpeg'), // or use helper method below
-      ),
-    );
-
-    // Attach additional form fields if any
-    if (additionalFields != null) {
-      request.fields.addAll(additionalFields);
-    }
-
-    // Add stored cookie if exists
-    if (storedCookie != null && storedCookie.isNotEmpty) {
-      request.headers['Cookie'] = storedCookie;
-    }
-
-    // Add additional headers if provided
-    if (additionalHeaders != null) {
-      request.headers.addAll(additionalHeaders);
-    }
-
-    // Important: Do not set 'Content-Type', http.MultipartRequest handles it
-    try {
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-      _storeCookiesFromResponse(response);
-      return response;
-    } catch (e) {
-      throw Exception('Multipart POST failed: $e');
-    }
-  }
-
-
   static Future<http.Response> get(
     String endpoint, {
     Map<String, String>? additionalHeaders,
@@ -84,7 +36,7 @@ class RequestService {
     if (!endpoint.startsWith('/')) {
       endpoint = '/$endpoint';
     }
-    
+
     final Uri uri = Uri.parse(
       '$_baseUrl$endpoint',
     ).replace(queryParameters: queryParameters);
@@ -95,12 +47,12 @@ class RequestService {
     try {
       final response = await _client.get(uri, headers: headers);
       _storeCookiesFromResponse(response);
-      
+
       // Check if we got HTML instead of JSON
       if (_isHtmlResponse(response)) {
         debugPrint('Warning: Received HTML instead of JSON in GET request');
       }
-      
+
       return response;
     } catch (e) {
       debugPrint('GET request failed: $e');
@@ -119,7 +71,7 @@ class RequestService {
       if (!endpoint.startsWith('/')) {
         endpoint = '/$endpoint';
       }
-      
+
       final String url = '$_baseUrl$endpoint';
       final Uri uri = Uri.parse(url);
       final headers = await _getHeaders(additionalHeaders: additionalHeaders);
@@ -135,22 +87,24 @@ class RequestService {
         headers: headers,
         body: jsonBody,
       );
-      
+
       // Debug response information
       debugPrint('POST Response Status: ${response.statusCode}');
       debugPrint('POST Response Headers: ${response.headers}');
-      
+
       // Check if we got HTML instead of JSON
       if (_isHtmlResponse(response)) {
         debugPrint('Warning: Received HTML instead of JSON in POST request');
       }
-      
+
       if (response.body.length < 1000) {
         debugPrint('POST Response Body: ${response.body}');
       } else {
-        debugPrint('POST Response Body (truncated): ${response.body.substring(0, 1000)}...');
+        debugPrint(
+          'POST Response Body (truncated): ${response.body.substring(0, 1000)}...',
+        );
       }
-      
+
       _storeCookiesFromResponse(response);
       return response;
     } catch (e, stackTrace) {
@@ -181,6 +135,7 @@ class RequestService {
       throw Exception('PATCH request failed: $e');
     }
   }
+
   /// POST multipart request with body and optional headers
   static Future<http.Response> postMultipart(
     String endpoint,
@@ -226,6 +181,7 @@ class RequestService {
       throw Exception('Multipart POST failed: $e');
     }
   }
+
   /// PUT request
   static Future<http.Response> put(
     String endpoint, {
@@ -308,10 +264,10 @@ class RequestService {
   static bool _isHtmlResponse(http.Response response) {
     final contentType = response.headers['content-type'] ?? '';
     final body = response.body;
-    
-    return contentType.contains('text/html') || 
-           body.contains('<!DOCTYPE html>') || 
-           body.contains('<html>') ||
-           (body.isNotEmpty && !body.startsWith('{') && !body.startsWith('['));
+
+    return contentType.contains('text/html') ||
+        body.contains('<!DOCTYPE html>') ||
+        body.contains('<html>') ||
+        (body.isNotEmpty && !body.startsWith('{') && !body.startsWith('['));
   }
 }
