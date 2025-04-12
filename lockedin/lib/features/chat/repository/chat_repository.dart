@@ -1,50 +1,50 @@
-// chat_repository.dart
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/chat/model/chat_message_model.dart';
-import 'package:lockedin/features/chat/services/chat_service.dart';
+import 'dart:convert';
+import 'package:lockedin/features/chat/model/chat_model.dart';
+import 'package:lockedin/core/services/request_services.dart';
+import 'package:lockedin/core/utils/constants.dart';
 
-abstract class ChatRepository {
-  Future<List<ChatMessage>> getMessages(String chatId);
-  Future<ChatMessage> sendMessage({
-    required String chatId,
-    required String senderId,
-    required String content,
-  });
-}
-
-class ChatRepositoryImpl implements ChatRepository {
-  final ChatService _service;
-
-  ChatRepositoryImpl(this._service);
-
-  @override
-  Future<List<ChatMessage>> getMessages(String chatId) async {
+/// Repository for handling chat-related API calls
+class ChatRepository {
+  /// Fetches all chats for the current user from the backend
+  Future<List<Chat>> fetchChats() async {
     try {
-      return await _service.fetchMessages(chatId);
+      final response = await RequestService.get(Constants.allChatsEndpoint);
+      
+      if (response.statusCode != 200) {
+        throw Exception("Failed to fetch chats: ${response.statusCode}");
+      }
+      
+      // Parse the response body string to JSON
+      final Map<String, dynamic> jsonData = jsonDecode(response.body);
+      
+      // Check for success
+      if (jsonData['success'] != true) {
+        throw Exception("API returned error status");
+      }
+      
+      // Extract the chats list from the response
+      final List<dynamic> chatData = jsonData['chats'];
+      return chatData.map((chat) => Chat.fromJson(chat)).toList();
     } catch (e) {
-      throw Exception("Failed to load messages: ${e.toString()}");
+      print("Error fetching chats: $e");
+      throw Exception("Failed to load chats. Please try again.");
     }
   }
-
-  @override
-  Future<ChatMessage> sendMessage({
-    required String chatId,
-    required String senderId,
-    required String content,
-  }) async {
+  
+  /// Marks a chat as read in the backend
+  Future<void> markChatAsRead(String chatId) async {
     try {
-      return await _service.sendMessage(
-        chatId: chatId,
-        senderId: senderId,
-        content: content,
+      final response = await RequestService.post(
+        "${Constants.allChatsEndpoint}/$chatId",
+        body: {'read': true}
       );
+      
+      if (response.statusCode != 200) {
+        throw Exception("Failed to mark chat as read: ${response.statusCode}");
+      }
     } catch (e) {
-      throw Exception("Failed to send message: ${e.toString()}");
+      print("Error marking chat as read: $e");
+      throw Exception("Failed to update chat status. Please try again.");
     }
   }
 }
-
-final chatRepositoryProvider = Provider<ChatRepository>((ref) {
-  final chatService = ref.watch(chatServiceProvider);
-  return ChatRepositoryImpl(chatService);
-});

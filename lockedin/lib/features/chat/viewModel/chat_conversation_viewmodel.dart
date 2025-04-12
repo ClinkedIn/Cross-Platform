@@ -154,36 +154,7 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       state = state.copyWith(error: "Failed to send image: ${e.toString()}");
     }
   }
-  
-  Future<void> sendGifAttachment(String gifUrl) async {
-    try {
-      // Implement GIF sending logic
-      final messageContent = "[GIF]";
-      
-      final newMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        senderId: currentUserId,
-        content: messageContent,
-        timestamp: DateTime.now(),
-        attachmentUrl: gifUrl,
-        attachmentType: AttachmentType.gif,
-      );
-
-      state = state.copyWith(
-        messages: [...state.messages, newMessage],
-      );
-      
-      // _sendAttachmentToAPI(newMessage);
-    } catch (e) {
-      state = state.copyWith(error: "Failed to send GIF: ${e.toString()}");
-    }
-  }
-  
-  void addMentionToMessage(String username) {
-    // This could be used to handle mentions from the UI
-    // For example, adding the username to the text being composed
-    // However, this is usually handled directly in the UI
-  }
+    
 }
 
 // Define the provider correctly

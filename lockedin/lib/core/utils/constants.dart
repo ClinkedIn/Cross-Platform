@@ -37,4 +37,5 @@ class Constants {
   static const String logoutEndpoint = '/user/logout';
   static const String feedEndpoint = '/posts';
   static const String forgotPasswordEndpoint = '/user/forgot-password';
+  static const String allChatsEndpoint = '/chats/all-chats';
 }
