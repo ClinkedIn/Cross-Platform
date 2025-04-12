@@ -1,23 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/auth/repository/auth_repository.dart';
-import 'package:lockedin/features/auth/repository/auth_repository_impl.dart';
-import 'package:lockedin/features/auth/services/auth_service.dart';
+import 'package:lockedin/features/auth/repository/forgot_password_repository.dart';
 
-// Define authRepositoryProvider here if not defined in another file
-final authRepositoryProvider = Provider<AuthRepositoryImpl>((ref) {
-  return AuthRepositoryImpl(AuthService());
+// Define the provider for ForgotPasswordRepository
+final forgotPasswordRepositoryProvider = Provider<ForgotPasswordRepository>((ref) {
+  return ForgotPasswordRepository();
 });
 
 class ForgotPasswordViewModel extends StateNotifier<AsyncValue<void>> {
-  final AuthRepository _authRepository;
+  final ForgotPasswordRepository _forgotPasswordRepository;
 
-  ForgotPasswordViewModel(this._authRepository) : super(const AsyncValue.data(null));
+  ForgotPasswordViewModel(this._forgotPasswordRepository) : super(const AsyncValue.data(null));
 
   // Method to send the forgot password request
   Future<void> sendForgotPasswordRequest(String emailOrPhone) async {
     state = const AsyncValue.loading();
     try {
-      await _authRepository.forgotPassword(emailOrPhone);
+      await _forgotPasswordRepository.forgotPassword(emailOrPhone);
       state = const AsyncValue.data(null); // Success
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
@@ -43,6 +41,6 @@ class ForgotPasswordViewModel extends StateNotifier<AsyncValue<void>> {
 
 // Define the Riverpod provider for the ViewModel
 final forgotPasswordProvider = StateNotifierProvider<ForgotPasswordViewModel, AsyncValue<void>>((ref) {
-  final authRepo = ref.watch(authRepositoryProvider);
-  return ForgotPasswordViewModel(authRepo);
+  final forgotPasswordRepo = ref.watch(forgotPasswordRepositoryProvider);
+  return ForgotPasswordViewModel(forgotPasswordRepo);
 });

@@ -36,4 +36,5 @@ class Constants {
   static const String createUserProfileEndpoint = '/user/profile';
   static const String logoutEndpoint = '/user/logout';
   static const String feedEndpoint = '/posts';
+  static const String forgotPasswordEndpoint = '/user/forgot-password';
 }
