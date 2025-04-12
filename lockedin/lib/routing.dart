@@ -14,6 +14,7 @@ import 'package:lockedin/features/notifications/view/notifications_page.dart';
 import 'package:lockedin/features/post/view/post_page.dart';
 import 'package:lockedin/features/profile/state/user_state.dart';
 import 'package:lockedin/features/profile/view/add_education_page.dart';
+import 'package:lockedin/features/profile/view/add_position_page.dart';
 import 'package:lockedin/features/profile/view/add_section_window.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
 import 'package:lockedin/shared/widgets/side_bar.dart';
@@ -95,6 +96,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: "add-education",
         builder: (context, state) => AddEducationPage(),
       ),
+      GoRoute(
+        path: "/add-position",
+        name: "add-position",
+        builder: (context, state) => AddPositionPage(),
+      ),
 
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -115,9 +121,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
                 radius: 20,
                 backgroundColor: Colors.transparent,
                 backgroundImage:
-                    currentUser != null &&
-                            currentUser.profilePicture != null &&
-                            currentUser.profilePicture.isNotEmpty
+                    currentUser != null && currentUser.profilePicture.isNotEmpty
                         ? NetworkImage(currentUser.profilePicture)
                         : const AssetImage(
                               'assets/images/default_profile_photo.png',
