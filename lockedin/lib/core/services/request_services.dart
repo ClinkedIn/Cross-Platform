@@ -85,6 +85,7 @@ class RequestService {
     String endpoint, {
     Map<String, String>? additionalHeaders,
     Map<String, String>? queryParameters,
+    int retryCount = 0,
   }) async {
     // Ensure the endpoint starts with '/'
     if (!endpoint.startsWith('/')) {
@@ -96,20 +97,63 @@ class RequestService {
     ).replace(queryParameters: queryParameters);
 
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
-    debugPrint('GET Request: ${uri.toString()}');
+    debugPrint('GET Request URL: ${uri.toString()}');
+    debugPrint('GET Request Headers: $headers');
 
     try {
       final response = await _client.get(uri, headers: headers);
       _storeCookiesFromResponse(response);
 
+      // Debug response information
+      debugPrint('GET Response Status: ${response.statusCode}');
+      debugPrint('GET Response Headers: ${response.headers}');
+
       // Check if we got HTML instead of JSON
       if (_isHtmlResponse(response)) {
         debugPrint('Warning: Received HTML instead of JSON in GET request');
+        if (response.body.length < 500) {
+          debugPrint('HTML Response: ${response.body}');
+        } else {
+          debugPrint('HTML Response (truncated): ${response.body.substring(0, 500)}...');
+        }
+        
+        // Retry logic for HTML responses (max 2 retries)
+        if (retryCount < 2) {
+          debugPrint('Retrying request (attempt ${retryCount + 1})...');
+          // Refresh the authentication token if we have one
+          await TokenService.getCookie(); // Ensure we have latest token
+          // Wait a bit before retrying
+          await Future.delayed(Duration(seconds: 1));
+          // Retry the request with incremented retry count
+          return get(
+            endpoint, 
+            additionalHeaders: additionalHeaders, 
+            queryParameters: queryParameters,
+            retryCount: retryCount + 1
+          );
+        }
+      } else if (response.body.length < 1000) {
+        debugPrint('GET Response Body: ${response.body}');
+      } else {
+        debugPrint('GET Response Body (truncated): ${response.body.substring(0, 1000)}...');
       }
 
       return response;
     } catch (e) {
       debugPrint('GET request failed: $e');
+      
+      // Retry network errors as well
+      if (retryCount < 2) {
+        debugPrint('Retrying failed request (attempt ${retryCount + 1})...');
+        await Future.delayed(Duration(seconds: 1));
+        return get(
+          endpoint, 
+          additionalHeaders: additionalHeaders, 
+          queryParameters: queryParameters,
+          retryCount: retryCount + 1
+        );
+      }
+      
       throw Exception('GET request failed: $e');
     }
   }
@@ -119,6 +163,7 @@ class RequestService {
     String endpoint, {
     required Map<String, dynamic> body,
     Map<String, String>? additionalHeaders,
+    int retryCount = 0,
   }) async {
     try {
       // Ensure the endpoint starts with '/'
@@ -149,6 +194,22 @@ class RequestService {
       // Check if we got HTML instead of JSON
       if (_isHtmlResponse(response)) {
         debugPrint('Warning: Received HTML instead of JSON in POST request');
+        
+        // Retry logic for HTML responses (max 2 retries)
+        if (retryCount < 2) {
+          debugPrint('Retrying POST request (attempt ${retryCount + 1})...');
+          // Refresh the authentication token if we have one
+          await TokenService.getCookie(); // Ensure we have latest token
+          // Wait a bit before retrying
+          await Future.delayed(Duration(seconds: 1));
+          // Retry the request with incremented retry count
+          return post(
+            endpoint, 
+            body: body,
+            additionalHeaders: additionalHeaders,
+            retryCount: retryCount + 1
+          );
+        }
       }
 
       if (response.body.length < 1000) {
@@ -164,6 +225,19 @@ class RequestService {
     } catch (e, stackTrace) {
       debugPrint('POST request failed: $e');
       debugPrint('Stack trace: $stackTrace');
+      
+      // Retry network errors as well
+      if (retryCount < 2) {
+        debugPrint('Retrying failed POST request (attempt ${retryCount + 1})...');
+        await Future.delayed(Duration(seconds: 1));
+        return post(
+          endpoint, 
+          body: body,
+          additionalHeaders: additionalHeaders,
+          retryCount: retryCount + 1
+        );
+      }
+      
       throw Exception('POST request failed: $e');
     }
   }
