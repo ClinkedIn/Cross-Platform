@@ -37,4 +37,19 @@ class Education {
       if (media != null) 'media': media,
     };
   }
+
+  factory Education.fromJson(Map<String, dynamic> json) {
+    return Education(
+      school: json['school'] ?? '',
+      degree: json['degree'],
+      fieldOfStudy: json['fieldOfStudy'],
+      startDate: json['startDate'],
+      endDate: json['endDate'],
+      grade: json['grade'],
+      activities: json['activities'],
+      description: json['description'],
+      skills: json['skills'] != null ? List<String>.from(json['skills']) : null,
+      media: json['media'],
+    );
+  }
 }

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:lockedin/core/services/request_services.dart';
-import 'package:lockedin/core/services/token_services.dart';
 
 class ProfilePhotoService {
   static Future<http.Response> updateProfilePhoto(File photoFile) async {

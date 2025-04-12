@@ -5,16 +5,12 @@ class AttachmentWidget extends StatelessWidget {
   final VoidCallback onDocumentPressed;
   final VoidCallback onCameraPressed;
   final VoidCallback onMediaPressed;
-  final VoidCallback onGifPressed;
-  final VoidCallback onMentionPressed;
 
   const AttachmentWidget({
     Key? key,
     required this.onDocumentPressed,
     required this.onCameraPressed,
     required this.onMediaPressed,
-    required this.onGifPressed,
-    required this.onMentionPressed,
   }) : super(key: key);
 
   @override
@@ -40,8 +36,6 @@ class AttachmentWidget extends StatelessWidget {
               _buildAttachmentButton(Icons.insert_drive_file, "Document", onDocumentPressed),
               _buildAttachmentButton(Icons.camera_alt, "Camera", onCameraPressed),
               _buildAttachmentButton(Icons.image, "Media", onMediaPressed),
-              _buildAttachmentButton(Icons.gif, "GIF", onGifPressed),
-              _buildAttachmentButton(Icons.alternate_email, "Mention", onMentionPressed),
             ],
           ),
         ],

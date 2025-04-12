@@ -81,10 +81,7 @@ class _VerificationEmailViewState extends ConsumerState<VerificationEmailView> {
                           final updatedEmail = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder:
-                                  (context) => EditEmailView(
-                                    initialEmail: signupState.email,
-                                  ),
+                              builder: (context) => EditEmailView(),
                             ),
                           );
 

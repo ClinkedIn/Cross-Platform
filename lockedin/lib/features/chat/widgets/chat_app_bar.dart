@@ -4,14 +4,14 @@ import 'package:lockedin/shared/theme/text_styles.dart';
 class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String name;
   final String imageUrl;
-  final bool isOnline;
+  //final bool isOnline;
   final bool isDarkMode;
 
   const ChatAppBar({
     Key? key,
     required this.name,
     required this.imageUrl,
-    required this.isOnline,
+    //required this.isOnline,
     required this.isDarkMode,
   }) : super(key: key);
 
@@ -38,12 +38,12 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   color: isDarkMode ? Colors.white : Colors.black,
                 ),
               ),
-              Text(
-                isOnline ? 'Online' : 'Offline',
-                style: AppTextStyles.bodyText2.copyWith(
-                  color: isDarkMode ? Colors.white70 : Colors.black54,
-                ),
-              ),
+              // Text(
+              //   isOnline ? 'Online' : 'Offline',
+              //   style: AppTextStyles.bodyText2.copyWith(
+              //     color: isDarkMode ? Colors.white70 : Colors.black54,
+              //   ),
+              // ),
             ],
           ),
         ],
