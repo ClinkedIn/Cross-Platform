@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
 import 'package:lockedin/features/home_page/model/post_model.dart';
@@ -46,8 +47,28 @@ class PostApi implements PostRepository {
         }
 
         final List<dynamic> postsJson = data['posts'];
+        
+        // Debug the isLiked structure if posts exist
+        if (postsJson.isNotEmpty && postsJson[0].containsKey('isLiked')) {
+          debugPrint('isLiked type: ${postsJson[0]['isLiked'].runtimeType}');
+          debugPrint('isLiked value: ${postsJson[0]['isLiked']}');
+        }
 
         return postsJson.map((postJson) {
+          // Simplified isLiked handling based on your API structure
+          bool isLikedValue = false;
+          if (postJson.containsKey('isLiked') && postJson['isLiked'] != null) {
+            var isLikedField = postJson['isLiked'];
+            if (isLikedField is bool) {
+              // Direct boolean value
+              isLikedValue = isLikedField;
+            } else if (isLikedField is Map) {
+              // If isLiked is a Map/object with details, the post is liked
+              // Based on your API example, the presence of this object means it's liked
+              isLikedValue = true;
+            }
+          }
+
           // Map the API response to our PostModel
           return PostModel(
             id: postJson['postId'] ?? '',
@@ -66,6 +87,7 @@ class PostApi implements PostRepository {
             likes: postJson['impressionCounts']?['total'] ?? 0,
             comments: postJson['commentCount'] ?? 0,
             reposts: postJson['repostCount'] ?? 0,
+            isLiked: isLikedValue, // Use our safely extracted boolean value
           );
         }).toList();
       } else {
@@ -80,6 +102,7 @@ class PostApi implements PostRepository {
     }
   }
 
+  // Rest of your code remains the same...
   // Helper method to format the timestamp into a relative time string
   String _formatTimeAgo(String? timestamp) {
     if (timestamp == null) return '';
@@ -106,6 +129,68 @@ class PostApi implements PostRepository {
       return '';
     }
   }
+
+  @override
+  Future<bool> savePostById(String postId) async {
+    try {
+      final String formattedEndpoint = Constants.savePostEndpoint.replaceFirst('%s', postId);
+      final response = await RequestService.post(
+        formattedEndpoint,
+        body: {},
+      );
+      
+      if (response.statusCode == 200) {
+        debugPrint('Post saved successfully: $postId');
+        return true;
+      } else {
+        throw Exception('Failed to save post: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error saving post: $e');
+      return false;
+    }
+  }
+
+  @override
+Future<bool> likePost(String postId) async {
+  try {
+    final String formattedEndpoint = Constants.togglelikePostEndpoint.replaceFirst('%s', postId);
+    final response = await RequestService.post(
+      formattedEndpoint,
+      body: {}, // Empty body since postId is in URL
+    );
+    
+    if (response.statusCode == 200) {
+      debugPrint('Post liked successfully: $postId');
+      return true;
+    } else {
+      throw Exception('Failed to like post: ${response.statusCode} - ${response.body}');
+    }
+  } catch (e) {
+    debugPrint('Error liking post: $e');
+    rethrow;
+  }
+}
+
+@override
+Future<bool> unlikePost(String postId) async {
+  try {
+    final String formattedEndpoint = Constants.togglelikePostEndpoint.replaceFirst('%s', postId);
+    final response = await RequestService.delete(
+      formattedEndpoint,
+    );
+    
+    if (response.statusCode == 200) {
+      debugPrint('Post unliked successfully: $postId');
+      return true;
+    } else {
+      throw Exception('Failed to unlike post: ${response.statusCode} - ${response.body}');
+    }
+  } catch (e) {
+    debugPrint('Error unliking post: $e');
+    rethrow;
+  }
+}
 }
 
 // Helper function for substring operations
