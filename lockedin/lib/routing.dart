@@ -19,6 +19,8 @@ import 'package:lockedin/features/profile/view/add_education_page.dart';
 import 'package:lockedin/features/profile/view/add_position_page.dart';
 import 'package:lockedin/features/profile/view/add_section_window.dart';
 import 'package:lockedin/features/profile/view/add_skill_page.dart';
+import 'package:lockedin/features/profile/view/edit_cover_photo.dart';
+import 'package:lockedin/features/profile/view/edit_profile_photo.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
 import 'package:lockedin/features/profile/view/setting_page.dart';
 import 'package:lockedin/shared/widgets/side_bar.dart';
@@ -132,6 +134,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: "/update-password",
         name: "update-password",
         builder: (context, state) => ChangePasswordPage(),
+      ),
+      GoRoute(
+        path: '/edit-profile-photo',
+        name: 'edit-profile-photo',
+        builder: (context, state) => EditProfilePhoto(),
+      ),
+      GoRoute(
+        path: '/edit-cover-photo',
+        name: 'edit-cover-photo',
+        builder: (context, state) => EditCoverPhoto(),
       ),
 
       StatefulShellRoute.indexedStack(

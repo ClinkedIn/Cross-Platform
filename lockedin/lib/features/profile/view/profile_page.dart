@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:lockedin/features/profile/state/user_state.dart';
 import 'package:lockedin/features/profile/utils/profile_converters.dart';
-import 'package:lockedin/features/profile/view/edit_profile_photo.dart';
 import 'package:lockedin/features/profile/view/update_page.dart';
 import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
 import 'package:lockedin/features/profile/widgets/profile_buttons.dart';
@@ -83,10 +82,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                   color: AppColors.white,
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(
-                                  Icons.edit,
-                                  color: AppColors.gray,
-                                  size: 20,
+                                child: IconButton(
+                                  icon: Icon(
+                                    Icons.edit,
+                                    color: AppColors.gray,
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    context.push('/edit-cover-photo');
+                                  },
                                 ),
                               ),
                             ),
@@ -99,12 +103,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               shape: CircleBorder(),
                               child: GestureDetector(
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => EditProfilePhoto(),
-                                    ),
-                                  );
+                                  context.push('/edit-profile-photo');
                                 },
                                 child: CircleAvatar(
                                   radius: 40,

@@ -2,15 +2,12 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:lockedin/core/services/request_services.dart';
 
-class ProfilePhotoService {
-  static Future<http.Response> updateProfilePhoto(File photoFile) async {
+class CoverPhotoService {
+  static Future<http.Response> updateCoverPhoto(File photoFile) async {
     try {
       final response = await RequestService.postMultipart(
-        "/user/pictures/profile-picture",
+        "/user/pictures/cover-picture",
         file: photoFile,
-      );
-      print(
-        "Response status code: ${response.statusCode}, body: ${response.body} type of file: ${photoFile.uri}",
       );
       return response;
     } catch (e) {
@@ -18,10 +15,10 @@ class ProfilePhotoService {
     }
   }
 
-  static Future<http.Response> deleteProfilePhoto() async {
+  static Future<http.Response> deleteCoverPhoto() async {
     try {
       final response = await RequestService.delete(
-        "/user/pictures/profile-picture",
+        "/user/pictures/cover-picture",
       );
       return response;
     } catch (e) {
