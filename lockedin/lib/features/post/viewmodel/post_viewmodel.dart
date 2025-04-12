@@ -23,7 +23,7 @@ class PostViewModel extends StateNotifier<PostState> {
   }
 
   /// Pick an image from the gallery
-  Future<void> pickImage() async {
+  Future<List<File>?> pickImage() async {
     try {
       final pickedImage = await _imagePicker.pickImage(
         source: ImageSource.gallery,
@@ -31,43 +31,44 @@ class PostViewModel extends StateNotifier<PostState> {
       );
       
       if (pickedImage != null) {
-        state = state.copyWith(imageFile: File(pickedImage.path));
+        final attachments = [File(pickedImage.path)];
+        state = state.copyWith(attachments: attachments);
+        return attachments;
       }
+        return null;
     } catch (e) {
       debugPrint('Error picking image: $e');
       state = state.copyWith(error: 'Failed to select image');
+      return null;
     }
   }
 
   /// Remove the selected image
   void removeImage() {
-    state = state.copyWith(imageFile: null);
+    state = state.copyWith(attachments: null);
   }
 
   /// Submit the post
- Future<bool> submitPost() async {
-//   state = state.copyWith(isSubmitting: true);
-//     try {
-//       // Include visibility in the parameters
-//       final repository = CreatepostApi();
-//       final success = await repository.createPost(
-//         content: state.content,
-//         imageFile: state.imageFile,
-//         visibility: state.visibility,
-//       );
-//       state = state.copyWith(isSubmitting: false);
-//       return success;
-//     } catch (e) {
-//       state = state.copyWith(
-//         isSubmitting: false,
-//         error: e.toString(),
-//       );
-//       return false;
-//     }
-//   }
-    return false; // Ensure a boolean value is always returned
+ Future<bool> submitPost({required String content, required List<File> attachments, String visibility='anyone'}) async {
+  state = state.copyWith(isSubmitting: true);
+    try {
+      // Include visibility in the parameters
+      final repository = CreatepostApi();
+      final success = await repository.createPost(
+        content: content,
+        attachments: attachments,
+        visibility: visibility,
+      );
+      state = state.copyWith(isSubmitting: false);
+      return success;
+    } catch (e) {
+      state = state.copyWith(
+        isSubmitting: false,
+        error: e.toString(),
+      );
+      return false;
+    }
   }
-
   /// Clear any error
   void clearError() {
     state = state.copyWith(error: null);
@@ -78,5 +79,7 @@ class PostViewModel extends StateNotifier<PostState> {
   /// Update the visibility setting for the post
   void updateVisibility(String visibility) {
     state = state.copyWith(visibility: visibility);
+
   }
+  
 }
