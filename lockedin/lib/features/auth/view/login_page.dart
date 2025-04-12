@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/auth/view/main_page.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/auth/viewmodel/login_in_viewmodel.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
 import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
@@ -20,26 +20,6 @@ class LoginPage extends ConsumerWidget {
     final isDarkMode = theme.brightness == Brightness.dark;
 
     // Listen to login state
-    ref.listen<AsyncValue<void>>(loginViewModelProvider, (previous, next) {
-      next.when(
-        data: (_) {
-          // Success case: Navigate to MainPage
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => MainPage()),
-          );
-        },
-        error: (error, stackTrace) {
-          // Error case: Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $error')),
-          );
-        },
-        loading: () {
-          // Optional: Show loading indicator (handled below if needed)
-        },
-      );
-    });
 
     return Scaffold(
       appBar: LogoAppbar(),
@@ -48,7 +28,6 @@ class LoginPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-             
             const SizedBox(height: 42),
 
             Text("Sign in", style: theme.textTheme.headlineLarge),
@@ -59,16 +38,13 @@ class LoginPage extends ConsumerWidget {
                 Text("or ", style: AppTextStyles.bodyText2),
 
                 SizedBox(width: 1.w),
-                
+
                 TextButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => SignUpView()),
-                    );
+                    context.push('/sign-up');
                   },
                   style: AppButtonStyles.textButton,
-                  child: Text("Join lockedIn",),
+                  child: Text("Join lockedIn"),
                 ),
               ],
             ),
@@ -103,27 +79,30 @@ class LoginPage extends ConsumerWidget {
 
             TextButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ForgotPasswordScreen(),
-                  ),
-                );
+                print("Navigating to forgot password"); // Debug print
+                context.push(
+                  '/forgot-password',
+                ); // Make sure this matches your route definition
               },
-
               style: AppButtonStyles.textButton,
-              child: Text("Forgot password?",),
+              child: Text("Forgot password?"),
             ),
-            
+
             const SizedBox(height: 24),
 
             ElevatedButton(
               style: AppButtonStyles.elevatedButton,
-              onPressed: () {
-                ref.read(loginViewModelProvider.notifier).login(
+              onPressed: () async {
+                bool isLoggedIn = await ref
+                    .read(loginViewModelProvider.notifier)
+                    .login(
                       _emailController.text,
                       _passwordController.text,
+                      context,
                     );
+                if (isLoggedIn) {
+                  context.go('/home');
+                }
               },
               child: const Text("Sign in"),
             ),
@@ -154,7 +133,9 @@ class LoginPage extends ConsumerWidget {
                   text: "Sign in with Google",
                   icon: Icons.g_mobiledata,
                   onPressed: () {
-                    ref.read(loginViewModelProvider.notifier).signInWithGoogle();
+                    ref
+                        .read(loginViewModelProvider.notifier)
+                        .signInWithGoogle();
                   },
                 ),
               ],

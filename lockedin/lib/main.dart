@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/auth/view/main_page.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lockedin/routing.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -25,12 +26,13 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeProvider);
+    final GoRouter router = ref.watch(goRouterProvider);
 
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'LockedIn',
       theme: theme,
-      home: MainPage(),
+      routerConfig: router,
     );
   }
 }

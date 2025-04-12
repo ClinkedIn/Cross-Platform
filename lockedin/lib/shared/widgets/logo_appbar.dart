@@ -10,6 +10,8 @@ class LogoAppbar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      automaticallyImplyLeading: false,
+      leading: Container(),
       backgroundColor: Colors.white,
       elevation: 0,
       title: Row(
