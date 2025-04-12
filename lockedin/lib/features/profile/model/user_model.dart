@@ -47,8 +47,7 @@ class UserModel {
       firstName: json['firstName'] ?? "Unknown",
       lastName: json['lastName'] ?? "Unknown",
       email: json['email'] ?? "Unknown",
-      profilePicture:
-          json['profilePicture'] ?? "assets/images/default_profile_photo.png",
+      profilePicture: json['profilePicture'] ?? "",
       coverPicture:
           json['coverPicture'] ?? "assets/images/default_cover_photo.jpeg",
       resume: json['resume'] ?? "",

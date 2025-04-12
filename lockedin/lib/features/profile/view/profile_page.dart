@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/profile/state/user_state.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
@@ -21,11 +22,7 @@ class ProfilePage extends ConsumerWidget {
       appBar: UpperNavbar(
         leftIcon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
         leftOnPress: () {
-          ref.read(navProvider.notifier).changeTab(0);
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => MainPage()),
-          );
+          context.pop();
         },
       ),
       body:
@@ -84,9 +81,15 @@ class ProfilePage extends ConsumerWidget {
                               },
                               child: CircleAvatar(
                                 radius: 40,
-                                backgroundImage: NetworkImage(
-                                  user.profilePicture,
-                                ),
+                                backgroundImage:
+                                    user != null &&
+                                            user.profilePicture != null &&
+                                            user.profilePicture.isNotEmpty
+                                        ? NetworkImage(user.profilePicture)
+                                        : const AssetImage(
+                                              'assets/images/default_profile_photo.png',
+                                            )
+                                            as ImageProvider,
                               ),
                             ),
                           ),
@@ -226,15 +229,6 @@ class ProfilePage extends ConsumerWidget {
                   ],
                 ),
               ),
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: -1,
-        onTap: (index) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => MainPage()),
-          );
-        },
-      ),
     );
   }
 }

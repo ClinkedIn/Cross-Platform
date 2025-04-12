@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -14,7 +16,11 @@ class LoginViewModel extends StateNotifier<AsyncValue<void>> {
   LoginViewModel(this.ref) : super(const AsyncValue.data(null));
 
   /// Email/Password Login using cookie-based authentication
-  Future<void> login(String email, String password) async {
+  Future<bool> login(
+    String email,
+    String password,
+    BuildContext context,
+  ) async {
     state = const AsyncValue.loading();
     try {
       final response = await RequestService.login(
@@ -23,11 +29,13 @@ class LoginViewModel extends StateNotifier<AsyncValue<void>> {
       );
       if (response.statusCode == 200) {
         state = const AsyncValue.data(null);
+        return true;
       } else {
         throw Exception('Login failed: ${response.body}');
       }
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
+      return false;
     }
   }
 
