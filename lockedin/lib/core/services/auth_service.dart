@@ -34,32 +34,11 @@ class User {
 
 class AuthService {
   User? _currentUser;
-  bool _useDemoMode = false;
 
   User? get currentUser => _currentUser;
 
-  // Get a demo user for testing purposes
-  User get demoUser => User(
-    id: 'demo-user-123',
-    firstName: 'Demo',
-    lastName: 'User',
-    email: 'demo@example.com',
-    profilePicture: null,
-  );
-
-  // Enable demo mode for testing
-  void enableDemoMode() {
-    _useDemoMode = true;
-    _currentUser = demoUser;
-    debugPrint('Demo mode enabled, using demo user: ${demoUser.id}');
-  }
-
-  // Check if demo mode is enabled
-  bool get isDemoMode => _useDemoMode;
-
   // Check if the user is logged in
   Future<bool> isLoggedIn() async {
-    if (_useDemoMode) return true;
     final hasCookie = await TokenService.hasCookie();
     debugPrint('Has cookie: $hasCookie');
     return hasCookie;
@@ -68,12 +47,6 @@ class AuthService {
   // Fetch current user data from the backend
   Future<User?> fetchCurrentUser() async {
     try {
-      // If demo mode is enabled, just return the demo user
-      if (_useDemoMode) {
-        debugPrint('Using demo user: ${demoUser.id}');
-        return demoUser;
-      }
-
       // Check if we have auth cookies
       if (!await isLoggedIn()) {
         debugPrint('No auth cookies found, returning null');
@@ -92,32 +65,35 @@ class AuthService {
 
       if (response.statusCode != 200) {
         debugPrint('Failed to get user data, status: ${response.statusCode}');
-        
-        // If API call fails but we have cookies, use demo user as fallback
-        debugPrint('Using demo user as fallback');
-        enableDemoMode();
-        return demoUser;
+        return null;
       }
 
       // Parse the user data
       final Map<String, dynamic> data = jsonDecode(response.body);
-      if (data['success'] == true && data['user'] != null) {
+      
+      // Check for success based on the actual API response structure
+      if (data['message']?.contains('successfully') == true && data['user'] != null) {
+        try {
+          _currentUser = User.fromJson(data['user']);
+          debugPrint('Loaded user: ${_currentUser!.id}');
+          return _currentUser;
+        } catch (e) {
+          debugPrint('Error parsing user data: $e');
+          debugPrint('User data keys: ${data['user'].keys.toList()}');
+          return null;
+        }
+      } else if (data['success'] == true && data['user'] != null) {
+        // Original format as backup
         _currentUser = User.fromJson(data['user']);
-        debugPrint('Loaded user: ${_currentUser!.id}');
+        debugPrint('Loaded user with original format: ${_currentUser!.id}');
         return _currentUser;
       }
 
-      // If we couldn't get user data but have cookies, use demo user
-      debugPrint('No user data in response, using demo user');
-      enableDemoMode();
-      return demoUser;
+      debugPrint('Failed to parse user data: unexpected format');
+      return null;
     } catch (e) {
       debugPrint('Error fetching user: $e');
-      
-      // In case of any error, use demo user as fallback
-      debugPrint('Using demo user due to error');
-      enableDemoMode();
-      return demoUser;
+      return null;
     }
   }
 
@@ -134,28 +110,16 @@ class AuthService {
         return true;
       }
 
-      // For testing purposes, enable demo mode even if login fails
-      enableDemoMode();
-      return true;
+      return false;
     } catch (e) {
       debugPrint('Login error: $e');
-      
-      // For testing purposes, enable demo mode
-      enableDemoMode();
-      return true;
+      return false;
     }
   }
 
   // Logout user
   Future<bool> logout() async {
     try {
-      // If in demo mode, just reset it
-      if (_useDemoMode) {
-        _useDemoMode = false;
-        _currentUser = null;
-        return true;
-      }
-      
       final response = await RequestService.get(Constants.logoutEndpoint);
       
       if (response.statusCode == 200) {
