@@ -102,13 +102,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => AddEducationPage(),
       ),
       GoRoute(
-
         path: "/detailed-post/:postId",
         name: "detailed-post",
-        builder: (context, state) => PostDetailView(
-          postId: state.pathParameters['postId']!,
-        ),
-
+        builder:
+            (context, state) =>
+                PostDetailView(postId: state.pathParameters['postId']!),
+      ),
+      GoRoute(
         path: "/add-position",
         name: "add-position",
         builder: (context, state) => AddPositionPage(),
@@ -132,7 +132,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: "/update-password",
         name: "update-password",
         builder: (context, state) => ChangePasswordPage(),
-
       ),
 
       StatefulShellRoute.indexedStack(

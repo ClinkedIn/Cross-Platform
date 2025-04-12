@@ -27,7 +27,6 @@ class RequestService {
     };
   }
 
-
   static Future<http.Response> postMultipart(
     String endpoint, {
     File? file,
@@ -46,7 +45,7 @@ class RequestService {
         await http.MultipartFile.fromPath(
           fileFieldName, // <-- Use the passed field name
           file.path,
-          contentType: MediaType('image', 'jpg'),
+          contentType: MediaType('image', 'jpeg'),
         ),
       );
     }
@@ -72,6 +71,16 @@ class RequestService {
       request.headers.addAll(headers);
     }
 
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      _storeCookiesFromResponse(response);
+      return response;
+    } catch (e) {
+      throw Exception('Multipart POST failed: $e');
+    }
+  }
+
   static Future<http.Response> get(
     String endpoint, {
     Map<String, String>? additionalHeaders,
@@ -89,7 +98,6 @@ class RequestService {
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
     debugPrint('GET Request: ${uri.toString()}');
 
-
     try {
       final response = await _client.get(uri, headers: headers);
       _storeCookiesFromResponse(response);
@@ -106,10 +114,8 @@ class RequestService {
     }
   }
 
-
   /// Generic POST request with body and optional headers
   static Future<http.Response> post(
-
     String endpoint, {
     required Map<String, dynamic> body,
     Map<String, String>? additionalHeaders,
