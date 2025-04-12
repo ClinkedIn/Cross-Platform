@@ -12,6 +12,8 @@ class PostModel {
   final int likes;
   final int comments;
   final int reposts;
+  final bool isLiked;
+  
 
   PostModel({
     required this.id,
@@ -25,7 +27,39 @@ class PostModel {
     required this.likes,
     required this.comments,
     required this.reposts,
+    this.isLiked = false, // Default to not liked
   });
+
+  // Add copyWith method for easy modification of post properties
+  PostModel copyWith({
+    String? id,
+    String? userId,
+    String? username,
+    String? profileImageUrl,
+    String? content,
+    String? time,
+    bool? isEdited,
+    String? imageUrl,
+    int? likes,
+    int? comments,
+    int? reposts,
+    bool? isLiked,
+  }) {
+    return PostModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      username: username ?? this.username,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      content: content ?? this.content,
+      time: time ?? this.time,
+      isEdited: isEdited ?? this.isEdited,
+      imageUrl: imageUrl ?? this.imageUrl,
+      likes: likes ?? this.likes,
+      comments: comments ?? this.comments,
+      reposts: reposts ?? this.reposts,
+      isLiked: isLiked ?? false,
+    );
+  }
 
   // Convert model to map for Firestore
   Map<String, dynamic> toJson() {
@@ -40,6 +74,7 @@ class PostModel {
       'likes': likes,
       'comments': comments,
       'reposts': reposts,
+      'isLiked': isLiked,
       'createdAt': FieldValue.serverTimestamp(), // Add server timestamp
     };
   }
@@ -60,6 +95,7 @@ class PostModel {
       likes: data['likes'] ?? 0,
       comments: data['comments'] ?? 0,
       reposts: data['reposts'] ?? 0,
+      isLiked: data['isLiked'] ?? false,
     );
   }
 
@@ -77,8 +113,7 @@ class PostModel {
       likes: json['likes'] ?? 0,
       comments: json['comments'] ?? 0,
       reposts: json['reposts'] ?? 0,
+      isLiked: json['isLiked'] ?? false,
     );
   }
-
-  
 }

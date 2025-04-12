@@ -51,6 +51,7 @@ class Constants {
   
   // Post/feed endpoints
   static const String feedEndpoint = '/posts';
+
   
   // Chat endpoints
   /// Endpoint to fetch all chats for the current user
@@ -63,4 +64,10 @@ class Constants {
   /// Endpoint to send a message to a specific chat
   /// Format: '/chats/direct-chat/{chatId}/messages' 
   static const String chatMessagesEndpoint = '/chats/direct-chat/{chatId}/messages';
+
+  static const String savePostEndpoint = '/posts/%s/save'; // %s will be replaced with the postId
+  static const String togglelikePostEndpoint = '/posts/%s/like'; // %s will be replaced with the postId
+  //static const String unlikePostEndpoint = '/posts/%s/unlike'; // %s will be replaced with the postId
+  
 }
+

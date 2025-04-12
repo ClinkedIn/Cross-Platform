@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/core/utils/constants.dart';
 import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lockedin/routing.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -79,25 +81,15 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(themeProvider);
+    final GoRouter router = ref.watch(goRouterProvider);
 
-    // Show loading indicator while initializing
-    if (!_isInitialized) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: theme,
-        home: Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        ),
-      );
-    }
 
-    return MaterialApp(
+    return MaterialApp.router(
+
       debugShowCheckedModeBanner: false,
       title: 'LockedIn',
       theme: theme,
-      home: LoginPage(), // Change this to LoginPage() to show the login page
+      routerConfig: router,
     );
   }
 }

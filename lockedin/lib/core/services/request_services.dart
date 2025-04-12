@@ -1,8 +1,14 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+
+import 'dart:io';
+
+
 import 'package:http/http.dart' as http;
 import 'package:lockedin/core/services/token_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
+import 'package:http_parser/http_parser.dart';
 
 class RequestService {
   static final String _baseUrl = Constants.baseUrl;
@@ -22,7 +28,53 @@ class RequestService {
     };
   }
 
-  /// Generic GET request with headers and query parameters
+
+  static Future<http.Response> postMultipart(
+    String endpoint,
+    File file, {
+    Map<String, String>? additionalFields,
+    Map<String, String>? additionalHeaders,
+  }) async {
+    final uri = Uri.parse('$_baseUrl$endpoint');
+    final String? storedCookie = await TokenService.getCookie();
+
+    var request = http.MultipartRequest('POST', uri);
+
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'file',
+        file.path,
+        contentType: MediaType('image', 'jpeg'), // or use helper method below
+      ),
+    );
+
+    // Attach additional form fields if any
+    if (additionalFields != null) {
+      request.fields.addAll(additionalFields);
+    }
+
+    // Add stored cookie if exists
+    if (storedCookie != null && storedCookie.isNotEmpty) {
+      request.headers['Cookie'] = storedCookie;
+    }
+
+    // Add additional headers if provided
+    if (additionalHeaders != null) {
+      request.headers.addAll(additionalHeaders);
+    }
+
+    // Important: Do not set 'Content-Type', http.MultipartRequest handles it
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      _storeCookiesFromResponse(response);
+      return response;
+    } catch (e) {
+      throw Exception('Multipart POST failed: $e');
+    }
+  }
+
+
   static Future<http.Response> get(
     String endpoint, {
     Map<String, String>? additionalHeaders,
@@ -105,6 +157,28 @@ class RequestService {
       debugPrint('POST request failed: $e');
       debugPrint('Stack trace: $stackTrace');
       throw Exception('POST request failed: $e');
+    }
+  }
+
+  // PATCH request
+  static Future<http.Response> patch(
+    String endpoint, {
+    required Map<String, dynamic> body,
+    Map<String, String>? additionalHeaders,
+  }) async {
+    final String url = '$_baseUrl$endpoint';
+    final headers = await _getHeaders(additionalHeaders: additionalHeaders);
+
+    try {
+      final response = await _client.patch(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(body),
+      );
+      _storeCookiesFromResponse(response);
+      return response;
+    } catch (e) {
+      throw Exception('PATCH request failed: $e');
     }
   }
 

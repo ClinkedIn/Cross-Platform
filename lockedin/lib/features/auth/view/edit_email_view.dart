@@ -9,9 +9,7 @@ final editEmailViewModelProvider = ChangeNotifierProvider(
 );
 
 class EditEmailView extends ConsumerStatefulWidget {
-  final String initialEmail;
-
-  const EditEmailView({super.key, required this.initialEmail});
+  const EditEmailView({super.key});
 
   @override
   _EditEmailViewState createState() => _EditEmailViewState();
@@ -24,7 +22,7 @@ class _EditEmailViewState extends ConsumerState<EditEmailView> {
   @override
   void initState() {
     super.initState();
-    emailController = TextEditingController(text: widget.initialEmail);
+    emailController = TextEditingController();
     passwordController = TextEditingController();
   }
 
