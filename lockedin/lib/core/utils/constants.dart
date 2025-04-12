@@ -69,7 +69,11 @@ class Constants {
   static const String togglelikePostEndpoint = '/posts/%s/like'; // %s will be replaced with the postId
   static const String createPostEndpoint = '/posts';
   //static const String unlikePostEndpoint = '/posts/%s/unlike'; // %s will be replaced with the postId
+<<<<<<< HEAD
     static const String getNotificationsEndpoint = '/notifications';
+=======
+  static const String getNotificationsEndpoint = '/notifications';
+>>>>>>> 04adac84804aa2c8f9b4f8475cb0a0ba4d28b477
   static const String markNotificationAsReadEndpoint = '/notifications/mark-read/%s'; // %s will be replaced with the notificationId
   static const String markNotificationAsUnreadEndpoint = '/notifications/mark-unread/%s'; // %s will be replaced with the notificationId
   static const String getNotificationsUnreadCountEndpoint = '/notifications/unread-count';
@@ -77,6 +81,9 @@ class Constants {
   static const String resumeNotificationsEndpoint = '/notifications/resume-notifications';
   static const String restoreNotificationsEndpoint = '/notifications/restore-notification/%s'; // %s will be replaced with the notificationId
   static const String deleteNotificationEndpoint = '/notifications/%s'; // %s will be replaced with the notificationId
+<<<<<<< HEAD
   
+=======
+>>>>>>> 04adac84804aa2c8f9b4f8475cb0a0ba4d28b477
 }
 

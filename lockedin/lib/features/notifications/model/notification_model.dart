@@ -65,6 +65,32 @@ class NotificationModel {
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       sendingUser: SendingUser.fromJson(json['sendingUser']),
+<<<<<<< HEAD
+=======
+    );
+  }
+}
+
+class SendingUser {
+  final String email;
+  final String firstName;
+  final String lastName;
+  final String? profilePicture;
+
+  SendingUser({
+    required this.email,
+    required this.firstName,
+    required this.lastName,
+    this.profilePicture,
+  });
+
+  factory SendingUser.fromJson(Map<String, dynamic> json) {
+    return SendingUser(
+      email: json['email'],
+      firstName: json['firstName'],
+      lastName: json['lastName'],
+      profilePicture: json['profilePicture'],
+>>>>>>> 04adac84804aa2c8f9b4f8475cb0a0ba4d28b477
     );
   }
 }
