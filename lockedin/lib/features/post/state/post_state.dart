@@ -6,7 +6,7 @@ class PostState {
   final String content;
 
   /// Selected image file (if any)
-  final File? imageFile;
+  final List<File>? attachments;
 
   /// Whether a post is currently being submitted
   final bool isSubmitting;
@@ -20,7 +20,7 @@ class PostState {
   /// Constructor
   const PostState({
     this.content = '',
-    this.imageFile,
+    this.attachments,
     this.isSubmitting = false,
     this.error,
     this.visibility = 'Anyone',
@@ -29,14 +29,14 @@ class PostState {
   /// Creates a copy of this state with the given fields replaced
   PostState copyWith({
     String? content,
-    File? imageFile,
+    List<File>? attachments,
     bool? isSubmitting,
     String? error,
     String? visibility,
   }) {
     return PostState(
       content: content ?? this.content,
-      imageFile: imageFile ?? this.imageFile,
+      attachments: attachments ?? this.attachments,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: error ?? this.error,
       visibility: visibility ?? this.visibility,
@@ -44,7 +44,7 @@ class PostState {
   }
 
   /// Helper method to check if the post has content and can be submitted
-  bool get canSubmit => (content.trim().isNotEmpty || imageFile != null) && !isSubmitting;
+  bool get canSubmit => (content.trim().isNotEmpty || attachments != null) && !isSubmitting;
 
   /// Initial empty state
   factory PostState.initial() => const PostState();

@@ -5,11 +5,7 @@ class CreatePostModel {
   /// Required: The main text content of the post
   final String description;
   
-  /// Optional: List of attachment paths or URLs (images, videos, documents, etc.)
-  final List<String>? attachments;
-  
-  /// Optional: File object for image upload (handled separately from attachments string list)
-  final File? imageFile;
+  final List<File>? attachments;  // Updated type
   
   /// Optional: List of user IDs who are tagged in the post
   final List<String>? taggedUsers;
@@ -21,7 +17,6 @@ class CreatePostModel {
   CreatePostModel({
     required this.description,
     this.attachments,
-    this.imageFile,
     this.taggedUsers,
     this.visibility = 'Anyone',
   });
@@ -41,15 +36,13 @@ class CreatePostModel {
   /// Create a copy of this model with specified fields updated
   CreatePostModel copyWith({
     String? description,
-    List<String>? attachments,
-    File? imageFile,
+    List<File>? attachments,
     List<String>? taggedUsers,
     String? visibility,
   }) {
     return CreatePostModel(
       description: description ?? this.description,
       attachments: attachments ?? this.attachments,
-      imageFile: imageFile ?? this.imageFile,
       taggedUsers: taggedUsers ?? this.taggedUsers,
       visibility: visibility ?? this.visibility,
     );
@@ -66,7 +59,7 @@ class CreatePostModel {
     return CreatePostModel(
       description: json['description'] as String,
       attachments: json['attachments'] != null 
-          ? List<String>.from(json['attachments']) 
+          ? List<File>.from(json['attachments']) 
           : null,
       taggedUsers: json['taggedUsers'] != null 
           ? List<String>.from(json['taggedUsers']) 

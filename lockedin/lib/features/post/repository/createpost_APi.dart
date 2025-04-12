@@ -1,83 +1,33 @@
-import '../repository/createpost_repository.dart';
-import '../model/createpost_model.dart'; // Import the CreatePostModel class
-import 'dart:convert';
+import '../model/createpost_model.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'dart:io'; // Import the File class
+import 'package:lockedin/core/services/request_services.dart';
+import 'package:lockedin/core/utils/constants.dart';
+import 'dart:io';
 
-class CreatepostApi implements CreatePostRepository {
-
-  final String _baseUrl = 'https://your-api-endpoint.com/api'; // Replace with your actual API base URL
+class CreatepostApi  {
   
-  @override
-  Future<void> createPost(String content, String imagePath, String visibility) async {
+  Future<bool> createPost({required String content, required List<File> attachments, String visibility='anyone'}) async {
     try {
-      // Create the post model
-      final postModel = CreatePostModel(
-        description: content,
-        imageFile: File(imagePath.isNotEmpty ? imagePath : ''),
-        visibility: visibility ?? 'Anyone',
+      
+      final response = await RequestService.postMultipart(
+        Constants.createPostEndpoint,
+        attachments[0],
+        additionalFields: {
+          'description': content,
+          'whoCanSee': visibility,
+        },
       );
-      if (content.isEmpty || imagePath.isEmpty || visibility.isEmpty) {
-        throw Exception('Invalid input data');
-        
-      }
-      
-      // Prepare request headers
-      final headers = {
-       // 'Authorization': 'Bearer $token',
-      };
-      
-      // If there's no image file, send a simple JSON request
-      if (postModel.imageFile == null) {
-        final response = await http.post(
-          Uri.parse('$_baseUrl/posts'),
-          headers: {
-            ...headers,
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode(postModel.toJson()),
-        );
-        
-        _handleResponse(response);
-        return;
-      } 
-      // If there's an image file, send a multipart request
-      else {
-          // Create multipart request
-        final request = http.MultipartRequest('POST', Uri.parse('$_baseUrl/posts'));
-        
-        // Add headers
-       // request.headers.addAll(headers);
-        
-        // Add text fields
-        request.fields['description'] = postModel.description;
-        request.fields['visibility'] = postModel.visibility;
-        
-        // Add file
-        request.files.add(await http.MultipartFile.fromPath(
-          'image', 
-          postModel.imageFile?.path ?? '',
-        ));
-        
-        // Send request
-        final streamedResponse = await request.send();
-        final response = await http.Response.fromStream(streamedResponse);
-        
-        _handleResponse(response);
-        return;
-      }
+
+       if (response.statusCode == 201 ) {
+      debugPrint('Post created successfully: ${response.body}');
+      return true;
+    } else {
+      debugPrint('Failed to create post: ${response.statusCode} - ${response.body}');
+      return false;
+    }
     } catch (e) {
       debugPrint('Error creating post: $e');
       rethrow;
     }
   }
-
-  void _handleResponse(http.Response response) {
-          if (response.statusCode >= 200 && response.statusCode < 300) {
-            debugPrint('Request successful: ${response.body}');
-          } else {
-            throw Exception('Failed to create post: ${response.statusCode} - ${response.body}');
-          }
-        }
 }

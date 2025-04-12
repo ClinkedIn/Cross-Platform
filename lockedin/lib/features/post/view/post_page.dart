@@ -2,41 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/colors.dart';
-import '../viewmodel/post_viewmodel.dart';
-import '../state/post_state.dart';
+import 'package:lockedin/features/post/viewmodel/post_viewmodel.dart';
 
-class PostPage extends ConsumerWidget {
+class PostPage extends ConsumerStatefulWidget {
   const PostPage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final postState = ref.watch(postViewModelProvider);
-    final postViewModel = ref.read(postViewModelProvider.notifier);
-    
-    // Create a TextEditingController that updates the ViewModel when text changes
-    final textController = TextEditingController(text: postState.content);
-    textController.selection = TextSelection.fromPosition(
-      TextPosition(offset: textController.text.length),
-    );
-    
-    // Show error if one exists
-    if (postState.error != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(postState.error!),
-            backgroundColor: Colors.red,
-            action: SnackBarAction(
-              label: 'Dismiss',
-              textColor: Colors.white,
-              onPressed: postViewModel.clearError,
-            ),
-          ),
-        );
-        postViewModel.clearError();
-      });
+  ConsumerState<PostPage> createState() => _PostPageState();
+}
+
+class _PostPageState extends ConsumerState<PostPage> {
+  // Mock state for UI demonstration only
+   late TextEditingController textController;
+  @override
+  void initState() {
+    super.initState();
+    textController = TextEditingController();
+    // Initialize any state or controllers here if needed
+    final initialData = ref.read(postViewModelProvider);
+    if (initialData.content.isNotEmpty) {
+      textController.text = initialData.content;
     }
+  }
+  @override
+  void dispose() {
+    textController.dispose();
+    super.dispose();
+  }
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final data = ref.watch(postViewModelProvider);
     
     return Scaffold(
       appBar: AppBar(
@@ -51,44 +47,44 @@ class PostPage extends ConsumerWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
-          postState.isSubmitting
-        ? Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: SizedBox(
-              height: 2.h,
-              width: 2.h,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: AppColors.primary,
+          data.isSubmitting
+          ? Padding(
+              padding: EdgeInsets.all(2.w),
+              child: SizedBox(
+                width: 5.w,
+                height: 5.w,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 0.5.w,
+                ),
               ),
-            ),
-          )
-        : FilledButton(
-            onPressed: postState.canSubmit
-                ? () async {
-                    final success = await postViewModel.submitPost();
-                    if (success && context.mounted) {
-                      Navigator.of(context).pop();
-                    }
-                  }
-                : null,
+            )
+          :FilledButton(
+            onPressed: () {
+              ref.read(postViewModelProvider.notifier).submitPost(
+                content: textController.text,
+                attachments: data.attachments ?? [], // Provide an empty list if null
+                visibility: data.visibility,
+              );
+              // This is just UI, no functionality
+              Navigator.of(context).pop();
+            },
             style: FilledButton.styleFrom(
-              backgroundColor: postState.canSubmit 
+              backgroundColor: textController.text.isNotEmpty 
                   ? AppColors.primary 
                   : AppColors.gray.withOpacity(0.5),
-              disabledBackgroundColor: AppColors.gray.withOpacity(0.5),
               padding: EdgeInsets.symmetric(horizontal: 5.w),
             ),
             child: Text(
               'Post',
               style: TextStyle(
-                color: Colors.white, // Always white text for contrast
+                color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 16.sp,
               ),
             ),
           ),
-            ],
+        ],
         elevation: 1,
       ),
       body: SingleChildScrollView(
@@ -103,7 +99,7 @@ class PostPage extends ConsumerWidget {
                   CircleAvatar(
                     radius: 6.w,
                     backgroundImage: const NetworkImage(
-                      'https://i.pravatar.cc/300', // Replace with user's profile image
+                      'https://i.pravatar.cc/300', // Placeholder avatar
                     ),
                     onBackgroundImageError: (_, __) {},
                     child: const Icon(Icons.person),
@@ -120,8 +116,7 @@ class PostPage extends ConsumerWidget {
                             border: Border.all(color: AppColors.gray.withOpacity(0.3)),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: // Add this to your existing ViewModel or create a new state variable for visibility
-                          Container(
+                          child: Container(
                             padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                             decoration: BoxDecoration(
                               border: Border.all(color: AppColors.gray.withOpacity(0.3)),
@@ -129,7 +124,7 @@ class PostPage extends ConsumerWidget {
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
-                                value: postState.visibility ?? 'Anyone', // Add this field to your state
+                                value: data.visibility,
                                 isDense: true,
                                 icon: Icon(
                                   Icons.arrow_drop_down,
@@ -180,7 +175,9 @@ class PostPage extends ConsumerWidget {
                                   ),
                                 ],
                                 onChanged: (value) {
-                                  postViewModel.updateVisibility(value!);
+                                  if (value != null) {
+                                     ref.read(postViewModelProvider.notifier).updateVisibility(value);
+                                  }
                                 },
                               ),
                             ),
@@ -211,47 +208,63 @@ class PostPage extends ConsumerWidget {
                   fontSize: 16.sp,
                   height: 1.4,
                 ),
-                onChanged: postViewModel.updateContent,
+                onChanged: (text) {
+                  // Just for UI updates
+                  ref.read(postViewModelProvider.notifier).updateContent(text);
+                  setState(() {});
+                },
               ),
               
               SizedBox(height: 2.h),
               
-              // Selected image preview
-              if (postState.imageFile != null) ...[
-                Stack(
-                  children: [
-                    ClipRRect(
+              // No image preview since this is just UI demo
+              // Add after TextField
+          SizedBox(height: 2.h),
+
+          // Image preview section when attachments exist
+          if (data.attachments != null && data.attachments!.isNotEmpty)
+            for (var file in data.attachments!)
+              Stack(
+                children: [
+                  Container(
+                    margin: EdgeInsets.only(bottom: 2.h),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(2.w),
+                      border: Border.all(color: AppColors.gray.withOpacity(0.3)),
+                    ),
+                    child: ClipRRect(
                       borderRadius: BorderRadius.circular(2.w),
                       child: Image.file(
-                        postState.imageFile!,
-                        width: 100.w,
-                        height: 40.h,
+                        file,
+                        height: 30.h,
+                        width: double.infinity,
                         fit: BoxFit.cover,
                       ),
                     ),
-                    Positioned(
-                      top: 1.h,
-                      right: 1.h,
-                      child: InkWell(
-                        onTap: postViewModel.removeImage,
-                        child: Container(
-                          padding: EdgeInsets.all(1.w),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.6),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.close,
-                            size: 5.w,
-                            color: Colors.white,
-                          ),
+                  ),
+                  Positioned(
+                    right: 1.w,
+                    top: 1.w,
+                    child: InkWell(
+                      onTap: () {
+                        ref.read(postViewModelProvider.notifier).removeImage();
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(1.w),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 5.w,
                         ),
                       ),
                     ),
-                  ],
-                ),
-                SizedBox(height: 2.h),
-              ],
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -269,34 +282,31 @@ class PostPage extends ConsumerWidget {
         child: Row(
           children: [
             IconButton(
-              onPressed: postViewModel.pickImage,
+              onPressed: () {
+                // No functionality
+                ref.read(postViewModelProvider.notifier).pickImage();
+              },
               icon: Icon(Icons.image, color: AppColors.primary),
               tooltip: 'Add image',
             ),
             IconButton(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Video upload not implemented yet')),
-                );
+                // No functionality
               },
               icon: Icon(Icons.videocam, color: AppColors.primary),
               tooltip: 'Add video',
             ),
             IconButton(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Document upload not implemented yet')),
-                );
+                // No functionality
               },
               icon: Icon(Icons.document_scanner, color: AppColors.primary),
-              tooltip: 'Add document',
+               tooltip: 'Add document',
             ),
             const Spacer(),
             IconButton(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Emoji picker not implemented yet')),
-                );
+                // No functionality
               },
               icon: Icon(Icons.emoji_emotions_outlined, color: AppColors.primary),
               tooltip: 'Add emoji',
