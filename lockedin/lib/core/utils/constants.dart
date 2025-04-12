@@ -11,4 +11,8 @@ class Constants {
   static const String createUserProfileEndpoint = '/user/profile';
   static const String logoutEndpoint = '/user/logout';
   static const String feedEndpoint = '/posts';
+  static const String savePostEndpoint = '/posts/%s/save'; // %s will be replaced with the postId
+  static const String togglelikePostEndpoint = '/posts/%s/like'; // %s will be replaced with the postId
+  //static const String unlikePostEndpoint = '/posts/%s/unlike'; // %s will be replaced with the postId
+  
 }
