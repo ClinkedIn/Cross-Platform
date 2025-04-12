@@ -193,8 +193,7 @@ class _EditProfilePhotoState extends ConsumerState<EditProfilePhoto> {
                       child: CircleAvatar(
                         radius: 120,
                         backgroundImage:
-                            user.profilePicture != null &&
-                                    user.profilePicture.isNotEmpty
+                            user.profilePicture.isNotEmpty
                                 ? NetworkImage(user.profilePicture)
                                 : AssetImage(
                                       'assets/images/default_profile_photo.png',

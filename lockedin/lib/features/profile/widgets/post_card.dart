@@ -28,7 +28,6 @@ class PostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Container(
       width: 100.w,
@@ -52,7 +51,10 @@ class PostCard extends StatelessWidget {
                     },
                     radius: 2.5.h,
                     // Fallback when image fails to load
-                    child: post.profileImageUrl.isEmpty ? Icon(Icons.person, size: 3.h) : null,
+                    child:
+                        post.profileImageUrl.isEmpty
+                            ? Icon(Icons.person, size: 3.h)
+                            : null,
                   ),
                   SizedBox(width: 2.w),
                   Expanded(
@@ -152,18 +154,30 @@ class PostCard extends StatelessWidget {
                               Icons.flag_outlined,
                               size: 2.h,
                               color: theme.iconTheme.color,
+
                             ),
-                            SizedBox(width: 2.w),
-                            Text(
-                              'Report this post',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontSize: 15.sp,
-                              ),
+                          ),
+                          PopupMenuItem(
+                            value: 'report',
+                            height: 5.h,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.flag_outlined,
+                                  size: 2.h,
+                                  color: theme.iconTheme.color,
+                                ),
+                                SizedBox(width: 2.w),
+                                Text(
+                                  'Report this post',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontSize: 15.sp,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
+                          ),
+                        ],
                   ),
                 ],
               ),
@@ -195,10 +209,11 @@ class PostCard extends StatelessWidget {
                         color: theme.cardColor,
                         child: Center(
                           child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded / 
-                                  loadingProgress.expectedTotalBytes!
-                                : null,
+                            value:
+                                loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
                             color: AppColors.primary,
                           ),
                         ),
@@ -214,7 +229,11 @@ class PostCard extends StatelessWidget {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.broken_image, size: 5.h, color: AppColors.gray),
+                              Icon(
+                                Icons.broken_image,
+                                size: 5.h,
+                                color: AppColors.gray,
+                              ),
                               SizedBox(height: 1.h),
                               Text(
                                 'Image could not be loaded',
@@ -236,11 +255,7 @@ class PostCard extends StatelessWidget {
               Row(
                 children: [
                   if (post.likes > 0) ...[
-                    Icon(
-                      Icons.thumb_up,
-                      size: 2.h,
-                      color: AppColors.gray,
-                    ),
+                    Icon(Icons.thumb_up, size: 2.h, color: AppColors.gray),
                     SizedBox(width: 1.w),
                     Text(
                       '${post.likes}',
@@ -251,7 +266,7 @@ class PostCard extends StatelessWidget {
                     ),
                     SizedBox(width: 3.w),
                   ],
-                   Spacer(),
+                  Spacer(),
                   if (post.comments > 0) ...[
                     Text(
                       '${post.comments} comments .',
@@ -261,6 +276,7 @@ class PostCard extends StatelessWidget {
                       ),
                     ),
                   ],
+
                   if (post.reposts > 0) ...[
                     Text(
                       '${post.reposts} reposts',
@@ -331,7 +347,7 @@ class PostCard extends StatelessWidget {
                           Text(
                             'Comment',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                             fontSize: 15.sp,
+                              fontSize: 15.sp,
                             ),
                           ),
                         ],

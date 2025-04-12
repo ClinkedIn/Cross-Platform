@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/auth/viewmodel/login_in_viewmodel.dart';
-import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
-import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';

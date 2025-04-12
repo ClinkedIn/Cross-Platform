@@ -1,7 +1,11 @@
 import 'dart:convert';
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
+import 'package:lockedin/features/profile/model/position_model.dart';
 import 'package:lockedin/features/profile/model/user_model.dart';
+import 'package:lockedin/features/profile/model/education_model.dart';
+import 'package:lockedin/features/profile/model/position_model.dart';
+// import 'package:lockedin/features/profile/model/license.dart';
 
 class ProfileService {
   Future<UserModel> fetchUserData() async {
@@ -14,4 +18,63 @@ class ProfileService {
       throw Exception("Failed to fetch user data: ${response.body}");
     }
   }
+
+  Future<List<Education>> fetchEducation() async {
+    try {
+      // Using RequestService instead of direct http calls
+      final response = await RequestService.get('/user/education');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        final List<dynamic> data = responseData['educations'] ?? [];
+        final List<Education> educationList =
+            data.map((item) => Education.fromJson(item)).toList();
+        return educationList;
+      } else {
+        throw Exception('Failed to load education data: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching education: $e');
+      throw e;
+    }
+  }
+
+  Future<List<Position>> fetchExperience() async {
+    try {
+      // Using RequestService instead of direct http calls
+      final response = await RequestService.get('/user/experience');
+      print("experience body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        final List<dynamic> data = responseData['experiences'] ?? [];
+        final List<Position> educationList =
+            data.map((item) => Position.fromJson(item)).toList();
+        return educationList;
+      } else {
+        throw Exception('Failed to load experience data: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching education: $e');
+      throw e;
+    }
+  }
+
+  // Future<List<License>> fetchLicenses() async {
+  //   try {
+  //     // Using RequestService instead of direct http calls
+  //     final response = await RequestService.get('/user/licenses');
+
+  //     if (response.statusCode == 200) {
+  //       final Map<String, dynamic> responseData = jsonDecode(response.body);
+  //       final List<dynamic> data = responseData['licenses'] ?? [];
+  //       return data.map((item) => License.fromJson(item)).toList();
+  //     } else {
+  //       throw Exception('Failed to load license data: ${response.body}');
+  //     }
+  //   } catch (e) {
+  //     print('Error fetching licenses: $e');
+  //     throw e;
+  //   }
+  // }
 }

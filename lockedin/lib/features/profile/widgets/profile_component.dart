@@ -80,7 +80,7 @@ class ProfileItem extends StatelessWidget {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Image.asset(
-                "assets/images/placeholder.png",
+                "assets/images/experience.jpg",
                 width: 50,
                 height: 50,
               );
