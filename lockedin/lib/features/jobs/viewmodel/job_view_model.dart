@@ -1,110 +1,118 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/jobs/model/job_model.dart';
+import 'package:lockedin/features/jobs/repository/job_repository.dart';
 
+/// Define the job repository provider here
+final jobRepositoryProvider = Provider<JobRepository>((ref) {
+  return JobRepository();
+});
+
+/// Job ViewModel
 class JobViewModel extends ChangeNotifier {
-  // Static provider declaration inside the view model
+  String? get selectedLocation => _selectedLocation;
+  String? get selectedIndustry => _selectedIndustry;
+  String? get selectedCompanyId => _selectedCompanyId;
+  int get minExperience => _minExperience;
+  final Set<String> _savedJobIds = {};
+  List<String> get savedJobs => _savedJobIds.toList();
+
+  /// Riverpod provider for JobViewModel
   static final provider = ChangeNotifierProvider<JobViewModel>((ref) {
-    return JobViewModel();
+    final repository = ref.watch(jobRepositoryProvider);
+    return JobViewModel(repository);
   });
 
-  // Holds the list of jobs
-  List<JobModel> _jobs = [];
-  List<JobModel> get jobs => _jobs;
+  final JobRepository _repository;
 
-  // Holds search query
-  String _searchQuery = '';
-  String get searchQuery => _searchQuery;
-
-  // Holds filter criteria
-  String? _selectedExperienceLevel;
-  String? _selectedCompany;
-  String? _selectedSalaryRange;
-
-  String? get selectedExperienceLevel => _selectedExperienceLevel;
-  String? get selectedCompany => _selectedCompany;
-  String? get selectedSalaryRange => _selectedSalaryRange;
-
-  // Constructor or init method to fetch initial data
-  JobViewModel() {
+  JobViewModel(this._repository) {
     fetchJobs();
   }
 
-  // Simulate fetching jobs (or integrate with your backend API)
-  void fetchJobs() {
-    _jobs = [
-      JobModel(
-        title: 'Senior iOS Engineer',
-        company: 'Flex AI',
-        location: 'Egypt (Remote)',
-        isRemote: false,
-        logoUrl: 'https://via.placeholder.com/50',
-        experienceLevel: 'Senior',
-        salaryRange: '\$80k - \$120k',
-        description:
-            'We are looking for a Senior iOS Engineer to build and maintain our iOS applications.',
-      ),
-      JobModel(
-        title: 'Data Engineer',
-        company: 'X Company',
-        location: 'Cairo, Egypt (On-site)',
-        isRemote: false,
-        experienceLevel: 'Mid-Level',
-        salaryRange: '\$60k - \$90k',
-        description:
-            'Join our data team to develop and optimize data pipelines for business intelligence.',
-      ),
-      JobModel(
-        title: 'Field Data Collector (Freelance)',
-        company: 'dubizzle Egypt',
-        location: 'Cairo, Egypt (On-site)',
-        isRemote: false,
-        experienceLevel: 'Entry-Level',
-        salaryRange: '\$10 - \$15 per hour',
-        description:
-            'Collect and validate market data for our research and analytics team.',
-      ),
-    ];
-    notifyListeners();
+  List<JobModel> _jobs = [];
+  List<JobModel> get jobs => _jobs;
+
+  String _searchQuery = '';
+  String? _selectedLocation;
+  String? _selectedIndustry;
+  String? _selectedCompanyId;
+  int _minExperience = 0;
+
+  Future<void> fetchJobs() async {
+    try {
+      _jobs = await _repository.fetchJobs(
+        q: _searchQuery,
+        location: _selectedLocation ?? '',
+        industry: _selectedIndustry ?? '',
+        companyId: _selectedCompanyId,
+        minExperience: _minExperience,
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching jobs: $e');
+    }
   }
 
-  // Method to update the search query
   void updateSearchQuery(String query) {
     _searchQuery = query;
-    notifyListeners();
+    fetchJobs();
   }
 
-  // Method to update filters
   void updateFilters({
-    String? experienceLevel,
-    String? company,
-    String? salaryRange,
+    String? location,
+    String? industry,
+    String? companyId,
+    int? minExperience,
   }) {
-    _selectedExperienceLevel = experienceLevel;
-    _selectedCompany = company;
-    _selectedSalaryRange = salaryRange;
-    notifyListeners();
+    _selectedLocation = location;
+    _selectedIndustry = industry;
+    _selectedCompanyId = companyId;
+    _minExperience = minExperience ?? 0;
+    fetchJobs();
   }
 
-  // Filtered list based on search query and filters
-  List<JobModel> get filteredJobs {
-    return _jobs.where((job) {
-      final queryMatch =
-          _searchQuery.isEmpty ||
-          job.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          job.company.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          job.location.toLowerCase().contains(_searchQuery.toLowerCase());
+  void saveJob(String jobId) async {
+    try {
+      _savedJobIds.add(jobId);
+      debugPrint('Saved Job IDs: $_savedJobIds');
+      await _repository.saveJob(jobId);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving job: $e');
+    }
+  }
 
-      final experienceMatch =
-          _selectedExperienceLevel == null ||
-          job.experienceLevel == _selectedExperienceLevel;
-      final companyMatch =
-          _selectedCompany == null || job.company == _selectedCompany;
-      final salaryMatch =
-          _selectedSalaryRange == null ||
-          job.salaryRange == _selectedSalaryRange;
+  void unsaveJob(String jobId) async {
+    try {
+      await _repository.unsaveJob(jobId);
+      _savedJobIds.remove(jobId);
+      debugPrint('Unsave successful: $jobId');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error unsaving job: $e');
+    }
+  }
 
-      return queryMatch && experienceMatch && companyMatch && salaryMatch;
-    }).toList();
+  bool isJobSaved(String jobId) {
+    return _savedJobIds.contains(jobId);
+  }
+
+  Future<void> applyToJob({
+    required String jobId,
+    required String contactEmail,
+    required String contactPhone,
+    required List<Map<String, String>> answers,
+  }) async {
+    try {
+      await _repository.applyForJob(
+        jobId: jobId,
+        contactEmail: contactEmail,
+        contactPhone: contactPhone,
+        answers: answers,
+      );
+      debugPrint('Application submitted successfully');
+    } catch (e) {
+      debugPrint('Error applying to job: $e');
+    }
   }
 }

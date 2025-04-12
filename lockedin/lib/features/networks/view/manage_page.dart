@@ -9,12 +9,12 @@ class ManagePage extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: Icon(Icons.arrow_back),
-        ),
+        // leading: IconButton(
+        //   onPressed: () {
+        //     Navigator.pop(context);
+        //   },
+        //   icon: Icon(Icons.arrow_back),
+        // ),
         title: Text('Manage my network', style: TextStyle(fontSize: 24)),
         centerTitle: true,
         iconTheme: theme.iconTheme,

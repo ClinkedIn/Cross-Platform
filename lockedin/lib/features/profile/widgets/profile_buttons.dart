@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 
 class ProfileButtons extends StatelessWidget {
@@ -21,7 +22,7 @@ class ProfileButtons extends StatelessWidget {
               SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () => context.push("/add-section"),
                   child: Text("Add section"),
                 ),
               ),

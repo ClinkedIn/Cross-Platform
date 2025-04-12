@@ -23,23 +23,51 @@ class RequestService {
     };
   }
 
-  // /// Generic GET request with optional headers
-  // static Future<http.Response> get(
-  //   String endpoint, {
-  //   Map<String, String>? additionalHeaders,
-  // }) async {
-  //   final String url = '$_baseUrl$endpoint';
-  //   final headers = await _getHeaders(additionalHeaders: additionalHeaders);
+  static Future<http.Response> postMultipart(
+    String endpoint,
+    File file, {
+    Map<String, String>? additionalFields,
+    Map<String, String>? additionalHeaders,
+  }) async {
+    final uri = Uri.parse('$_baseUrl$endpoint');
+    final String? storedCookie = await TokenService.getCookie();
 
-  //   try {
-  //     final response = await _client.get(Uri.parse(url), headers: headers);
-  //     _storeCookiesFromResponse(response);
-  //     return response;
-  //   } catch (e) {
-  //     throw Exception('GET request failed: $e');
-  //   }
-  // }
-  /// Generic GET request with optional headers and query parameters
+    var request = http.MultipartRequest('POST', uri);
+
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'file',
+        file.path,
+        contentType: MediaType('image', 'jpeg'), // or use helper method below
+      ),
+    );
+
+    // Attach additional form fields if any
+    if (additionalFields != null) {
+      request.fields.addAll(additionalFields);
+    }
+
+    // Add stored cookie if exists
+    if (storedCookie != null && storedCookie.isNotEmpty) {
+      request.headers['Cookie'] = storedCookie;
+    }
+
+    // Add additional headers if provided
+    if (additionalHeaders != null) {
+      request.headers.addAll(additionalHeaders);
+    }
+
+    // Important: Do not set 'Content-Type', http.MultipartRequest handles it
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      _storeCookiesFromResponse(response);
+      return response;
+    } catch (e) {
+      throw Exception('Multipart POST failed: $e');
+    }
+  }
+
   static Future<http.Response> get(
     String endpoint, {
     Map<String, String>? additionalHeaders,
