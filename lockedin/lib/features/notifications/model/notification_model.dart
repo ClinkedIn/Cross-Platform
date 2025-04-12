@@ -1,53 +1,93 @@
 /// A model representing a single notification in the app.
 class NotificationModel {
-  /// Unique identifier for the notification.
-  final int id;
-  /// Username of the user who triggered the notification.
-  final String username;
-  /// (Optional) A second username involved in the notification, if applicable.
-  final String secondUsername;
-  /// Type of activity that triggered the notification (e.g., "posted", "commented on").
-  final String activityType;
-  /// Description of the notification (e.g., "John Doe posted a new job").
-  final String description;
-  /// Time elapsed since the notification was triggered (e.g., "15m", "45m", "4h").
-  final String timeAgo;
-  /// URL of the profile image of the user who triggered the notification.
-  final String profileImageUrl;
-  /// Indicates whether the notification has been seen by the user.
-  bool isSeen;
-  /// Indicates whether the notification has been read by the user.
+  final String id;
+  final String from;
+  final String to;
+  final String subject;
+  final String content;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String resourceId;
+  final String relatedPostId;
+  final String relatedCommentId;
   bool isRead;
-  /// Indicates whether the notification is a placeholder (e.g., after "show less like this").
+  bool isSeen;
   bool isPlaceholder;
+  final SendingUser sendingUser;
+
+  // New field for timeAgo
+  String get timeAgo {
+    final difference = DateTime.now().difference(createdAt);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m';
+    } else {
+      return 'Just now'; // Optional, for very recent times
+    }
+  }
 
   /// Creates a [NotificationModel] instance with the given data.
   NotificationModel({
     required this.id,
-    required this.username,
-    required this.activityType,
-    required this.description,
-    required this.timeAgo,
-    required this.profileImageUrl,
-    this.isSeen = false,
+    required this.from,
+    required this.to,
+    required this.subject,
+    required this.content,
+    required this.createdAt,
+    required this.updatedAt,
+    this.resourceId = "",
+    this.relatedPostId = "",
+    this.relatedCommentId = "",
     this.isRead = false,
-    this.secondUsername = "",
+    this.isSeen = false,
     this.isPlaceholder = false,
+    required this.sendingUser,
   });
 
   /// Factory constructor to create a [NotificationModel] from a JSON map.
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
-      id: json['id'],
-      username: json['username'],
-      secondUsername: json['secondUsername'] ?? "",
-      activityType: json['activityType'],
-      description: json['description'],
-      timeAgo: json['timeAgo'],
-      profileImageUrl: json['profileImageUrl'],
+      id: json['_id'],
+      from: json['from'],
+      to: json['to'],
+      subject: json['subject'],
+      content: json['content'],
+      resourceId: json['resourceId'] ?? "",
+      relatedPostId: json['relatedPostId'] ?? "",
+      relatedCommentId: json['relatedCommentId'] ?? "",
       isRead: json['isRead'] ?? false,
       isSeen: json['isSeen'] ?? false,
       isPlaceholder: json['isPlaceholder'] ?? false,
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+      sendingUser: SendingUser.fromJson(json['sendingUser']),
+    );
+  }
+}
+
+class SendingUser {
+  final String email;
+  final String firstName;
+  final String lastName;
+  final String? profilePicture;
+
+  SendingUser({
+    required this.email,
+    required this.firstName,
+    required this.lastName,
+    this.profilePicture,
+  });
+
+  factory SendingUser.fromJson(Map<String, dynamic> json) {
+    return SendingUser(
+      email: json['email'],
+      firstName: json['firstName'],
+      lastName: json['lastName'],
+      profilePicture: json['profilePicture'],
     );
   }
 }

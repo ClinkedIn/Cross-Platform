@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/notifications/model/notification_model.dart';
 import 'package:lockedin/features/notifications/view/notifications_page.dart';
 import 'package:lockedin/features/notifications/viewmodel/notifications_viewmodel.dart';
 import 'package:lockedin/features/notifications/state/notification_settings_provider.dart';
@@ -13,7 +14,12 @@ import 'package:sizer/sizer.dart';
 /// This widget is used to build the notification item in the notifications page.
 /// When swiped left it shows 'Show less' and 'Delete' buttons.
 /// Applies a different background if the notification is unread.
-Widget buildNotificationItem(dynamic notification, bool isDarkMode, WidgetRef ref, BuildContext context) {
+Widget buildNotificationItem(
+  NotificationModel notification,
+  bool isDarkMode,
+  WidgetRef ref,
+  BuildContext context,
+) {
   return SafeArea(
     child: Container(
       padding: EdgeInsets.all(2.w),
@@ -36,7 +42,9 @@ Widget buildNotificationItem(dynamic notification, bool isDarkMode, WidgetRef re
           // Profile Picture
           if (!notification.isPlaceholder)
             CircleAvatar(
-              backgroundImage: NetworkImage(notification.profileImageUrl),
+              backgroundImage: NetworkImage(
+                notification.sendingUser.profilePicture!,
+              ),
               radius: 24,
             ),
 
@@ -57,7 +65,8 @@ Widget buildNotificationItem(dynamic notification, bool isDarkMode, WidgetRef re
                     children: [
                       if (!notification.isPlaceholder)
                         TextSpan(
-                          text: "${notification.username} ",
+                          text:
+                              "${notification.content.split(" ").take(2).join(" ")} ",
                           style: AppTextStyles.bodyText1.copyWith(
                             fontWeight: FontWeight.bold,
                             color: isDarkMode ? Colors.white : Colors.black,
@@ -65,34 +74,31 @@ Widget buildNotificationItem(dynamic notification, bool isDarkMode, WidgetRef re
                         ),
                       if (!notification.isPlaceholder)
                         TextSpan(
-                          text: "${notification.activityType} ",
+                          text: notification.content
+                              .split(" ")
+                              .skip(2)
+                              .join(" "),
                           style: AppTextStyles.bodyText1.copyWith(
                             color: isDarkMode ? Colors.white : Colors.black,
                           ),
                         ),
-                      if (!notification.isPlaceholder &&
-                          notification.secondUsername.isNotEmpty)
+                      // if (!notification.isPlaceholder &&
+                      //     notification.secondUsername.isNotEmpty)
+                      //   TextSpan(
+                      //     text: "${notification.secondUsername} ",
+                      //     style: AppTextStyles.bodyText1.copyWith(
+                      //       fontWeight: FontWeight.bold,
+                      //       color: isDarkMode ? Colors.white : Colors.black,
+                      //     ),
+                      //   ),
+                      if (notification.isPlaceholder)
                         TextSpan(
-                          text: "${notification.secondUsername} ",
+                          text:
+                              "Thanks. Your feedback helps us improve your notifications. ",
                           style: AppTextStyles.bodyText1.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: isDarkMode ? Colors.white : Colors.black,
+                            color: Colors.green[800],
                           ),
                         ),
-                      TextSpan(
-                        text:
-                            notification.isPlaceholder
-                                ? "Thanks. Your feedback helps us improve your notifications. "
-                                : notification.description,
-                        style: AppTextStyles.bodyText1.copyWith(
-                          color:
-                              notification.isPlaceholder
-                                  ? Colors.green[800]
-                                  : isDarkMode
-                                  ? Colors.white
-                                  : Colors.black,
-                        ),
-                      ),
                       if (notification.isPlaceholder)
                         TextSpan(
                           text: "Undo",
@@ -149,7 +155,7 @@ Widget buildNotificationItem(dynamic notification, bool isDarkMode, WidgetRef re
                             context,
                             ref,
                             isDarkMode,
-                            notification.username,
+                            "${notification.sendingUser.firstName} ${notification.sendingUser.lastName}",
                             notification.id,
                           ),
                     );
@@ -214,7 +220,7 @@ Widget buildBottomSheet(
   WidgetRef ref,
   bool isDarkMode,
   String username,
-  int id,
+  String id,
 ) {
   return Container(
     padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
@@ -259,7 +265,6 @@ Widget buildBottomSheet(
             ref.read(notificationsProvider.notifier).deleteNotification(id);
             showDeleteMessage(context, () {
               ref.read(notificationsProvider.notifier).undoDeleteNotification();
-              //Navigator.pop(context);
             }, isDarkMode);
             Navigator.pop(context);
           },
