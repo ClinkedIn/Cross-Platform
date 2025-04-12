@@ -31,19 +31,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: theme.scaffoldBackgroundColor,
-
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed:
-                () => ref.read(homeViewModelProvider.notifier).refreshFeed(),
-          ),
-        ],
-
-      ),
       body:
           homeState.isLoading
               ? Center(

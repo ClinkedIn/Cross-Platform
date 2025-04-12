@@ -14,6 +14,9 @@ class Constants {
   static const String savePostEndpoint = '/posts/%s/save'; // %s will be replaced with the postId
   static const String togglelikePostEndpoint = '/posts/%s/like'; // %s will be replaced with the postId
   static const String createPostEndpoint = '/posts';
+  static const String postDetailEndpoint = '/posts/%s'; // %s will be replaced with the postId
+  static const String commentsEndpoint = '/comments/%s/post'; // %s will be replaced with the postId
+  static const String addCommentEndpoint = '/comments'; // %s will be replaced with the postId
   //static const String unlikePostEndpoint = '/posts/%s/unlike'; // %s will be replaced with the postId
   
 }

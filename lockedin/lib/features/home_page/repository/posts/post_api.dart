@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
 import 'package:lockedin/features/home_page/model/post_model.dart';
@@ -85,7 +84,7 @@ class PostApi implements PostRepository {
                     ? postJson['attachments'][0]
                     : null,
             likes: postJson['impressionCounts']?['total'] ?? 0,
-            comments: postJson['commentCount'] ?? 0,
+            comments: _extractCommentCount(postJson), // Updated to use helper method
             reposts: postJson['repostCount'] ?? 0,
             isLiked: isLikedValue, // Use our safely extracted boolean value
           );
@@ -100,6 +99,49 @@ class PostApi implements PostRepository {
       // Return empty list on error
       return [];
     }
+  }
+
+  /// Helper method to safely extract comment count from various API formats
+  int _extractCommentCount(Map<String, dynamic> postJson) {
+    // Debug the available fields for troubleshooting
+    debugPrint('Available post fields for comment count: ${postJson.keys.join(', ')}');
+    
+    // Try the standard field name first
+    if (postJson.containsKey('commentCount')) {
+      final count = postJson['commentCount'];
+      debugPrint('Found commentCount: $count (${count.runtimeType})');
+      
+      if (count is int) {
+        return count;
+      } else if (count is String) {
+        return int.tryParse(count) ?? 0;
+      } else if (count is double) {
+        return count.toInt();
+      }
+    }
+    
+    // Try alternative field names
+    final alternativeNames = ['comments_count', 'comment_count', 'commentsCount'];
+    for (final name in alternativeNames) {
+      if (postJson.containsKey(name)) {
+        final count = postJson[name];
+        debugPrint('Found $name: $count');
+        if (count is int) return count;
+        if (count is String) return int.tryParse(count) ?? 0;
+        if (count is double) return count.toInt();
+      }
+    }
+    
+    // Check if there's a comments array we can count
+    if (postJson.containsKey('comments') && postJson['comments'] is List) {
+      final count = (postJson['comments'] as List).length;
+      debugPrint('Counted comments array length: $count');
+      return count;
+    }
+    
+    // If all else fails, log and return 0
+    debugPrint('Could not find comment count field in post data');
+    return 0;
   }
 
   // Rest of your code remains the same...
@@ -152,45 +194,45 @@ class PostApi implements PostRepository {
   }
 
   @override
-Future<bool> likePost(String postId) async {
-  try {
-    final String formattedEndpoint = Constants.togglelikePostEndpoint.replaceFirst('%s', postId);
-    final response = await RequestService.post(
-      formattedEndpoint,
-      body: {}, // Empty body since postId is in URL
-    );
-    
-    if (response.statusCode == 200) {
-      debugPrint('Post liked successfully: $postId');
-      return true;
-    } else {
-      throw Exception('Failed to like post: ${response.statusCode} - ${response.body}');
+  Future<bool> likePost(String postId) async {
+    try {
+      final String formattedEndpoint = Constants.togglelikePostEndpoint.replaceFirst('%s', postId);
+      final response = await RequestService.post(
+        formattedEndpoint,
+        body: {}, // Empty body since postId is in URL
+      );
+      
+      if (response.statusCode == 200) {
+        debugPrint('Post liked successfully: $postId');
+        return true;
+      } else {
+        throw Exception('Failed to like post: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error liking post: $e');
+      rethrow;
     }
-  } catch (e) {
-    debugPrint('Error liking post: $e');
-    rethrow;
   }
-}
 
-@override
-Future<bool> unlikePost(String postId) async {
-  try {
-    final String formattedEndpoint = Constants.togglelikePostEndpoint.replaceFirst('%s', postId);
-    final response = await RequestService.delete(
-      formattedEndpoint,
-    );
-    
-    if (response.statusCode == 200) {
-      debugPrint('Post unliked successfully: $postId');
-      return true;
-    } else {
-      throw Exception('Failed to unlike post: ${response.statusCode} - ${response.body}');
+  @override
+  Future<bool> unlikePost(String postId) async {
+    try {
+      final String formattedEndpoint = Constants.togglelikePostEndpoint.replaceFirst('%s', postId);
+      final response = await RequestService.delete(
+        formattedEndpoint,
+      );
+      
+      if (response.statusCode == 200) {
+        debugPrint('Post unliked successfully: $postId');
+        return true;
+      } else {
+        throw Exception('Failed to unlike post: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error unliking post: $e');
+      rethrow;
     }
-  } catch (e) {
-    debugPrint('Error unliking post: $e');
-    rethrow;
   }
-}
 }
 
 // Helper function for substring operations

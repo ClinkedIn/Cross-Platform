@@ -11,10 +11,11 @@ class CreatepostApi  {
       
       final response = await RequestService.postMultipart(
         Constants.createPostEndpoint,
-        attachments[0],
+        file: attachments.isNotEmpty ? attachments[0] : null,
+        fileFieldName: 'files',
         additionalFields: {
           'description': content,
-          'whoCanSee': visibility,
+          'whoCanSee': visibility.toLowerCase(),
         },
       );
 
