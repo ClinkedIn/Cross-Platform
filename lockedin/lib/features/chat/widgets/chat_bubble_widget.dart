@@ -9,7 +9,7 @@ class ChatBubble extends ConsumerWidget {
   final String message;
   final bool isMe;
   final String time;
-  final String senderImageUrl;
+  final String? senderImageUrl;
   final bool isRead;
   final String? attachmentUrl;
   final AttachmentType attachmentType;
@@ -19,7 +19,7 @@ class ChatBubble extends ConsumerWidget {
     required this.message,
     required this.isMe,
     required this.time,
-    required this.senderImageUrl,
+    this.senderImageUrl,
     required this.isRead,
     this.attachmentUrl,
     this.attachmentType = AttachmentType.none,
@@ -36,8 +36,13 @@ class ChatBubble extends ConsumerWidget {
         children: [
           if (!isMe) ...[
             CircleAvatar(
-              backgroundImage: NetworkImage(senderImageUrl),
+              backgroundImage: senderImageUrl != null && senderImageUrl!.isNotEmpty
+                  ? NetworkImage(senderImageUrl!)
+                  : null,
               radius: 16,
+              child: senderImageUrl == null || senderImageUrl!.isEmpty
+                  ? const Icon(Icons.person, size: 16)
+                  : null,
             ),
             const SizedBox(width: 8),
           ],

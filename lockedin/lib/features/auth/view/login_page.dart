@@ -17,7 +17,6 @@ class LoginPage extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
-    // Listen to login state
 
     return Scaffold(
       appBar: LogoAppbar(),

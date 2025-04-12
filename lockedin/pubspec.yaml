@@ -52,13 +52,16 @@ dependencies:
   font_awesome_flutter: ^10.8.0
   http: ^1.3.0
   shared_preferences: ^2.5.2
-  intl: ^0.19.0
-  #^0.20.2
   mockito: ^5.4.2
   build_runner: ^2.4.7
   file_picker: ^10.0.0
   giphy_picker: ^3.0.0
+
+  device_info_plus: ^11.3.3
+  intl: ^0.19.0
+
   go_router: ^14.8.1
+
 
 dev_dependencies:
   flutter_test:
