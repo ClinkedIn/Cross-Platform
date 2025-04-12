@@ -27,6 +27,51 @@ class RequestService {
     };
   }
 
+
+  static Future<http.Response> postMultipart(
+    String endpoint, {
+    File? file,
+    String fileFieldName = 'file', // <-- Add this parameter
+    Map<String, dynamic>? additionalFields,
+    Map<String, String>? headers,
+  }) async {
+    final uri = Uri.parse('$_baseUrl$endpoint');
+    final String? storedCookie = await TokenService.getCookie();
+
+    var request = http.MultipartRequest('POST', uri);
+
+    // Add file if present
+    if (file != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          fileFieldName, // <-- Use the passed field name
+          file.path,
+          contentType: MediaType('image', 'jpg'),
+        ),
+      );
+    }
+
+    // Add regular fields
+    if (additionalFields != null) {
+      additionalFields.forEach((key, value) {
+        if (value is String) {
+          request.fields[key] = value;
+        } else {
+          request.fields[key] = jsonEncode(value);
+        }
+      });
+    }
+
+    // Add cookie if available
+    if (storedCookie != null && storedCookie.isNotEmpty) {
+      request.headers['Cookie'] = storedCookie;
+    }
+
+    // Add additional headers if provided
+    if (headers != null) {
+      request.headers.addAll(headers);
+    }
+
   static Future<http.Response> get(
     String endpoint, {
     Map<String, String>? additionalHeaders,
@@ -44,6 +89,7 @@ class RequestService {
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
     debugPrint('GET Request: ${uri.toString()}');
 
+
     try {
       final response = await _client.get(uri, headers: headers);
       _storeCookiesFromResponse(response);
@@ -60,8 +106,10 @@ class RequestService {
     }
   }
 
+
   /// Generic POST request with body and optional headers
   static Future<http.Response> post(
+
     String endpoint, {
     required Map<String, dynamic> body,
     Map<String, String>? additionalHeaders,
@@ -133,52 +181,6 @@ class RequestService {
       return response;
     } catch (e) {
       throw Exception('PATCH request failed: $e');
-    }
-  }
-
-  /// POST multipart request with body and optional headers
-  static Future<http.Response> postMultipart(
-    String endpoint,
-    File file, {
-    Map<String, String>? additionalFields,
-    Map<String, String>? additionalHeaders,
-  }) async {
-    final uri = Uri.parse('$_baseUrl$endpoint');
-    final String? storedCookie = await TokenService.getCookie();
-
-    var request = http.MultipartRequest('POST', uri);
-
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'file',
-        file.path,
-        contentType: MediaType('image', 'jpg'), // or use helper method below
-      ),
-    );
-
-    // Attach additional form fields if any
-    if (additionalFields != null) {
-      request.fields.addAll(additionalFields);
-    }
-
-    // Add stored cookie if exists
-    if (storedCookie != null && storedCookie.isNotEmpty) {
-      request.headers['Cookie'] = storedCookie;
-    }
-
-    // Add additional headers if provided
-    if (additionalHeaders != null) {
-      request.headers.addAll(additionalHeaders);
-    }
-
-    // Important: Do not set 'Content-Type', http.MultipartRequest handles it
-    try {
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-      _storeCookiesFromResponse(response);
-      return response;
-    } catch (e) {
-      throw Exception('Multipart POST failed: $e');
     }
   }
 

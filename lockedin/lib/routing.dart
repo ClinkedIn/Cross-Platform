@@ -24,6 +24,7 @@ import 'package:lockedin/features/profile/view/setting_page.dart';
 import 'package:lockedin/shared/widgets/side_bar.dart';
 import 'package:lockedin/shared/widgets/upper_navbar.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
+import 'package:lockedin/features/home_page/view/detailed_post.dart';
 
 // Track whether user data has been loaded
 final userDataLoadedProvider = StateProvider<bool>((ref) => false);
@@ -101,6 +102,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => AddEducationPage(),
       ),
       GoRoute(
+
+        path: "/detailed-post/:postId",
+        name: "detailed-post",
+        builder: (context, state) => PostDetailView(
+          postId: state.pathParameters['postId']!,
+        ),
+
         path: "/add-position",
         name: "add-position",
         builder: (context, state) => AddPositionPage(),
@@ -124,6 +132,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: "/update-password",
         name: "update-password",
         builder: (context, state) => ChangePasswordPage(),
+
       ),
 
       StatefulShellRoute.indexedStack(

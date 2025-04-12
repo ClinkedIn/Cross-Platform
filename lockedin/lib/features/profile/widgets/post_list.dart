@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../home_page/model/post_model.dart';
 import '../../home_page/viewModel/home_viewmodel.dart';
+import '../../home_page/view/detailed_post.dart';
 import 'post_card.dart';
 
 class PostList extends ConsumerWidget {
@@ -32,6 +34,8 @@ class PostList extends ConsumerWidget {
           },
           onComment: () {
             print("Commented on post: ${posts[index].id}");
+            print("number of comments: ${posts[index].comments}");
+           context.push('/detailed-post/${posts[index].id}');
           },
           onShare: () {
             print("Shared post: ${posts[index].id}");

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/features/post/viewmodel/post_viewmodel.dart';
@@ -42,10 +43,6 @@ class _PostPageState extends ConsumerState<PostPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         actions: [
           data.isSubmitting
           ? Padding(
@@ -66,8 +63,7 @@ class _PostPageState extends ConsumerState<PostPage> {
                 attachments: data.attachments ?? [], // Provide an empty list if null
                 visibility: data.visibility,
               );
-              // This is just UI, no functionality
-              Navigator.of(context).pop();
+              context.go('/home'); // Navigate to home page after posting
             },
             style: FilledButton.styleFrom(
               backgroundColor: textController.text.isNotEmpty 

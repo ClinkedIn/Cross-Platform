@@ -24,7 +24,7 @@ class EducationService {
     try {
       final response = await RequestService.postMultipart(
         "/user/education/media",
-        file,
+        file: file,
       );
 
       print("Media upload response: ${response.statusCode}, ${response.body}");
