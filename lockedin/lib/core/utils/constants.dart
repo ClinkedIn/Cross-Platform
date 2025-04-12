@@ -68,6 +68,9 @@ class Constants {
   static const String savePostEndpoint = '/posts/%s/save'; // %s will be replaced with the postId
   static const String togglelikePostEndpoint = '/posts/%s/like'; // %s will be replaced with the postId
   static const String createPostEndpoint = '/posts';
+  static const String postDetailEndpoint = '/posts/%s'; // %s will be replaced with the postId
+  static const String commentsEndpoint = '/comments/%s/post'; // %s will be replaced with the postId
+  static const String addCommentEndpoint = '/comments'; // %s will be replaced with the postId
   //static const String unlikePostEndpoint = '/posts/%s/unlike'; // %s will be replaced with the postId
   static const String getNotificationsEndpoint = '/notifications';
   static const String markNotificationAsReadEndpoint = '/notifications/mark-read/%s'; // %s will be replaced with the notificationId
@@ -77,6 +80,6 @@ class Constants {
   static const String resumeNotificationsEndpoint = '/notifications/resume-notifications';
   static const String restoreNotificationsEndpoint = '/notifications/restore-notification/%s'; // %s will be replaced with the notificationId
   static const String deleteNotificationEndpoint = '/notifications/%s'; // %s will be replaced with the notificationId
-  
+
 }
 

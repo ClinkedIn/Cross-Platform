@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lockedin/features/profile/state/user_state.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/features/post/viewmodel/post_viewmodel.dart';
@@ -13,7 +15,7 @@ class PostPage extends ConsumerStatefulWidget {
 
 class _PostPageState extends ConsumerState<PostPage> {
   // Mock state for UI demonstration only
-   late TextEditingController textController;
+  late TextEditingController textController;
   @override
   void initState() {
     super.initState();
@@ -24,16 +26,19 @@ class _PostPageState extends ConsumerState<PostPage> {
       textController.text = initialData.content;
     }
   }
+
   @override
   void dispose() {
     textController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final data = ref.watch(postViewModelProvider);
-    
+    final user = ref.watch(userProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -42,48 +47,48 @@ class _PostPageState extends ConsumerState<PostPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         actions: [
           data.isSubmitting
-          ? Padding(
-              padding: EdgeInsets.all(2.w),
-              child: SizedBox(
-                width: 5.w,
-                height: 5.w,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 0.5.w,
+              ? Padding(
+                padding: EdgeInsets.all(2.w),
+                child: SizedBox(
+                  width: 5.w,
+                  height: 5.w,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 0.5.w,
+                  ),
+                ),
+              )
+              : FilledButton(
+                onPressed: () {
+                  ref
+                      .read(postViewModelProvider.notifier)
+                      .submitPost(
+                        content: textController.text,
+                        attachments:
+                            data.attachments ??
+                            [], // Provide an empty list if null
+                        visibility: data.visibility,
+                      );
+                  context.go('/home'); // Navigate to home page after posting
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor:
+                      textController.text.isNotEmpty
+                          ? AppColors.primary
+                          : AppColors.gray.withOpacity(0.5),
+                  padding: EdgeInsets.symmetric(horizontal: 5.w),
+                ),
+                child: Text(
+                  'Post',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.sp,
+                  ),
                 ),
               ),
-            )
-          :FilledButton(
-            onPressed: () {
-              ref.read(postViewModelProvider.notifier).submitPost(
-                content: textController.text,
-                attachments: data.attachments ?? [], // Provide an empty list if null
-                visibility: data.visibility,
-              );
-              // This is just UI, no functionality
-              Navigator.of(context).pop();
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: textController.text.isNotEmpty 
-                  ? AppColors.primary 
-                  : AppColors.gray.withOpacity(0.5),
-              padding: EdgeInsets.symmetric(horizontal: 5.w),
-            ),
-            child: Text(
-              'Post',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16.sp,
-              ),
-            ),
-          ),
         ],
         elevation: 1,
       ),
@@ -98,9 +103,14 @@ class _PostPageState extends ConsumerState<PostPage> {
                 children: [
                   CircleAvatar(
                     radius: 6.w,
-                    backgroundImage: const NetworkImage(
-                      'https://i.pravatar.cc/300', // Placeholder avatar
-                    ),
+                    backgroundImage:
+                        user != null && user.profilePicture.isNotEmpty
+                            ? NetworkImage(user.profilePicture)
+                            : const AssetImage(
+                                  'assets/images/default_profile_photo.png',
+                                )
+                                as ImageProvider, // Placeholder avatar
+
                     onBackgroundImageError: (_, __) {},
                     child: const Icon(Icons.person),
                   ),
@@ -111,15 +121,25 @@ class _PostPageState extends ConsumerState<PostPage> {
                       children: [
                         SizedBox(height: 0.5.h),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 3.w,
+                            vertical: 0.5.h,
+                          ),
                           decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.gray.withOpacity(0.3)),
+                            border: Border.all(
+                              color: AppColors.gray.withOpacity(0.3),
+                            ),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 2.w,
+                              vertical: 0.5.h,
+                            ),
                             decoration: BoxDecoration(
-                              border: Border.all(color: AppColors.gray.withOpacity(0.3)),
+                              border: Border.all(
+                                color: AppColors.gray.withOpacity(0.3),
+                              ),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: DropdownButtonHideUnderline(
@@ -176,7 +196,9 @@ class _PostPageState extends ConsumerState<PostPage> {
                                 ],
                                 onChanged: (value) {
                                   if (value != null) {
-                                     ref.read(postViewModelProvider.notifier).updateVisibility(value);
+                                    ref
+                                        .read(postViewModelProvider.notifier)
+                                        .updateVisibility(value);
                                   }
                                 },
                               ),
@@ -188,9 +210,9 @@ class _PostPageState extends ConsumerState<PostPage> {
                   ),
                 ],
               ),
-              
+
               SizedBox(height: 4.h),
-              
+
               // Post content text field
               TextField(
                 controller: textController,
@@ -198,73 +220,71 @@ class _PostPageState extends ConsumerState<PostPage> {
                 keyboardType: TextInputType.multiline,
                 decoration: InputDecoration(
                   hintText: 'What do you want to talk about?',
-                  hintStyle: TextStyle(
-                    color: AppColors.gray,
-                    fontSize: 16.sp,
-                  ),
+                  hintStyle: TextStyle(color: AppColors.gray, fontSize: 16.sp),
                   border: InputBorder.none,
                 ),
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  height: 1.4,
-                ),
+                style: TextStyle(fontSize: 16.sp, height: 1.4),
                 onChanged: (text) {
                   // Just for UI updates
                   ref.read(postViewModelProvider.notifier).updateContent(text);
                   setState(() {});
                 },
               ),
-              
+
               SizedBox(height: 2.h),
-              
+
               // No image preview since this is just UI demo
               // Add after TextField
-          SizedBox(height: 2.h),
+              SizedBox(height: 2.h),
 
-          // Image preview section when attachments exist
-          if (data.attachments != null && data.attachments!.isNotEmpty)
-            for (var file in data.attachments!)
-              Stack(
-                children: [
-                  Container(
-                    margin: EdgeInsets.only(bottom: 2.h),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(2.w),
-                      border: Border.all(color: AppColors.gray.withOpacity(0.3)),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(2.w),
-                      child: Image.file(
-                        file,
-                        height: 30.h,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 1.w,
-                    top: 1.w,
-                    child: InkWell(
-                      onTap: () {
-                        ref.read(postViewModelProvider.notifier).removeImage();
-                      },
-                      child: Container(
-                        padding: EdgeInsets.all(1.w),
+              // Image preview section when attachments exist
+              if (data.attachments != null && data.attachments!.isNotEmpty)
+                for (var file in data.attachments!)
+                  Stack(
+                    children: [
+                      Container(
+                        margin: EdgeInsets.only(bottom: 2.h),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(2.w),
+                          border: Border.all(
+                            color: AppColors.gray.withOpacity(0.3),
+                          ),
                         ),
-                        child: Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 5.w,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(2.w),
+                          child: Image.file(
+                            file,
+                            height: 30.h,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
-                    ),
+                      Positioned(
+                        right: 1.w,
+                        top: 1.w,
+                        child: InkWell(
+                          onTap: () {
+                            ref
+                                .read(postViewModelProvider.notifier)
+                                .removeImage();
+                          },
+                          child: Container(
+                            padding: EdgeInsets.all(1.w),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 5.w,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
             ],
           ),
         ),
@@ -273,10 +293,7 @@ class _PostPageState extends ConsumerState<PostPage> {
         padding: EdgeInsets.symmetric(vertical: 1.h, horizontal: 4.w),
         decoration: BoxDecoration(
           border: Border(
-            top: BorderSide(
-              color: AppColors.gray.withOpacity(0.2),
-              width: 0.5,
-            ),
+            top: BorderSide(color: AppColors.gray.withOpacity(0.2), width: 0.5),
           ),
         ),
         child: Row(
@@ -301,14 +318,17 @@ class _PostPageState extends ConsumerState<PostPage> {
                 // No functionality
               },
               icon: Icon(Icons.document_scanner, color: AppColors.primary),
-               tooltip: 'Add document',
+              tooltip: 'Add document',
             ),
             const Spacer(),
             IconButton(
               onPressed: () {
                 // No functionality
               },
-              icon: Icon(Icons.emoji_emotions_outlined, color: AppColors.primary),
+              icon: Icon(
+                Icons.emoji_emotions_outlined,
+                color: AppColors.primary,
+              ),
               tooltip: 'Add emoji',
             ),
           ],

@@ -74,7 +74,6 @@ class SignupViewModel extends Notifier<SignupState> {
     state = state.copyWith(isLoading: true);
 
     try {
-      final startTime = DateTime.now();
       final response = await _repository.registerUser(
         firstName: state.firstName,
         lastName: state.lastName,
@@ -82,13 +81,6 @@ class SignupViewModel extends Notifier<SignupState> {
         password: state.password,
         rememberMe: state.rememberMe,
       );
-      final endTime = DateTime.now();
-      print(
-        "⏳ API Call Duration: ${endTime.difference(startTime).inMilliseconds}ms",
-      );
-
-      print("📨 Server response: ${response.body}");
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         print("✅ Signup successful: ${responseData["message"]}");

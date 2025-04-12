@@ -65,9 +65,6 @@ class NotificationModel {
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       sendingUser: SendingUser.fromJson(json['sendingUser']),
-    );
-  }
-}
 
 class SendingUser {
   final String email;

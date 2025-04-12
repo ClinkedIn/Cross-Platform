@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/core/utils/constants.dart';
-import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/routing.dart';
@@ -11,13 +10,13 @@ import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize the base URL before the app starts
   await Constants.initializeBaseUrl();
-  
+
   // Initialize Firebase
   await Firebase.initializeApp();
-  
+
   runApp(
     ProviderScope(
       child: Sizer(
@@ -49,10 +48,10 @@ class _MyAppState extends ConsumerState<MyApp> {
     try {
       // Get the auth service and check if user is logged in
       final authService = ref.read(authServiceProvider);
-      
+
       // Try to fetch user data, this will automatically use demo mode if needed
       final user = await authService.fetchCurrentUser();
-      
+
       if (user != null) {
         debugPrint('User initialized: ${user.id}');
         if (authService.isDemoMode) {
@@ -62,7 +61,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         debugPrint('No user available, enabling demo mode');
         authService.enableDemoMode();
       }
-      
+
       setState(() {
         _isInitialized = true;
       });
@@ -71,7 +70,7 @@ class _MyAppState extends ConsumerState<MyApp> {
       // If any error occurs, enable demo mode
       final authService = ref.read(authServiceProvider);
       authService.enableDemoMode();
-      
+
       setState(() {
         _isInitialized = true;
       });
@@ -83,9 +82,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     final theme = ref.watch(themeProvider);
     final GoRouter router = ref.watch(goRouterProvider);
 
-
     return MaterialApp.router(
-
       debugShowCheckedModeBanner: false,
       title: 'LockedIn',
       theme: theme,

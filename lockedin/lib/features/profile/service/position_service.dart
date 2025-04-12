@@ -33,7 +33,7 @@ class PositionService {
     try {
       final response = await RequestService.postMultipart(
         "/user/experience/media", // Updated endpoint
-        file,
+        file: file,
       );
 
       print("Media upload response: ${response.statusCode}, ${response.body}");
