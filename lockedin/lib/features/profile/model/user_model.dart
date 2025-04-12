@@ -14,7 +14,7 @@ class UserModel {
   final String profilePrivacySettings;
   final List<WorkExperience> workExperience;
   final List<Skill> skills;
-  final List<Education> education;
+  final List<Educationn> education;
   final List<FollowEntity> following;
   final List<FollowEntity> followers;
   final List<String> connectionList;
@@ -47,8 +47,7 @@ class UserModel {
       firstName: json['firstName'] ?? "Unknown",
       lastName: json['lastName'] ?? "Unknown",
       email: json['email'] ?? "Unknown",
-      profilePicture:
-          json['profilePicture'] ?? "assets/images/default_profile_photo.png",
+      profilePicture: json['profilePicture'] ?? "",
       coverPicture:
           json['coverPicture'] ?? "assets/images/default_cover_photo.jpeg",
       resume: json['resume'] ?? "",
@@ -68,7 +67,7 @@ class UserModel {
           [],
       education:
           (json['education'] as List?)
-              ?.map((e) => Education.fromJson(e))
+              ?.map((e) => Educationn.fromJson(e))
               .toList() ??
           [],
       following:
@@ -138,7 +137,7 @@ class Skill {
   }
 }
 
-class Education {
+class Educationn {
   final String school;
   final String degree;
   final String fieldOfStudy;
@@ -148,7 +147,7 @@ class Education {
   final String description;
   final List<String> skills;
 
-  Education({
+  Educationn({
     required this.school,
     required this.degree,
     required this.fieldOfStudy,
@@ -159,8 +158,8 @@ class Education {
     required this.skills,
   });
 
-  factory Education.fromJson(Map<String, dynamic> json) {
-    return Education(
+  factory Educationn.fromJson(Map<String, dynamic> json) {
+    return Educationn(
       school: json['school'] ?? "Unknown",
       degree: json['degree'] ?? "Unknown",
       fieldOfStudy: json['fieldOfStudy'] ?? "Unknown",

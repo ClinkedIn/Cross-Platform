@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/auth/view/forget%20Password/verification_code_page.dart';
+import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/features/auth/viewmodel/forgot_password_viewmodel.dart';
 import 'package:lockedin/shared/widgets/logo_appbar.dart';
 import 'package:sizer/sizer.dart';
@@ -82,7 +82,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text("Verification code sent successfully"),
+                                    content: Text("Reset password link sent successfully"),
                                     backgroundColor: Colors.green,
                                   ),
                                 );
@@ -90,7 +90,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => VerificationCodeScreen(),
+                                    builder: (context) => LoginPage(),
                                   ),
                                 );
                               }

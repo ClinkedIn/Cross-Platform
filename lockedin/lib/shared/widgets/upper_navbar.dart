@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:lockedin/features/chat/view/chat_list_page.dart'; //trial for chat button when pressed
@@ -53,7 +54,9 @@ class UpperNavbar extends ConsumerWidget implements PreferredSizeWidget {
         ),
         IconButton(
           icon: Icon(Icons.settings, color: Colors.grey[700]),
-          onPressed: () {},
+          onPressed: () {
+            context.push("/settings");
+          },
         ),
         IconButton(
           icon: Icon(Icons.chat, color: Colors.grey[700]),

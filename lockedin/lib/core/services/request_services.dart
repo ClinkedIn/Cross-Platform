@@ -1,10 +1,16 @@
 import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+
+import 'dart:io';
+
 import 'package:http/http.dart' as http;
 import 'package:lockedin/core/services/token_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
+import 'package:http_parser/http_parser.dart';
 
 class RequestService {
-  static const String _baseUrl = Constants.baseUrl;
+  static final String _baseUrl = Constants.baseUrl;
   static final http.Client _client = http.Client();
 
   /// Prepares request headers, including stored cookies if available.
@@ -21,19 +27,89 @@ class RequestService {
     };
   }
 
-  /// Generic GET request with optional headers
-  static Future<http.Response> get(
+  static Future<http.Response> postMultipart(
     String endpoint, {
-    Map<String, String>? additionalHeaders,
+    File? file,
+    String fileFieldName = 'file', // <-- Add this parameter
+    Map<String, dynamic>? additionalFields,
+    Map<String, String>? headers,
   }) async {
-    final String url = '$_baseUrl$endpoint';
-    final headers = await _getHeaders(additionalHeaders: additionalHeaders);
+    final uri = Uri.parse('$_baseUrl$endpoint');
+    final String? storedCookie = await TokenService.getCookie();
+
+    var request = http.MultipartRequest('POST', uri);
+
+    // Add file if present
+    if (file != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          fileFieldName, // <-- Use the passed field name
+          file.path,
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      );
+    }
+
+    // Add regular fields
+    if (additionalFields != null) {
+      additionalFields.forEach((key, value) {
+        if (value is String) {
+          request.fields[key] = value;
+        } else {
+          request.fields[key] = jsonEncode(value);
+        }
+      });
+    }
+
+    // Add cookie if available
+    if (storedCookie != null && storedCookie.isNotEmpty) {
+      request.headers['Cookie'] = storedCookie;
+    }
+
+    // Add additional headers if provided
+    if (headers != null) {
+      request.headers.addAll(headers);
+    }
 
     try {
-      final response = await _client.get(Uri.parse(url), headers: headers);
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
       _storeCookiesFromResponse(response);
       return response;
     } catch (e) {
+      throw Exception('Multipart POST failed: $e');
+    }
+  }
+
+  static Future<http.Response> get(
+    String endpoint, {
+    Map<String, String>? additionalHeaders,
+    Map<String, String>? queryParameters,
+  }) async {
+    // Ensure the endpoint starts with '/'
+    if (!endpoint.startsWith('/')) {
+      endpoint = '/$endpoint';
+    }
+
+    final Uri uri = Uri.parse(
+      '$_baseUrl$endpoint',
+    ).replace(queryParameters: queryParameters);
+
+    final headers = await _getHeaders(additionalHeaders: additionalHeaders);
+    debugPrint('GET Request: ${uri.toString()}');
+
+    try {
+      final response = await _client.get(uri, headers: headers);
+      _storeCookiesFromResponse(response);
+
+      // Check if we got HTML instead of JSON
+      if (_isHtmlResponse(response)) {
+        debugPrint('Warning: Received HTML instead of JSON in GET request');
+      }
+
+      return response;
+    } catch (e) {
+      debugPrint('GET request failed: $e');
       throw Exception('GET request failed: $e');
     }
   }
@@ -44,11 +120,65 @@ class RequestService {
     required Map<String, dynamic> body,
     Map<String, String>? additionalHeaders,
   }) async {
+    try {
+      // Ensure the endpoint starts with '/'
+      if (!endpoint.startsWith('/')) {
+        endpoint = '/$endpoint';
+      }
+
+      final String url = '$_baseUrl$endpoint';
+      final Uri uri = Uri.parse(url);
+      final headers = await _getHeaders(additionalHeaders: additionalHeaders);
+
+      // Debug information
+      debugPrint('POST Request URL: $url');
+      debugPrint('POST Request Headers: $headers');
+      final jsonBody = jsonEncode(body);
+      debugPrint('POST Request Body: $jsonBody');
+
+      final response = await _client.post(
+        uri,
+        headers: headers,
+        body: jsonBody,
+      );
+
+      // Debug response information
+      debugPrint('POST Response Status: ${response.statusCode}');
+      debugPrint('POST Response Headers: ${response.headers}');
+
+      // Check if we got HTML instead of JSON
+      if (_isHtmlResponse(response)) {
+        debugPrint('Warning: Received HTML instead of JSON in POST request');
+      }
+
+      if (response.body.length < 1000) {
+        debugPrint('POST Response Body: ${response.body}');
+      } else {
+        debugPrint(
+          'POST Response Body (truncated): ${response.body.substring(0, 1000)}...',
+        );
+      }
+
+      _storeCookiesFromResponse(response);
+      return response;
+    } catch (e, stackTrace) {
+      debugPrint('POST request failed: $e');
+      debugPrint('Stack trace: $stackTrace');
+      throw Exception('POST request failed: $e');
+    }
+  }
+
+  // PATCH request
+  static Future<http.Response> patch(
+    String endpoint, {
+    required Map<String, dynamic> body,
+    Map<String, String>? additionalHeaders,
+  }) async {
     final String url = '$_baseUrl$endpoint';
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
 
     try {
-      final response = await _client.post(
+      final response = await _client.patch(
         Uri.parse(url),
         headers: headers,
         body: jsonEncode(body),
@@ -56,7 +186,7 @@ class RequestService {
       _storeCookiesFromResponse(response);
       return response;
     } catch (e) {
-      throw Exception('POST request failed: $e');
+      throw Exception('PATCH request failed: $e');
     }
   }
 
@@ -68,6 +198,7 @@ class RequestService {
   }) async {
     final String url = '$_baseUrl$endpoint';
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
+    debugPrint('PUT Request: $url');
 
     try {
       final response = await _client.put(
@@ -78,6 +209,7 @@ class RequestService {
       _storeCookiesFromResponse(response);
       return response;
     } catch (e) {
+      debugPrint('PUT request failed: $e');
       throw Exception('PUT request failed: $e');
     }
   }
@@ -89,12 +221,14 @@ class RequestService {
   }) async {
     final String url = '$_baseUrl$endpoint';
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
+    debugPrint('DELETE Request: $url');
 
     try {
       final response = await _client.delete(Uri.parse(url), headers: headers);
       _storeCookiesFromResponse(response);
       return response;
     } catch (e) {
+      debugPrint('DELETE request failed: $e');
       throw Exception('DELETE request failed: $e');
     }
   }
@@ -105,6 +239,7 @@ class RequestService {
     required String password,
   }) async {
     final String url = '$_baseUrl${Constants.loginEndpoint}';
+    debugPrint('LOGIN Request: $url');
 
     try {
       final response = await _client.post(
@@ -116,6 +251,7 @@ class RequestService {
       _storeCookiesFromResponse(response);
       return response;
     } catch (e) {
+      debugPrint('Login request failed: $e');
       throw Exception('Login request failed: $e');
     }
   }
@@ -130,5 +266,16 @@ class RequestService {
           .join('; ');
       TokenService.saveCookie(cleanedCookies);
     }
+  }
+
+  /// Check if the response is HTML instead of JSON
+  static bool _isHtmlResponse(http.Response response) {
+    final contentType = response.headers['content-type'] ?? '';
+    final body = response.body;
+
+    return contentType.contains('text/html') ||
+        body.contains('<!DOCTYPE html>') ||
+        body.contains('<html>') ||
+        (body.isNotEmpty && !body.startsWith('{') && !body.startsWith('['));
   }
 }
