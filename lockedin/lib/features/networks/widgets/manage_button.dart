@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 class ManageButton extends StatelessWidget {
   final String text;
   final IconData icon;
+  final Future<dynamic> action;
 
   const ManageButton({
     required this.text,
     required this.icon,
     super.key,
     required this.theme,
+    required this.action,
   });
 
   final ThemeData theme;
@@ -31,7 +33,9 @@ class ManageButton extends StatelessWidget {
                 RoundedRectangleBorder(borderRadius: BorderRadius.zero),
               ),
             ),
-            onPressed: () {},
+            onPressed: () {
+              action;
+            },
             icon: Icon(icon, color: theme.iconTheme.color, size: 24),
           ),
         ),
