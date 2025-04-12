@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/notifications/model/notification_model.dart';
 import 'package:lockedin/features/notifications/viewmodel/notifications_viewmodel.dart';
 import 'package:lockedin/features/notifications/widgets/notifications_widgets.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
@@ -22,15 +23,15 @@ class NotificationsPage extends ConsumerWidget {
     /// Currently selected notification category
     final selectedCategory = ref.watch(selectedCategoryProvider);
     /// Filter notifications based on selected category
-    final notifications = allNotifications.when(
+    final List<NotificationModel> notifications = allNotifications.when(
       data: (notificationsData) {
         switch (selectedCategory) {
           case 'Jobs':
-            return notificationsData.isNotEmpty ? [notificationsData[0]] : [];
+            return notificationsData.where((notification) => (notificationsData.indexOf(notification)) % 3 == 0).toList();
           case 'My posts':
-            return notificationsData.length > 1 ? [notificationsData[1]] : [];
+            return notificationsData.where((notification) => (notificationsData.indexOf(notification) + 2) % 3 == 0).toList();
           case 'Mentions':
-            return notificationsData.length > 2 ? [notificationsData[2]] : [];
+            return notificationsData.where((notification) => (notificationsData.indexOf(notification) + 1) % 3 == 0).toList();
           default:
             return notificationsData;
         }

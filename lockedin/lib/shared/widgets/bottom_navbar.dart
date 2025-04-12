@@ -11,6 +11,15 @@ final notificationsProvider =
       (ref) => NotificationsViewModel(),
     );
 
+final unseenNotificationsCountProvider = Provider<int>((ref) {
+  final state = ref.watch(notificationsProvider);
+  return state.when(
+    data: (notifications) => notifications.where((n) => !n.isSeen).length,
+    loading: () => 0,
+    error: (_, __) => 0,
+  );
+});
+
 class BottomNavBar extends ConsumerWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -25,7 +34,7 @@ class BottomNavBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final navBarTheme = theme.bottomNavigationBarTheme;
-    final unseenNotifications = ref.watch(notificationsProvider.notifier).getUnseenNotificationsCount();
+    final unseenNotifications = ref.watch(unseenNotificationsCountProvider);
 
     return Container(
       color: navBarTheme.backgroundColor,
@@ -42,11 +51,7 @@ class BottomNavBar extends ConsumerWidget {
               3,
               Icons.notifications,
               'Notifications',
-              unseenNotificationsCount: unseenNotifications.when(
-                data: (count) => count,
-                loading: () => null,
-                error: (err, stack) => null,
-              ),
+              unseenNotificationsCount: unseenNotifications,
               onTap: () {
                 ref.read(notificationsProvider.notifier).markAllAsSeen();
                 onTap(3); // Navigate to the Notifications page
