@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:lockedin/features/networks/view/connections_page.dart';
+import 'package:lockedin/features/networks/view/events_page.dart';
+import 'package:lockedin/features/networks/view/groups_page.dart';
+import 'package:lockedin/features/networks/view/newsletters_page.dart';
+import 'package:lockedin/features/networks/view/pages_page.dart';
 import 'package:lockedin/features/networks/widgets/manage_button.dart';
 
 class ManagePage extends StatelessWidget {
@@ -31,22 +36,50 @@ class ManagePage extends StatelessWidget {
               text: 'Connections',
               icon: Icons.group_add_rounded,
               theme: theme,
+              action: Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ConnectionsPage()),
+              ),
             ),
             Divider(height: 0),
-            ManageButton(text: 'Groups', icon: Icons.groups, theme: theme),
+            ManageButton(
+              text: 'Groups',
+              icon: Icons.groups,
+              theme: theme,
+              action: Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => GroupsPage()),
+              ),
+            ),
             Divider(height: 0),
             ManageButton(
               text: 'Events',
               icon: Icons.calendar_month,
               theme: theme,
+              action: Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => EventsPage()),
+              ),
             ),
             Divider(height: 0),
-            ManageButton(text: 'Pages', icon: Icons.apartment, theme: theme),
+            ManageButton(
+              text: 'Pages',
+              icon: Icons.apartment,
+              theme: theme,
+              action: Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PagesPage()),
+              ),
+            ),
             Divider(height: 0),
             ManageButton(
               text: 'Newsletters',
               icon: Icons.newspaper,
               theme: theme,
+              action: Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => NewsletterPage()),
+              ),
             ),
             Divider(height: 0),
           ],
