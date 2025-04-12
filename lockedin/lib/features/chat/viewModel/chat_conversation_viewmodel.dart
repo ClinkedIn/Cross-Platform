@@ -1,6 +1,11 @@
 // chat_conversation_viewmodel.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
+import 'package:lockedin/core/services/auth_service.dart';
 import 'package:lockedin/features/chat/model/chat_message_model.dart';
+import 'package:lockedin/features/chat/model/chat_model.dart';
+import 'package:lockedin/features/chat/repository/chat_conversation_repository.dart';
+import 'package:lockedin/features/chat/viewModel/chat_viewmodel.dart';
 
 // Define attachment types
 enum AttachmentType {
@@ -15,22 +20,38 @@ class ChatConversationState {
   final List<ChatMessage> messages;
   final bool isLoading;
   final String? error;
+  final Map<String, List<ChatMessage>> messagesByDate;
+  final String? otherUserId;
+  final String? otherUserName;
+  final String? otherUserProfilePic;
 
   ChatConversationState({
     this.messages = const [],
     this.isLoading = false,
     this.error,
+    this.messagesByDate = const {},
+    this.otherUserId,
+    this.otherUserName,
+    this.otherUserProfilePic,
   });
 
   ChatConversationState copyWith({
     List<ChatMessage>? messages,
     bool? isLoading,
     String? error,
+    Map<String, List<ChatMessage>>? messagesByDate,
+    String? otherUserId,
+    String? otherUserName,
+    String? otherUserProfilePic,
   }) {
     return ChatConversationState(
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
+      messagesByDate: messagesByDate ?? this.messagesByDate,
+      otherUserId: otherUserId ?? this.otherUserId,
+      otherUserName: otherUserName ?? this.otherUserName,
+      otherUserProfilePic: otherUserProfilePic ?? this.otherUserProfilePic,
     );
   }
 }
@@ -38,126 +59,79 @@ class ChatConversationState {
 // Define the StateNotifier
 class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
   final String chatId;
-  final String currentUserId = 'current_user'; // Replace with actual user ID from auth
+  final ChatConversationRepository _repository;
+  final AuthService _authService;
+  final Chat? chat;
+  
+  String get currentUserId => _authService.currentUser?.id ?? '';
 
-  ChatConversationNotifier(this.chatId) : super(ChatConversationState(isLoading: true)) {
-    _loadMessages();
+  ChatConversationNotifier(this.chatId, this._repository, this._authService, this.chat) 
+      : super(ChatConversationState(isLoading: true)) {
+    _loadConversation();
   }
 
-  Future<void> _loadMessages() async {
+  Future<void> _loadConversation() async {
     try {
-      // Implement your API call here
-      // For now, let's use some mock data
-      await Future.delayed(Duration(seconds: 1));
-      final messages = [
-        ChatMessage(
-          id: '1',
-          senderId: 'current_user',
-          content: 'Hello there!',
-          timestamp: DateTime.now().subtract(Duration(minutes: 5)),
-        ),
-        ChatMessage(
-          id: '2',
-          senderId: 'other_user',
-          content: 'Hi! How are you?',
-          timestamp: DateTime.now().subtract(Duration(minutes: 4)),
-        ),
-      ];
+      state = state.copyWith(isLoading: true);
       
-      state = state.copyWith(messages: messages, isLoading: false);
+      final conversationData = await _repository.fetchConversation(chatId);
+      
+      // Extract the raw messages
+      final chatData = conversationData['chat'];
+      final List<dynamic> rawMessages = chatData['rawMessages'];
+      final messages = rawMessages.map((json) => ChatMessage.fromJson(json)).toList();
+      
+      // Get other user data
+      final otherUserData = conversationData['otherUser'];
+      final String otherUserId = otherUserData['_id'];
+      final String otherUserName = '${otherUserData['firstName']} ${otherUserData['lastName']}'.trim();
+      final String? otherUserProfilePic = otherUserData['profilePicture'];
+      
+      // Group messages by date
+      final Map<String, List<ChatMessage>> messagesByDate = {};
+      if (chatData['conversationHistory'] != null) {
+        for (var dateGroup in chatData['conversationHistory']) {
+          final date = dateGroup['date'];
+          final List<dynamic> messagesForDate = dateGroup['messages'];
+          messagesByDate[date] = messagesForDate.map((json) => ChatMessage.fromJson(json)).toList();
+        }
+      }
+      
+      state = state.copyWith(
+        messages: messages,
+        isLoading: false,
+        messagesByDate: messagesByDate,
+        otherUserId: otherUserId,
+        otherUserName: otherUserName,
+        otherUserProfilePic: otherUserProfilePic,
+      );
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
-
-  void sendMessage(String content) {
-    if (content.isEmpty) return;
-
-    final newMessage = ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      senderId: currentUserId,
-      content: content,
-      timestamp: DateTime.now(),
-    );
-
-    state = state.copyWith(
-      messages: [...state.messages, newMessage],
-    );
-
-    // Here you would normally also send the message to your backend
-    // _sendMessageToAPI(newMessage);
-  }
-  
-  // New methods for handling attachments
-  
-  Future<void> sendDocumentAttachment(String filePath) async {
-    try {
-      // Implement document sending logic
-      // 1. Upload file to storage
-      // 2. Get download URL
-      // 3. Create message with document data
-      
-      // Mock implementation for demonstration
-      final documentUrl = "https://storage.example.com/documents/${DateTime.now().millisecondsSinceEpoch}";
-      final documentName = filePath.split('/').last;
-      
-      final messageContent = "[Document: $documentName]";
-      
-      final newMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        senderId: currentUserId,
-        content: messageContent,
-        timestamp: DateTime.now(),
-        attachmentUrl: documentUrl,
-        attachmentType: AttachmentType.document,
-      );
-
-      state = state.copyWith(
-        messages: [...state.messages, newMessage],
-      );
-      
-      // _sendAttachmentToAPI(newMessage);
-    } catch (e) {
-      state = state.copyWith(error: "Failed to send document: ${e.toString()}");
-    }
-  }
-  
-  Future<void> sendImageAttachment(String imagePath, bool fromCamera) async {
-    try {
-      // Implement image sending logic
-      // 1. Compress image if needed
-      // 2. Upload to storage
-      // 3. Get download URL
-      // 4. Create message with image data
-      
-      // Mock implementation for demonstration
-      final imageUrl = "https://storage.example.com/images/${DateTime.now().millisecondsSinceEpoch}";
-      final source = fromCamera ? "Camera" : "Gallery";
-      
-      final messageContent = "[Image from $source]";
-      
-      final newMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        senderId: currentUserId,
-        content: messageContent,
-        timestamp: DateTime.now(),
-        attachmentUrl: imageUrl,
-        attachmentType: AttachmentType.image,
-      );
-
-      state = state.copyWith(
-        messages: [...state.messages, newMessage],
-      );
-      
-      // _sendAttachmentToAPI(newMessage);
-    } catch (e) {
-      state = state.copyWith(error: "Failed to send image: ${e.toString()}");
-    }
-  }
-    
 }
+
+// Auth service provider
+final authServiceProvider = Provider<AuthService>((ref) {
+  return AuthService();
+});
 
 // Define the provider correctly
 final chatConversationProvider = StateNotifierProvider.family<ChatConversationNotifier, ChatConversationState, String>(
-  (ref, chatId) => ChatConversationNotifier(chatId),
-);
+  (ref, chatId) {
+    final repository = ref.watch(chatConversationRepositoryProvider);
+    final authService = ref.watch(authServiceProvider);
+    final chatState = ref.watch(chatProvider);
+    
+    // Find the chat to get its type
+    Chat? chat;
+    try {
+      chat = chatState.chats.firstWhere((c) => c.id == chatId);
+    } catch (e) {
+      // Chat not found, leave as null
+      debugPrint('Chat not found in chat list: $chatId');
+    }
+    
+    return ChatConversationNotifier(chatId, repository, authService, chat);
+  },
+); 

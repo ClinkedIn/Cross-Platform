@@ -6,12 +6,15 @@ import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
   // Initialize the base URL before the app starts
   await Constants.initializeBaseUrl();
+  
+  // Initialize Firebase
   await Firebase.initializeApp();
+  
   runApp(
     ProviderScope(
       child: Sizer(

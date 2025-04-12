@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
+import 'package:lockedin/features/chat/view/chat_conversation_page.dart';
 import 'package:lockedin/features/chat/viewModel/chat_viewmodel.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 
@@ -21,8 +22,13 @@ class ChatItem extends ConsumerWidget {
           chatViewModel.markChatAsRead(chat);
         }
         
-        // Navigate to chat screen (implement this)
-        // Navigator.pushNamed(context, '/chat-detail', arguments: chat);
+        // Navigate to chat conversation screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatConversationScreen(chat: chat),
+          ),
+        );
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

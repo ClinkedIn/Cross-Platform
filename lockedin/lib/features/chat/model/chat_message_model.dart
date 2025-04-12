@@ -2,67 +2,95 @@ import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dar
 
 class ChatMessage {
   final String id;
-  final String senderId;
-  final String content;
-  final DateTime timestamp;
-  final bool isRead;
-  final String? attachmentUrl;
+  final MessageSender sender;
+  final String messageText;
+  final List<String> messageAttachment;
+  final DateTime createdAt;
+  final DateTime updatedAt;
   final AttachmentType attachmentType;
 
   ChatMessage({
     required this.id,
-    required this.senderId,
-    required this.content,
-    required this.timestamp,
-    this.isRead = false,
-    this.attachmentUrl,
+    required this.sender,
+    required this.messageText,
+    required this.createdAt,
+    required this.updatedAt,
+    this.messageAttachment = const [],
     this.attachmentType = AttachmentType.none,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
-      id: json['id'],
-      senderId: json['senderId'],
-      content: json['content'],
-      timestamp: DateTime.parse(json['timestamp']),
-      isRead: json['isRead'] ?? false,
-      attachmentUrl: json['attachmentUrl'],
-      attachmentType: AttachmentType.values.firstWhere(
-        (type) => type.toString() == 'AttachmentType.${json['attachmentType']}',
-        orElse: () => AttachmentType.none,
-      ),
+      id: json['_id'],
+      sender: MessageSender.fromJson(json['sender']),
+      messageText: json['messageText'],
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+      messageAttachment: json['messageAttachment'] != null 
+          ? List<String>.from(json['messageAttachment'])
+          : [],
+      attachmentType: _determineAttachmentType(json['messageAttachment']),
+    );
+  }
+
+  static AttachmentType _determineAttachmentType(List<dynamic>? attachments) {
+    if (attachments == null || attachments.isEmpty) {
+      return AttachmentType.none;
+    }
+    
+    // You can implement logic to determine attachment type based on file extension
+    // For now, just return image type if there's an attachment
+    return AttachmentType.image;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'sender': sender.toJson(),
+      'messageText': messageText,
+      'messageAttachment': messageAttachment,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
+
+  bool get isFromCurrentUser {
+    // This will need to be updated based on your authentication system
+    // to check if the message sender is the current user
+    return false;
+  }
+}
+
+class MessageSender {
+  final String id;
+  final String firstName;
+  final String lastName;
+  final String? profilePicture;
+
+  MessageSender({
+    required this.id,
+    required this.firstName,
+    required this.lastName,
+    this.profilePicture,
+  });
+
+  factory MessageSender.fromJson(Map<String, dynamic> json) {
+    return MessageSender(
+      id: json['_id'],
+      firstName: json['firstName'],
+      lastName: json['lastName'],
+      profilePicture: json['profilePicture'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'senderId': senderId,
-      'content': content,
-      'timestamp': timestamp.toIso8601String(),
-      'isRead': isRead,
-      'attachmentUrl': attachmentUrl,
-      'attachmentType': attachmentType.toString().split('.').last,
+      '_id': id,
+      'firstName': firstName,
+      'lastName': lastName,
+      'profilePicture': profilePicture,
     };
   }
 
-  ChatMessage copyWith({
-    String? id,
-    String? senderId,
-    String? content,
-    DateTime? timestamp,
-    bool? isRead,
-    String? attachmentUrl,
-    AttachmentType? attachmentType,
-  }) {
-    return ChatMessage(
-      id: id ?? this.id,
-      senderId: senderId ?? this.senderId,
-      content: content ?? this.content,
-      timestamp: timestamp ?? this.timestamp,
-      isRead: isRead ?? this.isRead,
-      attachmentUrl: attachmentUrl ?? this.attachmentUrl,
-      attachmentType: attachmentType ?? this.attachmentType,
-    );
-  }
+  String get fullName => '$firstName $lastName';
 }

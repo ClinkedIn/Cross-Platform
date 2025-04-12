@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/chat/view/chat_item.dart';
+import 'package:lockedin/features/chat/widgets/chat_item_widget.dart';
 import 'package:lockedin/features/chat/viewModel/chat_viewmodel.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
