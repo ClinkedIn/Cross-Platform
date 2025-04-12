@@ -57,11 +57,10 @@ class Constants {
   static const String allChatsEndpoint = '/chats/all-chats';
   
   /// Endpoint to fetch a specific chat conversation
-  /// Format: /chats/direct-chat/{chatId}
-  /// Use .replaceAll('{chatId}', actualChatId) when making the request
+  /// Use: '/chats/direct-chat/{actualChatId}'
   static const String chatConversationEndpoint = '/chats/direct-chat/{chatId}';
   
   /// Endpoint to send a message to a specific chat
-  /// This is appended to the chat ID path in the repository
-  static const String sendMessageEndpoint = '/messages';
+  /// Format: '/chats/direct-chat/{chatId}/messages' 
+  static const String chatMessagesEndpoint = '/chats/direct-chat/{chatId}/messages';
 }

@@ -22,11 +22,17 @@ class RequestService {
     };
   }
 
+  /// Generic GET request with headers and query parameters
   static Future<http.Response> get(
     String endpoint, {
     Map<String, String>? additionalHeaders,
     Map<String, String>? queryParameters,
   }) async {
+    // Ensure the endpoint starts with '/'
+    if (!endpoint.startsWith('/')) {
+      endpoint = '/$endpoint';
+    }
+    
     final Uri uri = Uri.parse(
       '$_baseUrl$endpoint',
     ).replace(queryParameters: queryParameters);
@@ -37,6 +43,12 @@ class RequestService {
     try {
       final response = await _client.get(uri, headers: headers);
       _storeCookiesFromResponse(response);
+      
+      // Check if we got HTML instead of JSON
+      if (_isHtmlResponse(response)) {
+        debugPrint('Warning: Received HTML instead of JSON in GET request');
+      }
+      
       return response;
     } catch (e) {
       debugPrint('GET request failed: $e');
@@ -51,6 +63,11 @@ class RequestService {
     Map<String, String>? additionalHeaders,
   }) async {
     try {
+      // Ensure the endpoint starts with '/'
+      if (!endpoint.startsWith('/')) {
+        endpoint = '/$endpoint';
+      }
+      
       final String url = '$_baseUrl$endpoint';
       final Uri uri = Uri.parse(url);
       final headers = await _getHeaders(additionalHeaders: additionalHeaders);
@@ -70,6 +87,11 @@ class RequestService {
       // Debug response information
       debugPrint('POST Response Status: ${response.statusCode}');
       debugPrint('POST Response Headers: ${response.headers}');
+      
+      // Check if we got HTML instead of JSON
+      if (_isHtmlResponse(response)) {
+        debugPrint('Warning: Received HTML instead of JSON in POST request');
+      }
       
       if (response.body.length < 1000) {
         debugPrint('POST Response Body: ${response.body}');
@@ -162,5 +184,16 @@ class RequestService {
           .join('; ');
       TokenService.saveCookie(cleanedCookies);
     }
+  }
+
+  /// Check if the response is HTML instead of JSON
+  static bool _isHtmlResponse(http.Response response) {
+    final contentType = response.headers['content-type'] ?? '';
+    final body = response.body;
+    
+    return contentType.contains('text/html') || 
+           body.contains('<!DOCTYPE html>') || 
+           body.contains('<html>') ||
+           (body.isNotEmpty && !body.startsWith('{') && !body.startsWith('['));
   }
 }

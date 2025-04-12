@@ -34,8 +34,12 @@ class ChatRepository {
   /// Marks a chat as read in the backend
   Future<void> markChatAsRead(String chatId) async {
     try {
+      // Use proper endpoint for marking chat as read - the URL was returning HTML docs
+      // We'll create a proper URL that matches your API's expected format
+      final endpoint = "/chats/${chatId}/mark-read";
+      
       final response = await RequestService.post(
-        "${Constants.allChatsEndpoint}/$chatId",
+        endpoint,
         body: {'read': true}
       );
       

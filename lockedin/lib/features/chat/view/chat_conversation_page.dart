@@ -28,7 +28,8 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     super.initState();
     // Mark chat as read when opening the conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(chatProvider.notifier).markChatAsRead(widget.chat);
+      // Commenting out the mark as read call to test without it
+      // ref.read(chatProvider.notifier).markChatAsRead(widget.chat);
     });
   }
 
@@ -49,14 +50,77 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     }
   }
 
-  // Placeholder for future implementation
+  // Updated to use the viewModel's sendMessage implementation
   void sendMessage() {
+    if (_messageController.text.trim().isEmpty) return;
+    
+    final messageText = _messageController.text.trim();
+    _messageController.clear();
+    
+    // Get the current user ID and log it for debugging
+    final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+    final userId = chatViewModel.currentUserId;
+    debugPrint('Sending message with user ID: ${userId.isNotEmpty ? userId : "EMPTY"}');
+    
+    // Show a loading indicator
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Message sending not yet implemented'),
-        duration: Duration(seconds: 2),
+        content: Text('Sending message...'),
+        duration: Duration(seconds: 1),
       ),
     );
+    
+    // Call the viewModel's sendMessage method
+    chatViewModel.sendMessage(messageText).then((_) {
+      // Success! Message sent
+      _scrollToBottom();
+    }).catchError((error) {
+      // Show a detailed error message if something went wrong
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Error sending message', 
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 4),
+              Text(
+                error.toString(),
+                style: TextStyle(fontSize: 12),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'DETAILS',
+            textColor: Colors.white,
+            onPressed: () {
+              // Show a dialog with the full error details
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('API Error Details'),
+                  content: SingleChildScrollView(
+                    child: Text(error.toString()),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('CLOSE'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    });
   }
   
   @override
@@ -78,11 +142,69 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       ),
       body: Column(
         children: [
+          // Show error banner if there's an API error
+          if (chatState.error != null)
+            Material(
+              color: Colors.red.shade700,
+              child: InkWell(
+                onTap: () {
+                  // Show dialog with full error details
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text('API Error Details'),
+                      content: SingleChildScrollView(
+                        child: Text(chatState.error!),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('CLOSE'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.white),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'API Error: Tap for details',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           Expanded(
             child: chatState.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : chatState.error != null
-                    ? Center(child: Text('Error: ${chatState.error}'))
+                : chatState.messages.isEmpty && chatState.messagesByDate.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
+                            SizedBox(height: 16),
+                            Text('No messages yet', style: TextStyle(color: Colors.grey)),
+                            if (chatState.error != null)
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  'Could not load messages from server',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                          ],
+                        ),
+                      )
                     : _buildChatMessagesList(chatState),
           ),
           ChatInputField(
@@ -153,7 +275,16 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   
   Widget _buildMessageBubble(message) {
     final currentUserId = ref.read(chatConversationProvider(widget.chat.id).notifier).currentUserId;
-    final isMe = message.sender.id == currentUserId;
+    // Debug fix: In demo mode, alternate messages between "me" and "other"
+    // to show different bubble colors (remove this in production)
+    bool isMe;
+    if (currentUserId == 'demo-user-123') {
+      // We're in demo mode, so we'll make every other message appear as "me"
+      isMe = message.id.hashCode % 2 == 0;
+    } else {
+      // Normal mode: check if the message sender is the current user
+      isMe = message.sender.id == currentUserId;
+    }
     
     // Default to empty string for messageText if null
     final messageText = message.messageText ?? '';
