@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'dart:convert';
 
 final loginViewModelProvider =
     StateNotifierProvider<LoginViewModel, AsyncValue<void>>((ref) {
@@ -12,6 +13,7 @@ final loginViewModelProvider =
 
 class LoginViewModel extends StateNotifier<AsyncValue<void>> {
   final Ref ref;
+  String errorMessage = '';
 
   LoginViewModel(this.ref) : super(const AsyncValue.data(null));
 
@@ -21,22 +23,62 @@ class LoginViewModel extends StateNotifier<AsyncValue<void>> {
     String password,
     BuildContext context,
   ) async {
+    // Reset previous error message
+    errorMessage = '';
+
+    // Validate inputs
+    if (email.isEmpty) {
+      errorMessage = 'Email cannot be empty';
+      state = AsyncValue.error(Exception(errorMessage), StackTrace.current);
+      return false;
+    }
+
+    if (password.isEmpty) {
+      errorMessage = 'Password cannot be empty';
+      state = AsyncValue.error(Exception(errorMessage), StackTrace.current);
+      return false;
+    }
+
     state = const AsyncValue.loading();
     try {
       final response = await RequestService.login(
         email: email,
         password: password,
       );
+
       if (response.statusCode == 200) {
         state = const AsyncValue.data(null);
         return true;
       } else {
-        throw Exception('Login failed: ${response.body}');
+        // Parse the error message from the response
+        try {
+          final errorData = json.decode(response.body);
+          if (errorData.containsKey('message')) {
+            errorMessage = errorData['message'];
+          } else {
+            errorMessage = 'Login failed. Please check your credentials.';
+          }
+        } catch (_) {
+          errorMessage = 'Login failed: ${response.reasonPhrase}';
+        }
+
+        state = AsyncValue.error(Exception(errorMessage), StackTrace.current);
+        return false;
       }
     } catch (e, stackTrace) {
+      errorMessage =
+          e.toString().contains('SocketException')
+              ? 'Network error. Please check your connection.'
+              : 'Login failed: ${e.toString()}';
+
       state = AsyncValue.error(e, stackTrace);
       return false;
     }
+  }
+
+  // Get the current error message
+  String getErrorMessage() {
+    return errorMessage;
   }
 
   // Updated Google Sign-In method with token and error logging

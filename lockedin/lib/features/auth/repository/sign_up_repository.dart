@@ -15,11 +15,9 @@ class SignupRepository {
       "email": email,
       "password": password,
       "remember_me": rememberMe,
+      "recaptchaResponseToken": "recaptchaResponseToken",
     };
-    print("bodyyy : $body");
-
     final response = await RequestService.post("/user", body: body);
-    print("response ${response.statusCode} , response body: ${response.body}");
     return response;
   }
 }
