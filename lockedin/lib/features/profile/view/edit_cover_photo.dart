@@ -2,7 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lockedin/features/profile/state/user_state.dart';
+import 'package:lockedin/features/profile/state/profile_components_state.dart';
+import 'package:lockedin/features/profile/utils/picture_loader.dart';
 import 'package:lockedin/features/profile/viewmodel/edit_cover_photo_viewmodel.dart';
 import 'package:lockedin/features/profile/viewmodel/edit_profile_photo_viewmodel.dart';
 
@@ -186,18 +187,12 @@ class _EditCoverPhotoState extends ConsumerState<EditCoverPhoto> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                           color: Colors.white,
+                          image: DecorationImage(
+                            image: getUsercoverImage(user),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                         clipBehavior: Clip.antiAlias,
-                        child:
-                            user.coverPicture.isNotEmpty
-                                ? Image.network(
-                                  user.coverPicture,
-                                  fit: BoxFit.cover,
-                                )
-                                : Image.asset(
-                                  'assets/images/default_cover_photo.jpg',
-                                  fit: BoxFit.cover,
-                                ),
                       ),
                     ),
                     const SizedBox(height: 40),

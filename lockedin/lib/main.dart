@@ -16,9 +16,6 @@ void main() async {
   // Initialize the base URL before the app starts
   await Constants.initializeBaseUrl();
 
-  // For development: Uncomment this line to force logout on hot restart
-  await TokenService.deleteCookie();
-
   // Initialize Firebase
   await Firebase.initializeApp();
 
@@ -58,7 +55,7 @@ class _MyAppState extends ConsumerState<MyApp> {
       final isLoggedIn = await authService.isLoggedIn();
       if (!isLoggedIn) {
         debugPrint('No auth token found, should navigate to login');
-        // We'll set _isInitialized to true and let the router handle redirection 
+        // We'll set _isInitialized to true and let the router handle redirection
         setState(() {
           _isInitialized = true;
         });
@@ -71,7 +68,9 @@ class _MyAppState extends ConsumerState<MyApp> {
       if (user != null) {
         debugPrint('User initialized: ${user.id}');
       } else {
-        debugPrint('No authenticated user available, removing any stale tokens');
+        debugPrint(
+          'No authenticated user available, removing any stale tokens',
+        );
         // Clear any stale tokens
         await _clearAuthAndPrepareForLogin();
       }
@@ -83,13 +82,13 @@ class _MyAppState extends ConsumerState<MyApp> {
       debugPrint('Error initializing auth: $e');
       // Clear auth on error
       await _clearAuthAndPrepareForLogin();
-      
+
       setState(() {
         _isInitialized = true;
       });
     }
   }
-  
+
   Future<void> _clearAuthAndPrepareForLogin() async {
     try {
       // Clear any existing auth tokens
@@ -106,14 +105,10 @@ class _MyAppState extends ConsumerState<MyApp> {
     if (!_isInitialized) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        ),
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
-    
+
     final theme = ref.watch(themeProvider);
     final GoRouter router = ref.watch(goRouterProvider);
 

@@ -16,12 +16,10 @@ class EditEmailViewModel extends ChangeNotifier {
 
     if (RegExp(r'^\+?[ 0-9]+$').hasMatch(input)) {
       if (!input.startsWith('+')) {
-        print("❌ Invalid phone format");
         emailError =
             "❌ Please enter a valid phone number, including '+' when using a country code.";
         isEmailValid = false;
       } else {
-        print("✅ Valid phone number");
         emailError = null;
         isEmailValid = true;
       }
@@ -32,11 +30,9 @@ class EditEmailViewModel extends ChangeNotifier {
     if (RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     ).hasMatch(input)) {
-      print("✅ Valid email");
       emailError = null;
       isEmailValid = true;
     } else {
-      print("❌ Invalid email or phone");
       emailError =
           "❌ Invalid input. Please enter a valid email or phone number.";
       isEmailValid = false;
@@ -73,6 +69,12 @@ class EditEmailViewModel extends ChangeNotifier {
     }
 
     isLoading = false;
+    notifyListeners();
+  }
+
+  void resetMessages() {
+    apiMessage = null;
+    emailError = null;
     notifyListeners();
   }
 }

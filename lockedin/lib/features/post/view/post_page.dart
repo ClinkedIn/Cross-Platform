@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lockedin/features/profile/state/user_state.dart';
+import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/features/post/viewmodel/post_viewmodel.dart';
@@ -37,7 +37,7 @@ class _PostPageState extends ConsumerState<PostPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final data = ref.watch(postViewModelProvider);
-    final user = ref.watch(userProvider);
+    final userState = ref.watch(userProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -103,13 +103,17 @@ class _PostPageState extends ConsumerState<PostPage> {
                 children: [
                   CircleAvatar(
                     radius: 6.w,
-                    backgroundImage:
-                        user != null && user.profilePicture.isNotEmpty
-                            ? NetworkImage(user.profilePicture)
-                            : const AssetImage(
-                                  'assets/images/default_profile_photo.png',
-                                )
-                                as ImageProvider, // Placeholder avatar
+                    backgroundImage: userState.when(
+                      data: (user) => NetworkImage(user.profilePicture ?? ""),
+                      error:
+                          (error, _) => AssetImage(
+                            'assets/images/default_profile_photo.png',
+                          ),
+                      loading:
+                          () => AssetImage(
+                            'assets/images/default_profile_photo.png',
+                          ),
+                    ), // Placeholder avatar
 
                     onBackgroundImageError: (_, __) {},
                     child: const Icon(Icons.person),

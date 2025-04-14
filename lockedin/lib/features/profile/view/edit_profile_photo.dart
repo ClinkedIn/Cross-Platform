@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lockedin/features/profile/state/user_state.dart';
+import 'package:lockedin/features/profile/state/profile_components_state.dart';
+import 'package:lockedin/features/profile/utils/picture_loader.dart';
 import 'package:lockedin/features/profile/viewmodel/edit_profile_photo_viewmodel.dart';
 
 class EditProfilePhoto extends ConsumerStatefulWidget {
@@ -151,8 +152,7 @@ class _EditProfilePhotoState extends ConsumerState<EditProfilePhoto> {
       body:
           _isLoading
               ? Center(child: CircularProgressIndicator(color: Colors.white))
-              : user != null
-              ? SingleChildScrollView(
+              : SingleChildScrollView(
                 child: Column(
                   children: [
                     const SizedBox(height: 40),
@@ -192,13 +192,7 @@ class _EditProfilePhotoState extends ConsumerState<EditProfilePhoto> {
                       padding: const EdgeInsets.all(4),
                       child: CircleAvatar(
                         radius: 120,
-                        backgroundImage:
-                            user.profilePicture.isNotEmpty
-                                ? NetworkImage(user.profilePicture)
-                                : AssetImage(
-                                      'assets/images/default_profile_photo.png',
-                                    )
-                                    as ImageProvider,
+                        backgroundImage: getUserProfileImage(user),
                       ),
                     ),
                     const SizedBox(height: 80),
@@ -227,9 +221,6 @@ class _EditProfilePhotoState extends ConsumerState<EditProfilePhoto> {
                     ),
                   ],
                 ),
-              )
-              : const Center(
-                child: CircularProgressIndicator(color: Colors.white),
               ),
     );
   }

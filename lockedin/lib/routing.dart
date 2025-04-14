@@ -14,7 +14,8 @@ import 'package:lockedin/features/jobs/view/jobs_page.dart';
 import 'package:lockedin/features/networks/view/network_page.dart';
 import 'package:lockedin/features/notifications/view/notifications_page.dart';
 import 'package:lockedin/features/post/view/post_page.dart';
-import 'package:lockedin/features/profile/state/user_state.dart';
+import 'package:lockedin/features/profile/state/profile_components_state.dart';
+import 'package:lockedin/features/profile/utils/picture_loader.dart';
 import 'package:lockedin/features/profile/view/add_education_page.dart';
 import 'package:lockedin/features/profile/view/add_position_page.dart';
 import 'package:lockedin/features/profile/view/add_section_window.dart';
@@ -23,20 +24,17 @@ import 'package:lockedin/features/profile/view/edit_cover_photo.dart';
 import 'package:lockedin/features/profile/view/edit_profile_photo.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
 import 'package:lockedin/features/profile/view/setting_page.dart';
+import 'package:lockedin/features/profile/view/update_page.dart';
 import 'package:lockedin/shared/widgets/side_bar.dart';
 import 'package:lockedin/shared/widgets/upper_navbar.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
 import 'package:lockedin/features/home_page/view/detailed_post.dart';
-
-// Track whether user data has been loaded
-final userDataLoadedProvider = StateProvider<bool>((ref) => false);
 
 // Use this to control drawer state
 final scaffoldKeyProvider = Provider((ref) => GlobalKey<ScaffoldState>());
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final globalKey = ref.watch(scaffoldKeyProvider);
-  final currentUser = ref.watch(userProvider);
 
   return GoRouter(
     initialLocation: '/',
@@ -44,8 +42,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       // Define public routes that don't require authentication
       final publicRoutes = ['/login', '/forgot-password', '/sign-up'];
 
-      // Get authentication status
-      final isAuthenticated = await TokenService.hasCookie();
+      var isAuthenticated = await TokenService.hasCookie();
+      var cokkie = await TokenService.getCookie();
+      print("Cookie: $cokkie");
+      print("Is authenticated: $isAuthenticated");
 
       // Don't redirect when navigating to the root page, let MainPage handle it
       if (state.fullPath == '/') {
@@ -145,6 +145,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'edit-cover-photo',
         builder: (context, state) => EditCoverPhoto(),
       ),
+      GoRoute(
+        path: '/edit-profile',
+        name: 'edit-profile',
+        builder: (context, state) => UpdatePage(),
+      ),
 
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -160,27 +165,37 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 
           return Scaffold(
             key: globalKey,
-            appBar: UpperNavbar(
-              leftIcon: CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.transparent,
-                backgroundImage:
-                    currentUser != null && currentUser.profilePicture.isNotEmpty
-                        ? NetworkImage(currentUser.profilePicture)
-                        : const AssetImage(
-                              'assets/images/default_profile_photo.png',
-                            )
-                            as ImageProvider,
+            appBar: PreferredSize(
+              preferredSize: Size.fromHeight(
+                kToolbarHeight,
+              ), // Standard app bar height
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final currentUser = ref.watch(userProvider);
+                  return currentUser.when(
+                    data:
+                        (user) => UpperNavbar(
+                          leftIcon: CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.transparent,
+                            backgroundImage: getUserProfileImage(currentUser),
+                          ),
+                          leftOnPress: () {
+                            // Toggle drawer only when profile icon is clicked
+                            if (globalKey.currentState?.isDrawerOpen ?? false) {
+                              globalKey.currentState?.closeDrawer();
+                            } else {
+                              globalKey.currentState?.openDrawer();
+                            }
+                          },
+                        ),
+                    loading: () => AppBar(title: Text("Loading...")),
+                    error: (err, _) => AppBar(title: Text("error")),
+                  );
+                },
               ),
-              leftOnPress: () {
-                // Toggle drawer only when profile icon is clicked
-                if (globalKey.currentState?.isDrawerOpen ?? false) {
-                  globalKey.currentState?.closeDrawer();
-                } else {
-                  globalKey.currentState?.openDrawer();
-                }
-              },
             ),
+
             // Drawer is only opened when the profile icon is clicked
             drawer: SidebarDrawer(),
             body: navigationShell,

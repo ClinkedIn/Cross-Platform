@@ -1,6 +1,30 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/profile/model/education_model.dart';
 import 'package:lockedin/features/profile/model/position_model.dart';
+import 'package:lockedin/features/profile/model/user_model.dart';
+
+final userProvider = StateNotifierProvider<UserNotifier, AsyncValue<UserModel>>(
+  (ref) {
+    return UserNotifier();
+  },
+);
+
+class UserNotifier extends StateNotifier<AsyncValue<UserModel>> {
+  UserNotifier() : super(const AsyncValue.loading());
+
+  void setUser(UserModel user) {
+    Future.microtask(() {
+      state = AsyncValue.data(user);
+    });
+  }
+
+  void setError(Object error, StackTrace stackTrace) {
+    state = AsyncValue.error(error, stackTrace);
+  }
+
+  void setLoading() {
+    state = const AsyncValue.loading();
+  }
+}
 
 final educationProvider =
     StateNotifierProvider<EducationNotifier, AsyncValue<List<Education>>>((
@@ -47,24 +71,3 @@ class ExperienceNotifier extends StateNotifier<AsyncValue<List<Position>>> {
     state = const AsyncValue.loading();
   }
 }
-
-// final licensesProvider =
-//     StateNotifierProvider<LicensesNotifier, AsyncValue<List<License>>>((ref) {
-//       return LicensesNotifier();
-//     });
-
-// class LicensesNotifier extends StateNotifier<AsyncValue<List<License>>> {
-//   LicensesNotifier() : super(const AsyncValue.loading());
-
-//   void setLicenses(List<License> licenses) {
-//     state = AsyncValue.data(licenses);
-//   }
-
-//   void setError(Object error, StackTrace stackTrace) {
-//     state = AsyncValue.error(error, stackTrace);
-//   }
-
-//   void setLoading() {
-//     state = const AsyncValue.loading();
-//   }
-// }

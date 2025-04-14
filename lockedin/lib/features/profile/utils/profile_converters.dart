@@ -1,4 +1,4 @@
-import 'package:lockedin/features/profile/model/education_model.dart';
+import 'package:lockedin/features/profile/model/user_model.dart';
 import 'package:lockedin/features/profile/model/position_model.dart';
 // import 'package:lockedin/features/profile/model/license_model.dart';
 import 'package:lockedin/features/profile/model/profile_item_model.dart';

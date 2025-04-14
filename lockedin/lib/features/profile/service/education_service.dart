@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:lockedin/core/services/request_services.dart';
-import 'package:lockedin/features/profile/model/education_model.dart';
+import 'package:lockedin/features/profile/model/user_model.dart';
 
 class EducationService {
   // Add education to user profile

@@ -21,7 +21,7 @@ class EditCoverPhotoViewModel extends StateNotifier<AsyncValue<void>> {
       final response = await CoverPhotoService.updateCoverPhoto(photoFile);
 
       if (response.statusCode == 200) {
-        await ref.read(profileViewModelProvider).fetchUser(context);
+        await ref.read(profileViewModelProvider).fetchUser();
         state = const AsyncValue.data(null);
         return true;
       } else {
@@ -39,7 +39,7 @@ class EditCoverPhotoViewModel extends StateNotifier<AsyncValue<void>> {
       final response = await CoverPhotoService.deleteCoverPhoto();
 
       if (response.statusCode == 200) {
-        await ref.read(profileViewModelProvider).fetchUser(context);
+        await ref.read(profileViewModelProvider).fetchUser();
         state = const AsyncValue.data(null);
         return true;
       } else {

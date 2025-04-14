@@ -22,7 +22,7 @@ class EditProfilePhotoViewModel extends StateNotifier<AsyncValue<void>> {
 
       if (response.statusCode == 200) {
         // Refresh user data to get updated profile photo
-        await ref.read(profileViewModelProvider).fetchUser(context);
+        await ref.read(profileViewModelProvider).fetchUser();
         state = const AsyncValue.data(null);
         return true;
       } else {
@@ -41,7 +41,7 @@ class EditProfilePhotoViewModel extends StateNotifier<AsyncValue<void>> {
 
       if (response.statusCode == 200) {
         // Refresh user data to get updated profile state
-        await ref.read(profileViewModelProvider).fetchUser(context);
+        await ref.read(profileViewModelProvider).fetchUser();
         state = const AsyncValue.data(null);
         return true;
       } else {

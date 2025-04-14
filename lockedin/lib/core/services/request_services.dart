@@ -74,7 +74,6 @@ class RequestService {
     try {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-      _storeCookiesFromResponse(response);
       return response;
     } catch (e) {
       throw Exception('Multipart POST failed: $e');
@@ -97,63 +96,25 @@ class RequestService {
     ).replace(queryParameters: queryParameters);
 
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
-    debugPrint('GET Request URL: ${uri.toString()}');
-    debugPrint('GET Request Headers: $headers');
 
     try {
       final response = await _client.get(uri, headers: headers);
-      _storeCookiesFromResponse(response);
 
       // Debug response information
-      debugPrint('GET Response Status: ${response.statusCode}');
-      debugPrint('GET Response Headers: ${response.headers}');
-
-      // Check if we got HTML instead of JSON
-      if (_isHtmlResponse(response)) {
-        debugPrint('Warning: Received HTML instead of JSON in GET request');
-        if (response.body.length < 500) {
-          debugPrint('HTML Response: ${response.body}');
-        } else {
-          debugPrint('HTML Response (truncated): ${response.body.substring(0, 500)}...');
-        }
-        
-        // Retry logic for HTML responses (max 2 retries)
-        if (retryCount < 2) {
-          debugPrint('Retrying request (attempt ${retryCount + 1})...');
-          // Refresh the authentication token if we have one
-          await TokenService.getCookie(); // Ensure we have latest token
-          // Wait a bit before retrying
-          await Future.delayed(Duration(seconds: 1));
-          // Retry the request with incremented retry count
-          return get(
-            endpoint, 
-            additionalHeaders: additionalHeaders, 
-            queryParameters: queryParameters,
-            retryCount: retryCount + 1
-          );
-        }
-      } else if (response.body.length < 1000) {
-        debugPrint('GET Response Body: ${response.body}');
-      } else {
-        debugPrint('GET Response Body (truncated): ${response.body.substring(0, 1000)}...');
-      }
 
       return response;
     } catch (e) {
-      debugPrint('GET request failed: $e');
-      
       // Retry network errors as well
       if (retryCount < 2) {
-        debugPrint('Retrying failed request (attempt ${retryCount + 1})...');
         await Future.delayed(Duration(seconds: 1));
         return get(
-          endpoint, 
-          additionalHeaders: additionalHeaders, 
+          endpoint,
+          additionalHeaders: additionalHeaders,
           queryParameters: queryParameters,
-          retryCount: retryCount + 1
+          retryCount: retryCount + 1,
         );
       }
-      
+
       throw Exception('GET request failed: $e');
     }
   }
@@ -175,11 +136,7 @@ class RequestService {
       final Uri uri = Uri.parse(url);
       final headers = await _getHeaders(additionalHeaders: additionalHeaders);
 
-      // Debug information
-      debugPrint('POST Request URL: $url');
-      debugPrint('POST Request Headers: $headers');
       final jsonBody = jsonEncode(body);
-      debugPrint('POST Request Body: $jsonBody');
 
       final response = await _client.post(
         uri,
@@ -187,27 +144,20 @@ class RequestService {
         body: jsonBody,
       );
 
-      // Debug response information
-      debugPrint('POST Response Status: ${response.statusCode}');
-      debugPrint('POST Response Headers: ${response.headers}');
-
       // Check if we got HTML instead of JSON
       if (_isHtmlResponse(response)) {
-        debugPrint('Warning: Received HTML instead of JSON in POST request');
-        
         // Retry logic for HTML responses (max 2 retries)
         if (retryCount < 2) {
-          debugPrint('Retrying POST request (attempt ${retryCount + 1})...');
           // Refresh the authentication token if we have one
           await TokenService.getCookie(); // Ensure we have latest token
           // Wait a bit before retrying
           await Future.delayed(Duration(seconds: 1));
           // Retry the request with incremented retry count
           return post(
-            endpoint, 
+            endpoint,
             body: body,
             additionalHeaders: additionalHeaders,
-            retryCount: retryCount + 1
+            retryCount: retryCount + 1,
           );
         }
       }
@@ -220,24 +170,25 @@ class RequestService {
         );
       }
 
-      _storeCookiesFromResponse(response);
       return response;
     } catch (e, stackTrace) {
       debugPrint('POST request failed: $e');
       debugPrint('Stack trace: $stackTrace');
-      
+
       // Retry network errors as well
       if (retryCount < 2) {
-        debugPrint('Retrying failed POST request (attempt ${retryCount + 1})...');
+        debugPrint(
+          'Retrying failed POST request (attempt ${retryCount + 1})...',
+        );
         await Future.delayed(Duration(seconds: 1));
         return post(
-          endpoint, 
+          endpoint,
           body: body,
           additionalHeaders: additionalHeaders,
-          retryCount: retryCount + 1
+          retryCount: retryCount + 1,
         );
       }
-      
+
       throw Exception('POST request failed: $e');
     }
   }
@@ -257,7 +208,6 @@ class RequestService {
         headers: headers,
         body: jsonEncode(body),
       );
-      _storeCookiesFromResponse(response);
       return response;
     } catch (e) {
       throw Exception('PATCH request failed: $e');
@@ -280,7 +230,7 @@ class RequestService {
         headers: headers,
         body: jsonEncode(body),
       );
-      _storeCookiesFromResponse(response);
+
       return response;
     } catch (e) {
       debugPrint('PUT request failed: $e');
@@ -299,7 +249,6 @@ class RequestService {
 
     try {
       final response = await _client.delete(Uri.parse(url), headers: headers);
-      _storeCookiesFromResponse(response);
       return response;
     } catch (e) {
       debugPrint('DELETE request failed: $e');
