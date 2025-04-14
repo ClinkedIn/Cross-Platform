@@ -64,7 +64,10 @@ class Constants {
   static const String registerEndpoint = '/user/';
   static const String createUserProfileEndpoint = '/user/profile';
   static const String logoutEndpoint = '/user/logout';
+
   static const String forgotPasswordEndpoint = '/user/forgot-password';
+  static const String verifyResetPasswordOtpEndpoint = '/user/verify-reset-password-otp';
+  static const String resetPasswordEndpoint = '/user/reset-password';
   
   // Post/feed endpoints
   static const String feedEndpoint = '/posts';
