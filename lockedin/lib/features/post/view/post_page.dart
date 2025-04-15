@@ -30,6 +30,31 @@ class _PostPageState extends ConsumerState<PostPage> {
     textController.dispose();
     super.dispose();
   }
+
+// Add this method to your _PostPageState class
+  IconData _getDocumentIcon(String path) {
+    final extension = path.split('.').last.toLowerCase();
+    
+    switch (extension) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'xls':
+      case 'xlsx':
+        return Icons.table_chart;
+      case 'ppt':
+      case 'pptx':
+        return Icons.slideshow;
+      case 'txt':
+        return Icons.article;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -217,18 +242,67 @@ class _PostPageState extends ConsumerState<PostPage> {
               // Add after TextField
           SizedBox(height: 2.h),
 
-          // Image preview section when attachments exist
-          if (data.attachments != null && data.attachments!.isNotEmpty)
-            for (var file in data.attachments!)
-              Stack(
-                children: [
-                  Container(
-                    margin: EdgeInsets.only(bottom: 2.h),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(2.w),
-                      border: Border.all(color: AppColors.gray.withOpacity(0.3)),
-                    ),
-                    child: ClipRRect(
+          // Replace the existing attachment preview section
+    // Image preview section when attachments exist
+    if (data.attachments != null && data.attachments!.isNotEmpty)
+      for (var file in data.attachments!)
+        Stack(
+          children: [
+            Container(
+              margin: EdgeInsets.only(bottom: 2.h),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(2.w),
+                border: Border.all(color: AppColors.gray.withOpacity(0.3)),
+              ),
+              child: data.fileType == 'document'
+                  ? Container(
+                      padding: EdgeInsets.all(3.w),
+                      height: 15.h,
+                      width: double.infinity,
+                      child: Row(
+                        children: [
+                          // Document icon based on file extension
+                          Container(
+                            width: 12.w,
+                            height: 12.w,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(1.w),
+                            ),
+                            child: Icon(
+                              _getDocumentIcon(file.path),
+                              size: 8.w,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          SizedBox(width: 4.w),
+                          // Document details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  file.path.split('/').last,
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                SizedBox(height: 1.h),
+                                Text(
+                                  '${(file.lengthSync() / 1024).toStringAsFixed(1)} KB',
+                                  style: TextStyle(
+                                    color: Colors.grey[600], 
+                                    fontSize: 12.sp
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ClipRRect(
                       borderRadius: BorderRadius.circular(2.w),
                       child: Image.file(
                         file,
@@ -237,34 +311,34 @@ class _PostPageState extends ConsumerState<PostPage> {
                         fit: BoxFit.cover,
                       ),
                     ),
+            ),
+            Positioned(
+              right: 1.w,
+              top: 1.w,
+              child: InkWell(
+                onTap: () {
+                  ref.read(postViewModelProvider.notifier).removeAttachment();
+                },
+                child: Container(
+                  padding: EdgeInsets.all(1.w),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    shape: BoxShape.circle,
                   ),
-                  Positioned(
-                    right: 1.w,
-                    top: 1.w,
-                    child: InkWell(
-                      onTap: () {
-                        ref.read(postViewModelProvider.notifier).removeImage();
-                      },
-                      child: Container(
-                        padding: EdgeInsets.all(1.w),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 5.w,
-                        ),
-                      ),
-                    ),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 5.w,
                   ),
+                ),
+              ),
+            ),
+          ],
+        ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
       bottomNavigationBar: Container(
         padding: EdgeInsets.symmetric(vertical: 1.h, horizontal: 4.w),
         decoration: BoxDecoration(
@@ -295,6 +369,7 @@ class _PostPageState extends ConsumerState<PostPage> {
             IconButton(
               onPressed: () {
                 // No functionality
+                ref.read(postViewModelProvider.notifier).pickDocument();
               },
               icon: Icon(Icons.document_scanner, color: AppColors.primary),
                tooltip: 'Add document',
@@ -303,6 +378,7 @@ class _PostPageState extends ConsumerState<PostPage> {
             IconButton(
               onPressed: () {
                 // No functionality
+                
               },
               icon: Icon(Icons.emoji_emotions_outlined, color: AppColors.primary),
               tooltip: 'Add emoji',

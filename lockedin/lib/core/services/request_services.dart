@@ -24,58 +24,103 @@ class RequestService {
   }
 
   static Future<http.Response> postMultipart(
-    String endpoint, {
-    File? file,
-    String fileFieldName = 'file', // <-- Add this parameter
-    Map<String, dynamic>? additionalFields,
-    Map<String, String>? headers,
-  }) async {
-    final uri = Uri.parse('$_baseUrl$endpoint');
-    final String? storedCookie = await TokenService.getCookie();
+  String endpoint, {
+  File? file,
+  String fileFieldName = 'file',
+  Map<String, dynamic>? additionalFields,
+  Map<String, String>? headers,
+}) async {
+  final uri = Uri.parse('$_baseUrl$endpoint');
+  final String? storedCookie = await TokenService.getCookie();
 
-    var request = http.MultipartRequest('POST', uri);
+  var request = http.MultipartRequest('POST', uri);
 
-    // Add file if present
-    if (file != null) {
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          fileFieldName, // <-- Use the passed field name
-          file.path,
-          contentType: MediaType('image', 'jpg'),
-        ),
-      );
+  // Add file if present
+  if (file != null) {
+    // Determine file extension and content type
+    final String path = file.path;
+    final String extension = path.split('.').last.toLowerCase();
+    
+    // Set appropriate content type based on file extension
+    MediaType contentType;
+    switch (extension) {
+      case 'pdf':
+        contentType = MediaType('application', 'pdf');
+        break;
+      case 'doc':
+        contentType = MediaType('application', 'msword');
+        break;
+      case 'docx':
+        contentType = MediaType('application', 'vnd.openxmlformats-officedocument.wordprocessingml.document');
+        break;
+      case 'xls':
+        contentType = MediaType('application', 'vnd.ms-excel');
+        break;
+      case 'xlsx':
+        contentType = MediaType('application', 'vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        break;
+      case 'ppt':
+        contentType = MediaType('application', 'vnd.ms-powerpoint');
+        break;
+      case 'pptx':
+        contentType = MediaType('application', 'vnd.openxmlformats-officedocument.presentationml.presentation');
+        break;
+      case 'txt':
+        contentType = MediaType('text', 'plain');
+        break;
+      case 'jpg':
+      case 'jpeg':
+        contentType = MediaType('image', 'jpeg');
+        break;
+      case 'png':
+        contentType = MediaType('image', 'png');
+        break;
+      case 'gif':
+        contentType = MediaType('image', 'gif');
+        break;
+      default:
+        contentType = MediaType('application', 'octet-stream');
     }
-
-    // Add regular fields
-    if (additionalFields != null) {
-      additionalFields.forEach((key, value) {
-        if (value is String) {
-          request.fields[key] = value;
-        } else {
-          request.fields[key] = jsonEncode(value);
-        }
-      });
-    }
-
-    // Add cookie if available
-    if (storedCookie != null && storedCookie.isNotEmpty) {
-      request.headers['Cookie'] = storedCookie;
-    }
-
-    // Add additional headers if provided
-    if (headers != null) {
-      request.headers.addAll(headers);
-    }
-
-    try {
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-      _storeCookiesFromResponse(response);
-      return response;
-    } catch (e) {
-      throw Exception('Multipart POST failed: $e');
-    }
+    
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        fileFieldName,
+        file.path,
+        contentType: contentType,
+      ),
+    );
   }
+
+  // Add regular fields
+  if (additionalFields != null) {
+    additionalFields.forEach((key, value) {
+      if (value is String) {
+        request.fields[key] = value;
+      } else {
+        request.fields[key] = jsonEncode(value);
+      }
+    });
+  }
+
+  // Add cookie if available
+  if (storedCookie != null && storedCookie.isNotEmpty) {
+    request.headers['Cookie'] = storedCookie;
+  }
+
+  // Add additional headers if provided
+  if (headers != null) {
+    request.headers.addAll(headers);
+  }
+
+  try {
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    _storeCookiesFromResponse(response);
+    return response;
+  } catch (e) {
+    throw Exception('Multipart POST failed: $e');
+  }
+}
 
 
   static Future<http.Response> get(

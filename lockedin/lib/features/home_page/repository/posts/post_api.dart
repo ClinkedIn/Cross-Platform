@@ -87,6 +87,15 @@ class PostApi implements PostRepository {
             comments: _extractCommentCount(postJson), // Updated to use helper method
             reposts: postJson['repostCount'] ?? 0,
             isLiked: isLikedValue, // Use our safely extracted boolean value
+            isMine: postJson['isMine'] == true,
+            isRepost: postJson['isRepost'] == true,
+            repostId: postJson['repostId'],
+            repostDescription: postJson['repostDescription'],
+            reposterId: postJson['reposterId'],
+            reposterName: postJson['reposterFirstName'] != null
+                ? '${postJson['reposterFirstName']} ${postJson['reposterLastName'] ?? ''}'
+                : null,
+            reposterProfilePicture: postJson['reposterProfilePicture'],
           );
         }).toList();
       } else {
@@ -233,6 +242,63 @@ class PostApi implements PostRepository {
       rethrow;
     }
   }
+  // Add these new methods
+
+    @override
+    Future<bool> createRepost(String postId, {String? description}) async {
+      try {
+        final String formattedEndpoint = Constants.RepostEndpoint.replaceFirst('%s', postId);
+        
+        // Create the request body
+        final Map<String, dynamic> body = {};
+        if (description != null && description.isNotEmpty) {
+          body['description'] = description;
+        }
+        
+        final response = await RequestService.post(
+          formattedEndpoint,
+          body: body,
+        );
+        
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          debugPrint('Post reposted successfully: $postId');
+            // Log the full response
+          debugPrint('📥 Response status: ${response.statusCode}');
+          debugPrint('📥 Response body: ${response.body}');
+          return true;
+        } else {
+          throw Exception('Failed to repost: ${response.statusCode} - ${response.body}');
+        }
+      } catch (e) {
+        debugPrint('Error creating repost: $e');
+        rethrow;
+      }
+    }
+
+    @override
+    Future<bool> deleteRepost(String repostId) async {
+      try {
+        final String formattedEndpoint = Constants.RepostEndpoint.replaceFirst('%s', repostId);
+        
+        final response = await RequestService.delete(
+          formattedEndpoint,
+        );
+         debugPrint('📥 Response status: ${response.statusCode}');
+          debugPrint('📥 Response body: ${response.body}');
+        if (response.statusCode == 200) {
+          debugPrint('✅ Repost deleted successfully');
+                // Log the full response
+          debugPrint('📥 Response status: ${response.statusCode}');
+          debugPrint('📥 Response body: ${response.body}');
+          return true;
+        } else {
+          throw Exception('Failed to delete repost: ${response.statusCode} - ${response.body}');
+        }
+      } catch (e) {
+        debugPrint('Error deleting repost: $e');
+        rethrow;
+      }
+    }
 }
 
 // Helper function for substring operations
