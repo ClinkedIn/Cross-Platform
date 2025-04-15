@@ -47,7 +47,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     redirect: (context, state) async {
       ref.read(profileViewModelProvider).fetchAllProfileData();
-      // Define public routes that don't require authentication
       final publicRoutes = ['/login', '/forgot-password', '/sign-up'];
 
       var isAuthenticated = await TokenService.hasCookie();
