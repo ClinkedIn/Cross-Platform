@@ -18,7 +18,7 @@ class CreatePostModel {
     required this.description,
     this.attachments,
     this.taggedUsers,
-    this.visibility = 'Anyone',
+    required this.visibility,
   });
 
   /// Convert model to JSON for API requests

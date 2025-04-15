@@ -7,6 +7,8 @@ class InvitationCard extends StatelessWidget {
   final String timeAgo;
   final String profileImage;
   final bool isOpenToWork;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
 
   const InvitationCard({
     Key? key,
@@ -16,6 +18,8 @@ class InvitationCard extends StatelessWidget {
     required this.timeAgo,
     required this.profileImage,
     this.isOpenToWork = false,
+    required this.onAccept,
+    required this.onDecline,
   }) : super(key: key);
 
   @override
@@ -30,14 +34,22 @@ class InvitationCard extends StatelessWidget {
       child: Row(
         children: [
           // Profile Picture
-          CircleAvatar(backgroundImage: AssetImage(profileImage), radius: 24),
+          CircleAvatar(
+            backgroundImage: profileImage.startsWith('http')
+                ? NetworkImage(profileImage) as ImageProvider
+                : AssetImage(profileImage),
+            radius: 24,
+            onBackgroundImageError: (exception, stackTrace) {
+              // Fallback for failed image loads
+            },
+          ),
           SizedBox(width: 12),
           // User Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: theme.textTheme.labelLarge),
+                Text(name, style: theme.textTheme.bodyLarge),
                 Text(
                   role,
                   style: theme.textTheme.bodyMedium,
@@ -48,6 +60,23 @@ class InvitationCard extends StatelessWidget {
                   timeAgo,
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
+                if (isOpenToWork)
+                  Container(
+                    margin: EdgeInsets.only(top: 4),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '#OpenToWork',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -55,11 +84,11 @@ class InvitationCard extends StatelessWidget {
           Row(
             children: [
               IconButton(
-                onPressed: () {},
+                onPressed: onDecline,
                 icon: Icon(Icons.close, color: Colors.grey[400]),
               ),
               IconButton(
-                onPressed: () {},
+                onPressed: onAccept,
                 icon: Icon(Icons.check, color: Colors.blue),
               ),
             ],

@@ -11,7 +11,14 @@ import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
 import 'package:lockedin/features/chat/view/chat_list_page.dart';
 import 'package:lockedin/features/home_page/view/home_page.dart';
 import 'package:lockedin/features/jobs/view/jobs_page.dart';
+import 'package:lockedin/features/networks/view/connections_page.dart';
+import 'package:lockedin/features/networks/view/events_page.dart';
+import 'package:lockedin/features/networks/view/groups_page.dart';
+import 'package:lockedin/features/networks/view/invitations_page.dart';
+import 'package:lockedin/features/networks/view/manage_page.dart';
 import 'package:lockedin/features/networks/view/network_page.dart';
+import 'package:lockedin/features/networks/view/newsletters_page.dart';
+import 'package:lockedin/features/networks/view/pages_page.dart';
 import 'package:lockedin/features/notifications/view/notifications_page.dart';
 import 'package:lockedin/features/post/view/post_page.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
@@ -25,6 +32,7 @@ import 'package:lockedin/features/profile/view/edit_profile_photo.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
 import 'package:lockedin/features/profile/view/setting_page.dart';
 import 'package:lockedin/features/profile/view/update_page.dart';
+import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
 import 'package:lockedin/shared/widgets/side_bar.dart';
 import 'package:lockedin/shared/widgets/upper_navbar.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
@@ -39,7 +47,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) async {
-      // Define public routes that don't require authentication
+      ref.read(profileViewModelProvider).fetchAllProfileData();
       final publicRoutes = ['/login', '/forgot-password', '/sign-up'];
 
       var isAuthenticated = await TokenService.hasCookie();
@@ -136,6 +144,41 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => ChangePasswordPage(),
       ),
       GoRoute(
+        path: "/manage-page",
+        name: "manage-page",
+        builder: (context, state) => ManagePage(),
+      ),
+      GoRoute(
+        path: "/connections",
+        name: "connection-page",
+        builder: (context, state) => ConnectionsPage(),
+      ),
+      GoRoute(
+        path: "/groups",
+        name: "groups-page",
+        builder: (context, state) => GroupsPage(),
+      ),
+      GoRoute(
+        path: "/events",
+        name: "events-page",
+        builder: (context, state) => EventsPage(),
+      ),
+      GoRoute(
+        path: "/pages",
+        name: "pages-page",
+        builder: (context, state) => PagesPage(),
+      ),
+      GoRoute(
+        path: "/newsletter",
+        name: "newsletter-page",
+        builder: (context, state) => NewsletterPage(),
+      ),
+      GoRoute(
+        path: "/invitations",
+        name: "invitation-page",
+        builder: (context, state) => InvitationPage(),
+      ),
+      GoRoute(
         path: '/edit-profile-photo',
         name: 'edit-profile-photo',
         builder: (context, state) => EditProfilePhoto(),
@@ -172,6 +215,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               child: Consumer(
                 builder: (context, ref, _) {
                   final currentUser = ref.watch(userProvider);
+
                   return currentUser.when(
                     data:
                         (user) => UpperNavbar(

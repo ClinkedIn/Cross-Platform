@@ -36,9 +36,9 @@ class ChatRepository {
     try {
       // Use proper endpoint for marking chat as read - the URL was returning HTML docs
       // We'll create a proper URL that matches your API's expected format
-      final endpoint = "/chats/${chatId}/mark-read";
+      final endpoint = '${Constants.chatMarkAsReadEndpoint}/$chatId';
       
-      final response = await RequestService.post(
+      final response = await RequestService.patch(
         endpoint,
         body: {'read': true}
       );
@@ -48,6 +48,26 @@ class ChatRepository {
       }
     } catch (e) {
       print("Error marking chat as read: $e");
+      throw Exception("Failed to update chat status. Please try again.");
+    }
+  }
+  
+  /// Marks a chat as unread in the backend
+  Future<void> markChatAsUnread(String chatId) async {
+    try {
+      // Use proper endpoint for marking chat as unread
+      final endpoint = '${Constants.chatMarkAsUnreadEndpoint}/$chatId';
+      
+      final response = await RequestService.patch(
+        endpoint,
+        body: {'chatId': chatId}
+      );
+      
+      if (response.statusCode != 200) {
+        throw Exception("Failed to mark chat as unread: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error marking chat as unread: $e");
       throw Exception("Failed to update chat status. Please try again.");
     }
   }

@@ -27,8 +27,7 @@ class SidebarDrawer extends ConsumerWidget {
                         child: CircleAvatar(
                           radius: 28,
                           backgroundImage:
-                              user != null &&
-                                      user.profilePicture != null &&
+                              user.profilePicture != null &&
                                       user.profilePicture!.isNotEmpty
                                   ? NetworkImage(user.profilePicture ?? '')
                                   : const AssetImage(
@@ -40,9 +39,7 @@ class SidebarDrawer extends ConsumerWidget {
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          user != null
-                              ? "${user.firstName} ${user.lastName}"
-                              : "Name",
+                          "${user.firstName} ${user.lastName}",
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -61,14 +58,14 @@ class SidebarDrawer extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user?.headline ??
+                        user.headline ??
                             "not available, please update your profile",
                         style: TextStyle(color: Colors.white70, fontSize: 13),
                         maxLines: 3,
                       ),
                       SizedBox(height: 4),
                       Text(
-                        user?.location ?? "unknown location",
+                        user.location ?? "unknown location",
                         style: TextStyle(color: Colors.white70, fontSize: 13),
                       ),
                     ],
@@ -81,13 +78,13 @@ class SidebarDrawer extends ConsumerWidget {
                   child: Row(
                     children: [
                       Image.asset(
-                        'assets/images/aman_logo.jpg',
+                        'assets/images/experience.jpg',
                         width: 24,
                         height: 24,
                       ),
                       SizedBox(width: 8),
                       Text(
-                        user?.lastJobTitle ?? "Career Center",
+                        user.lastJobTitle ?? "Career Center",
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,

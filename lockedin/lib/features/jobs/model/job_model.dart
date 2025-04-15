@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 class JobModel {
   final String title;
   final String id;
@@ -9,8 +7,15 @@ class JobModel {
   final String experienceLevel;
   final String salaryRange;
   final bool isRemote;
+  final String workplaceType;
   final String? logoUrl;
   final String? industry;
+  final List<Map<String, dynamic>> screeningQuestions;
+
+  // ✅ New fields from API
+  final List<String> applicants;
+  final List<String> accepted;
+  final List<String> rejected;
 
   JobModel({
     required this.title,
@@ -21,36 +26,56 @@ class JobModel {
     required this.experienceLevel,
     required this.salaryRange,
     required this.isRemote,
+    required this.workplaceType,
     this.logoUrl,
     this.industry,
+    required this.screeningQuestions,
+    required this.applicants,
+    required this.accepted,
+    required this.rejected,
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
-    final company = json['company'] ?? {};
+    final companyData = json['company'] is Map ? json['company'] : null;
+    final screeningQuestions = json['screeningQuestions'] as List?;
 
-    // Debug: log the raw job data to investigate structure
-    print("Raw job JSON: ${jsonEncode(json)}");
+    final workplaceTypeRaw = json['workplaceType']?.toString() ?? 'Unknown';
+    final questions =
+        (screeningQuestions)?.map((q) => q as Map<String, dynamic>).toList() ??
+        [];
 
-    // Attempt to extract the job ID safely
-    final parsedId = json['_id'] ?? json['id'] ?? json['jobId'];
-    print("Parsed job ID: $parsedId");
+    // Parse string lists safely
+    List<String> _parseStringList(dynamic list) {
+      if (list is List) {
+        return list.map((e) => e.toString()).toList();
+      }
+      return [];
+    }
 
     return JobModel(
-      id: parsedId?.toString() ?? '',
+      id: (json['_id'] ?? json['id'] ?? json['jobId'])?.toString() ?? '',
       title: json['title'] ?? 'Unknown Position',
-      company: company['name'] ?? 'Unknown Company',
+      company:
+          companyData != null
+              ? (companyData['name'] ?? 'Unknown Company')
+              : 'Unknown Company',
       location: json['jobLocation'] ?? 'Unknown Location',
       description: json['description'] ?? '',
       experienceLevel:
-          json['screeningQuestions'] != null &&
-                  json['screeningQuestions'].isNotEmpty
-              ? json['screeningQuestions'][0]['specification'] ?? 'Unknown'
+          screeningQuestions != null && screeningQuestions.isNotEmpty
+              ? screeningQuestions.first['idealAnswer']?.toString() ?? 'Unknown'
               : 'Unknown',
-      salaryRange:
-          'N/A', // You can update this if your API provides salary info
-      isRemote: (json['workplaceType']?.toLowerCase() ?? '') == 'remote',
-      logoUrl: company['logo'],
+      salaryRange: json['salaryRange']?.toString() ?? 'N/A',
+      isRemote: workplaceTypeRaw.toLowerCase() == 'remote',
+      workplaceType: workplaceTypeRaw,
+      logoUrl: companyData != null ? companyData['logo'] : null,
       industry: json['industry'],
+      screeningQuestions: questions,
+
+      // ✅ Assign lists from API
+      applicants: _parseStringList(json['applicants']),
+      accepted: _parseStringList(json['accepted']),
+      rejected: _parseStringList(json['rejected']),
     );
   }
 }

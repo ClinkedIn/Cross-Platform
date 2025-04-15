@@ -41,4 +41,10 @@ class FakeJobRepository implements JobRepository {
   }) async {
     if (shouldThrow) throw Exception('Failed to apply');
   }
+
+  @override
+  Future<JobModel> getJobById(String jobId) async {
+    if (shouldThrow) throw Exception('Failed to fetch job by ID');
+    return jobs.firstWhere((job) => job.id == jobId);
+  }
 }
