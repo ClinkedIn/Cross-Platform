@@ -11,7 +11,13 @@ import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
 import 'package:lockedin/features/chat/view/chat_list_page.dart';
 import 'package:lockedin/features/home_page/view/home_page.dart';
 import 'package:lockedin/features/jobs/view/jobs_page.dart';
+import 'package:lockedin/features/networks/view/connections_page.dart';
+import 'package:lockedin/features/networks/view/events_page.dart';
+import 'package:lockedin/features/networks/view/groups_page.dart';
+import 'package:lockedin/features/networks/view/manage_page.dart';
 import 'package:lockedin/features/networks/view/network_page.dart';
+import 'package:lockedin/features/networks/view/newsletters_page.dart';
+import 'package:lockedin/features/networks/view/pages_page.dart';
 import 'package:lockedin/features/notifications/view/notifications_page.dart';
 import 'package:lockedin/features/post/view/post_page.dart';
 import 'package:lockedin/features/profile/state/user_state.dart';
@@ -133,7 +139,36 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: "update-password",
         builder: (context, state) => ChangePasswordPage(),
       ),
-
+      GoRoute(
+        path: "/manage-page",
+        name: "manage-page",
+        builder: (context, state) => ManagePage(),
+      ),
+      GoRoute(
+        path: "/connections",
+        name: "connection-page",
+        builder: (context, state) => ConnectionsPage(),
+      ),
+      GoRoute(
+        path: "/groups",
+        name: "groups-page",
+        builder: (context, state) => GroupsPage(),
+      ),
+      GoRoute(
+        path: "/events",
+        name: "events-page",
+        builder: (context, state) => EventsPage(),
+      ),
+      GoRoute(
+        path: "/pages",
+        name: "pages-page",
+        builder: (context, state) => PagesPage(),
+      ),
+      GoRoute(
+        path: "/newsletter",
+        name: "newsletter-page",
+        builder: (context, state) => NewsletterPage(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           // Get the current tab index from the navigation shell

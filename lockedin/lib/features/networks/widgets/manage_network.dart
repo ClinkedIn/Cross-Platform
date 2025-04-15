@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lockedin/features/networks/view/manage_page.dart';
+import 'package:go_router/go_router.dart';
 
 class ManageNetwork extends StatelessWidget {
   const ManageNetwork({Key? key}) : super(key: key);
@@ -14,23 +14,17 @@ class ManageNetwork extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           GestureDetector(
-            child: 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Manage my network", style: theme.textTheme.bodyLarge),
-                  Icon(Icons.arrow_forward, color: theme.iconTheme.color),
-                ],
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Manage my network", style: theme.textTheme.bodyLarge),
+                Icon(Icons.arrow_forward, color: theme.iconTheme.color),
+              ],
+            ),
 
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ManagePage(),
-                  ),
-                );
-              },
+            onTap: () {
+              context.push('/manage-page');
+            },
           ),
         ],
       ),
