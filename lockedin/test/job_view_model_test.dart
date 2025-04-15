@@ -13,28 +13,44 @@ void main() {
       title: 'Software Engineer',
       company: 'TechCorp',
       location: 'Remote',
+      description: 'Cool job!',
       experienceLevel: 'Mid',
       salaryRange: '\$100k',
       isRemote: true,
-      description: 'Cool job!',
+
       workplaceType: 'Remote',
+      logoUrl: 'https://example.com/logo.png',
+      industry: 'Technology',
       screeningQuestions: [
-        {'question': 'Why?', 'answer': 'Because'},
+        {'question': 'Why do you want this job?', 'idealAnswer': 'To learn'},
       ],
+      applicants: ['user1'],
+      accepted: [],
+      rejected: [],
+
+
+
     ),
     JobModel(
       id: '2',
       title: 'Designer',
       company: 'Creative Inc',
       location: 'NYC',
+      description: 'Fun job!',
       experienceLevel: 'Junior',
       salaryRange: '\$80k',
       isRemote: false,
-      description: 'Fun job!',
-      workplaceType: 'Remote',
-      screeningQuestions: [
-        {'question': 'Why?', 'answer': 'Because'},
-      ],
+
+      workplaceType: 'On-site',
+      logoUrl: null,
+      industry: 'Design',
+      screeningQuestions: [],
+      applicants: [],
+      accepted: [],
+      rejected: [],
+
+
+
     ),
   ];
 

@@ -6,6 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:convert';
 
+import 'package:lockedin/features/auth/services/secure_storage_service.dart';
+
 final loginViewModelProvider =
     StateNotifierProvider<LoginViewModel, AsyncValue<void>>((ref) {
       return LoginViewModel(ref);
@@ -47,6 +49,7 @@ class LoginViewModel extends StateNotifier<AsyncValue<void>> {
       );
 
       if (response.statusCode == 200) {
+        await SecureStorageService().saveCredentials(email, password);
         state = const AsyncValue.data(null);
         return true;
       } else {
