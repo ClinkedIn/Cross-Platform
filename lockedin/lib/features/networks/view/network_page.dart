@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/features/networks/view/grow_tab.dart';
 import 'package:lockedin/features/networks/view/catch_up_tab.dart';
-import 'package:lockedin/features/networks/widgets/profile_card.dart';
-import 'package:lockedin/features/networks/widgets/connect_card.dart';
 import 'package:lockedin/shared/widgets/upper_navbar.dart';
 
 class NetworksPage extends StatefulWidget {
