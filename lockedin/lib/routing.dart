@@ -14,6 +14,7 @@ import 'package:lockedin/features/jobs/view/jobs_page.dart';
 import 'package:lockedin/features/networks/view/connections_page.dart';
 import 'package:lockedin/features/networks/view/events_page.dart';
 import 'package:lockedin/features/networks/view/groups_page.dart';
+import 'package:lockedin/features/networks/view/invitations_page.dart';
 import 'package:lockedin/features/networks/view/manage_page.dart';
 import 'package:lockedin/features/networks/view/network_page.dart';
 import 'package:lockedin/features/networks/view/newsletters_page.dart';
@@ -172,6 +173,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: "/newsletter",
         name: "newsletter-page",
         builder: (context, state) => NewsletterPage(),
+      ),
+      GoRoute(
+        path: "/invitations",
+        name: "invitation-page",
+        builder: (context, state) => InvitationPage(),
       ),
       GoRoute(
         path: '/edit-profile-photo',
