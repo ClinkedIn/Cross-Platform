@@ -64,7 +64,10 @@ class Constants {
   static const String registerEndpoint = '/user/';
   static const String createUserProfileEndpoint = '/user/profile';
   static const String logoutEndpoint = '/user/logout';
+
   static const String forgotPasswordEndpoint = '/user/forgot-password';
+  static const String verifyResetPasswordOtpEndpoint = '/user/verify-reset-password-otp';
+  static const String resetPasswordEndpoint = '/user/reset-password';
   
   // Post/feed endpoints
   static const String feedEndpoint = '/posts';
@@ -73,6 +76,8 @@ class Constants {
   // Chat endpoints
   /// Endpoint to fetch all chats for the current user
   static const String allChatsEndpoint = '/chats/all-chats';
+  static const String chatMarkAsReadEndpoint = '/chats/mark-as-read';
+  static const String chatMarkAsUnreadEndpoint = '/chats/mark-as-unread';
   
   /// Endpoint to fetch a specific chat conversation
   /// Use: '/chats/direct-chat/{actualChatId}'
@@ -80,7 +85,7 @@ class Constants {
   
   /// Endpoint to send a message to a specific chat
   /// Format: '/chats/direct-chat/{chatId}/messages' 
-  static const String chatMessagesEndpoint = '/chats/direct-chat/{chatId}/messages';
+  static const String chatMessagesEndpoint = '/messages';
 
   static const String savePostEndpoint = '/posts/%s/save'; // %s will be replaced with the postId
   static const String togglelikePostEndpoint = '/posts/%s/like'; // %s will be replaced with the postId
