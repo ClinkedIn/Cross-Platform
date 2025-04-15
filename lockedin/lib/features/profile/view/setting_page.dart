@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/services/token_services.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -8,8 +9,6 @@ class SettingsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -43,8 +42,12 @@ class SettingsPage extends ConsumerWidget {
               _SettingsTile(
                 icon: Icons.logout,
                 label: 'Sign Out',
-                onTap: () {
-                  TokenService.deleteCookie();
+                onTap: () async {
+                  RequestService.post("/user/logout", body: {});
+
+                  await TokenService.deleteCookie();
+                  final token = await TokenService.getCookie();
+                  print('Token after deletion: $token');
                   context.go('/');
                 },
               ),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lockedin/features/profile/model/education_model.dart';
+import 'package:lockedin/features/profile/model/user_model.dart';
 import 'package:lockedin/features/profile/viewmodel/add_education_viewmodel.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:intl/intl.dart';
@@ -79,7 +80,7 @@ class _AddEducationPageState extends ConsumerState<AddEducationPage> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => context.pop(),
                 child: Text("Cancel", style: TextStyle(color: Colors.grey)),
               ),
               ElevatedButton(
@@ -88,7 +89,7 @@ class _AddEducationPageState extends ConsumerState<AddEducationPage> {
                     setState(() {
                       _skills.add(skillController.text);
                     });
-                    Navigator.pop(context);
+                    context.pop();
                   }
                 },
                 style: ElevatedButton.styleFrom(

@@ -1,24 +1,23 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:lockedin/features/profile/utils/picture_loader.dart';
+import 'package:lockedin/features/profile/viewmodel/edit_cover_photo_viewmodel.dart';
 import 'package:lockedin/features/profile/viewmodel/edit_profile_photo_viewmodel.dart';
 
-class EditProfilePhoto extends ConsumerStatefulWidget {
-  const EditProfilePhoto({Key? key}) : super(key: key);
+class EditCoverPhoto extends ConsumerStatefulWidget {
+  const EditCoverPhoto({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<EditProfilePhoto> createState() => _EditProfilePhotoState();
+  ConsumerState<EditCoverPhoto> createState() => _EditCoverPhotoState();
 }
 
-class _EditProfilePhotoState extends ConsumerState<EditProfilePhoto> {
+class _EditCoverPhotoState extends ConsumerState<EditCoverPhoto> {
   bool _isLoading = false;
 
   Future<void> _handleEditPhoto() async {
-    // Show a dialog to choose between camera and gallery
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -54,27 +53,25 @@ class _EditProfilePhotoState extends ConsumerState<EditProfilePhoto> {
     });
 
     try {
-      // Pick image
       final File? imageFile = await ref
           .read(editProfilePhotoProvider.notifier)
           .pickImage(source);
 
       if (imageFile != null) {
-        // Upload image
         final success = await ref
-            .read(editProfilePhotoProvider.notifier)
-            .updateProfilePhoto(imageFile, context);
+            .read(editCoverPhotoProvider.notifier)
+            .updateCoverPhoto(imageFile, context); // <-- Update cover photo
 
         if (success && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile photo updated successfully')),
+            const SnackBar(content: Text('Cover photo updated successfully')),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile photo: $e')),
+          SnackBar(content: Text('Failed to update cover photo: $e')),
         );
       }
     } finally {
@@ -87,14 +84,13 @@ class _EditProfilePhotoState extends ConsumerState<EditProfilePhoto> {
   }
 
   Future<void> _handleDeletePhoto() async {
-    // Show confirmation dialog
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Delete Profile Photo'),
+            title: const Text('Delete Cover Photo'),
             content: const Text(
-              'Are you sure you want to delete your profile photo?',
+              'Are you sure you want to delete your cover photo?',
             ),
             actions: [
               TextButton(
@@ -120,18 +116,18 @@ class _EditProfilePhotoState extends ConsumerState<EditProfilePhoto> {
 
     try {
       final success = await ref
-          .read(editProfilePhotoProvider.notifier)
-          .deleteProfilePhoto(context);
+          .read(editCoverPhotoProvider.notifier)
+          .deleteCoverPhoto(context); // <-- Delete cover photo
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile photo deleted successfully')),
+          const SnackBar(content: Text('Cover photo deleted successfully')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete profile photo: $e')),
+          SnackBar(content: Text('Failed to delete cover photo: $e')),
         );
       }
     } finally {
@@ -151,12 +147,14 @@ class _EditProfilePhotoState extends ConsumerState<EditProfilePhoto> {
       backgroundColor: Colors.black,
       body:
           _isLoading
-              ? Center(child: CircularProgressIndicator(color: Colors.white))
-              : SingleChildScrollView(
+              ? const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              )
+              : user != null
+              ? SingleChildScrollView(
                 child: Column(
                   children: [
                     const SizedBox(height: 40),
-                    // Top bar with close button and title
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Row(
@@ -171,32 +169,33 @@ class _EditProfilePhotoState extends ConsumerState<EditProfilePhoto> {
                             onPressed: () => Navigator.pop(context),
                           ),
                           const Text(
-                            "Profile Photo",
+                            "Cover Photo",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(width: 40), // Placeholder for spacing
+                          const SizedBox(width: 40),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 80),
-                    // Profile image with circular border
-                    Container(
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white, // White background circle
-                      ),
-                      padding: const EdgeInsets.all(4),
-                      child: CircleAvatar(
-                        radius: 120,
-                        backgroundImage: getUserProfileImage(user),
+                    const SizedBox(height: 20),
+                    AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white,
+                          image: DecorationImage(
+                            image: getUsercoverImage(user),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
                       ),
                     ),
-                    const SizedBox(height: 80),
-                    // Bottom bar with icons
+                    const SizedBox(height: 40),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                       child: Row(
@@ -209,9 +208,9 @@ class _EditProfilePhotoState extends ConsumerState<EditProfilePhoto> {
                           GestureDetector(
                             onTap:
                                 () => _pickAndUploadImage(ImageSource.gallery),
-                            child: _bottomIcon(Icons.add_a_photo, "Add photo"),
+                            child: _bottomIcon(Icons.add_a_photo, "Add"),
                           ),
-                          _bottomIcon(FontAwesomeIcons.borderStyle, "Frames"),
+                          _bottomIcon(Icons.crop, "Crop"),
                           GestureDetector(
                             onTap: _handleDeletePhoto,
                             child: _bottomIcon(Icons.delete, "Delete"),
@@ -221,6 +220,9 @@ class _EditProfilePhotoState extends ConsumerState<EditProfilePhoto> {
                     ),
                   ],
                 ),
+              )
+              : const Center(
+                child: CircularProgressIndicator(color: Colors.white),
               ),
     );
   }

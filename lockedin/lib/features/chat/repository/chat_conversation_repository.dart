@@ -7,6 +7,7 @@ import 'package:lockedin/core/utils/constants.dart';
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/services/auth_service.dart';
 
+
 class ChatConversationRepository {
   final AuthService _authService;
   
@@ -14,41 +15,100 @@ class ChatConversationRepository {
 
   Future<Map<String, dynamic>> fetchConversation(String chatId) async {
     try {
+      // Validate chatId first
+      if (chatId.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Invalid chat ID',
+          'chat': {
+            'rawMessages': [],
+            'conversationHistory': []
+          },
+        };
+      }
+      
+      // Check authentication first
+      if (_authService.currentUser == null) {
+        // Try to fetch user data
+        final user = await _authService.fetchCurrentUser();
+        if (user == null) {
+          return {
+            'success': false,
+            'error': 'Authentication required',
+            'chat': {
+              'rawMessages': [],
+              'conversationHistory': []
+            },
+          };
+        }
+      }
+
       // Use the chat conversation endpoint from constants
       final endpoint = Constants.chatConversationEndpoint.replaceAll('{chatId}', chatId);
-      debugPrint('Fetching conversation with endpoint: $endpoint');
       
-      // Get the conversation
-      final response = await RequestService.get(endpoint);
-      
-      // First check if we received HTML instead of JSON (which indicates a problem)
-      if (response.body.contains('<!DOCTYPE html>') || 
-          response.body.contains('<html>') ||
-          !response.body.startsWith('{')) {
-        
-        debugPrint('Error: Received HTML instead of JSON when fetching conversation from fetchConversation');
-        debugPrint('HTML Response (truncated): ${response.body.substring(0, math.min(200, response.body.length))}');
-        
-        // Instead of mock data, throw an exception with details
-        throw Exception('API returned HTML instead of JSON. Status code: ${response.statusCode}. Check server configuration.');
+      try {
+        final response = await RequestService.get(endpoint);
+
+        // If we have a valid response, process it
+        if (response.statusCode != 200) {
+          return {
+            'success': false,
+            'error': 'Server returned status code ${response.statusCode}',
+            'chat': {
+              'rawMessages': [],
+              'conversationHistory': []
+            },
+          };
+        }
+
+        // Parse the JSON response
+        try {
+          final String responseBody = response.body.trim();
+          final Map<String, dynamic> jsonData = jsonDecode(responseBody);
+          
+          // Check if response has the expected structure
+          if (jsonData['success'] == true && jsonData['chat'] != null) {
+            return jsonData;
+          }
+          
+          // If success is false or not specified, handle the error
+          return {
+            'success': false,
+            'error': jsonData['message'] ?? 'Unknown API error',
+            'chat': {
+              'rawMessages': [],
+              'conversationHistory': []
+            },
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'error': 'Failed to parse server response: ${e.toString()}',
+            'chat': {
+              'rawMessages': [],
+              'conversationHistory': []
+            },
+          };
+        }
+      } catch (e) {
+        return {
+          'success': false,
+          'error': 'Network error: ${e.toString()}',
+          'chat': {
+            'rawMessages': [],
+            'conversationHistory': []
+          },
+        };
       }
-      
-      // If we have a valid response, process it normally
-      if (response.statusCode != 200) {
-        throw Exception('Failed to load conversation: ${response.statusCode}');
-      }
-      
-      final Map<String, dynamic> jsonData = jsonDecode(response.body);
-      
-      if (jsonData['success'] != true) {
-        throw Exception('API returned error status: ${jsonData['message'] ?? "Unknown error"}');
-      }
-      
-      return jsonData;
     } catch (e) {
-      debugPrint('Error fetching conversation: $e');
-      // Rethrow the error instead of returning mock data
-      rethrow;
+      return {
+        'success': false,
+        'error': 'Failed to load conversation: ${e.toString()}',
+        'chat': {
+          'rawMessages': [],
+          'conversationHistory': []
+        },
+      };
     }
   }
   
@@ -56,16 +116,16 @@ class ChatConversationRepository {
   /// 
   /// Format follows API documentation:
   /// {
-  ///   "receiverId": "string",   // ID of the user receiving the message
-  ///   "chatId": "string",       // ID of the chat conversation
-  ///   "type": "direct",         // Type of chat (direct, group, etc.)
-  ///   "messageText": "string",  // Text content of the message
-  ///   "messageAttachment": null, // Optional file attachments
-  ///   "replyTo": null           // Optional message being replied to
+  ///   "receiverId": "string",   // Optional: ID of the user receiving the message
+  ///   "chatId": "string",       // Required: ID of the chat conversation
+  ///   "type": "direct",         // Optional: Type of chat (direct, group, etc.)
+  ///   "messageText": "string",  // Optional: Text content of the message
+  ///   "messageAttachment": null, // Optional: File attachments
+  ///   "replyTo": null           // Optional: Message being replied to
   /// }
   Future<bool> sendMessage({
     required String chatId,
-    required String messageText,
+    String messageText = '',
     String chatType = 'direct',
     String? receiverId,
   }) async {
@@ -76,28 +136,35 @@ class ChatConversationRepository {
       // Get the current user ID after ensuring it's loaded
       final currentUser = _authService.currentUser;
       if (currentUser == null) {
-        debugPrint('Still no current user after fetchCurrentUser()');
-        throw Exception('User not authenticated');
+        debugPrint('No authenticated user found');
+        throw Exception('You must be logged in to send messages');
       }
       
-      // Determine which user ID to use (current user by default, receiver if specified)
-      final String userId = receiverId ?? currentUser.id;
-      debugPrint('Using user ID for message: $userId (${receiverId != null ? "receiver ID" : "current user ID"})');
-      
-      // Create the request body exactly matching the API documentation
+      // Create the request body with only the required fields
       final Map<String, dynamic> body = {
-        'receiverId': userId,
         'chatId': chatId,
-        'type': "direct", // Using 'type' field as shown in the API docs
-        'messageText': messageText,
-        'messageAttachment': null,
-        'replyTo': null
       };
+      
+      // Add optional fields if provided
+      if (messageText.isNotEmpty) {
+        body['messageText'] = messageText;
+      }
+      
+      if (receiverId != null) {
+        body['receiverId'] = receiverId;
+      } else {
+        // Use current user ID as fallback
+        body['receiverId'] = currentUser.id;
+      }
+      
+      if (chatType.isNotEmpty) {
+        body['type'] = chatType;
+      }
       
       // Log the request body for debugging
       debugPrint('Sending message with body: ${jsonEncode(body)}');
       
-      // Use the new endpoint constant for messages
+      // Use the endpoint constant for messages
       final endpoint = Constants.chatMessagesEndpoint.replaceAll('{chatId}', chatId);
       debugPrint('Using messages endpoint: $endpoint');
       
@@ -107,54 +174,33 @@ class ChatConversationRepository {
         body: body,
       );
       
-      // Log detailed response information
-      debugPrint('=== MESSAGE SEND RESPONSE ===');
-      debugPrint('Status Code: ${response.statusCode}');
-      debugPrint('Headers: ${response.headers}');
+      // Check status code for success
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        debugPrint('Error: Server returned status code ${response.statusCode}');
+        throw Exception('Server error: ${response.statusCode}');
+      }
       
       // Check if we got HTML instead of JSON and throw an exception
       if (response.body.contains('<!DOCTYPE html>') || 
           response.body.contains('<html>') ||
           (response.body.isNotEmpty && !response.body.startsWith('{'))) {
         
-        debugPrint('ERROR: Received HTML instead of JSON response from sendMessage');
-        final htmlSnippet = response.body.substring(0, math.min(500, response.body.length));
-        debugPrint('HTML Response (truncated): $htmlSnippet');
-        
-        // Throw exception with detailed error
-        throw Exception('Server returned HTML instead of JSON. Status code: ${response.statusCode}. Check API endpoint configuration. HTML starts with: ${htmlSnippet.substring(0, math.min(100, htmlSnippet.length))}...');
+        debugPrint('ERROR: Received HTML instead of JSON response');
+        throw Exception('Server returned HTML instead of JSON');
       }
       
-      // Log full response body for JSON responses
-      debugPrint('Response Body (full): ${response.body}');
-      
-      // Try to parse as JSON if possible
-      if (response.body.startsWith('{')) {
-        try {
-          final jsonResponse = jsonDecode(response.body);
-          debugPrint('JSON Response: $jsonResponse');
-          
-          // Check if the API returned an error status
-          if (jsonResponse['success'] == false) {
-            throw Exception('API returned error status: ${jsonResponse['message'] ?? "Unknown error"}');
-          }
-        } catch (e) {
-          debugPrint('Could not parse response as JSON: $e');
-          throw Exception('Failed to parse JSON response: $e');
+      // Parse the response if it's JSON
+      if (response.body.isNotEmpty && response.body.startsWith('{')) {
+        final jsonResponse = jsonDecode(response.body);
+        
+        if (jsonResponse['success'] == false) {
+          throw Exception(jsonResponse['message'] ?? 'Unknown error');
         }
       }
       
-      // Check if the request was successful based on status code
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('Message sent successfully!');
-        return true;
-      }
-      
-      // If the request failed, throw an exception with the status code
-      throw Exception('Failed to send message: ${response.statusCode}');
+      return true;
     } catch (e) {
       debugPrint('Error sending message: $e');
-      // Rethrow the exception to be handled by the caller
       rethrow;
     }
   }

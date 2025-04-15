@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/profile/model/education_model.dart';
+import 'package:lockedin/features/profile/model/user_model.dart';
 import 'package:lockedin/features/profile/service/education_service.dart';
 
 final addEducationViewModelProvider =

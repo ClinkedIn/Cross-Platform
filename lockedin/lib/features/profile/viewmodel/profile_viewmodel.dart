@@ -1,34 +1,17 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lockedin/core/services/token_services.dart';
-import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/features/profile/repository/profile/profile_api.dart';
-import 'package:lockedin/features/profile/state/user_state.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
-import 'package:flutter/material.dart';
 
 class ProfileViewModel {
   final Ref ref;
 
   ProfileViewModel(this.ref);
 
-  Future<void> fetchUser(BuildContext context) async {
-    try {
-      final user = await ProfileService().fetchUserData();
-      ref.read(userProvider.notifier).setUser(user);
-    } catch (e) {
-      final errorMessage = e.toString();
-
-      if (errorMessage.contains('Unauthorized')) {
-        TokenService.deleteCookie();
-
-        if (context.mounted) {
-          context.push("/login");
-        }
-      }
-    }
+  Future<void> fetchUser() async {
+    final user = await ProfileService().fetchUserData();
+    ref.read(userProvider.notifier).setUser(user);
   }
 
   Future<void> fetchEducation() async {
@@ -51,23 +34,16 @@ class ProfileViewModel {
     }
   }
 
-  // Future<void> fetchLicenses() async {
-  //   ref.read(licensesProvider.notifier).setLoading();
-  //   try {
-  //     final licenses = await ProfileService().fetchLicenses();
-  //     ref.read(licensesProvider.notifier).setLicenses(licenses);
-  //   } catch (e, stackTrace) {
-  //     ref.read(licensesProvider.notifier).setError(e, stackTrace);
-  //   }
-  // }
-
-  Future<void> fetchAllProfileData(BuildContext context) async {
+  Future<void> fetchAllProfileData() async {
     try {
-      await fetchUser(context);
+      // Try to fetch user data first
+      await fetchUser();
+
+      // Only proceed with fetching additional data if user fetch was successful
+
       await fetchEducation();
       await fetchExperience();
     } catch (e) {
-      print('Error fetching profile data: $e');
       // You can add a snackbar or other user feedback here
     }
   }

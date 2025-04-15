@@ -1,110 +1,51 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:lockedin/core/services/request_services.dart';
-import 'package:lockedin/features/auth/view/change_password_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/auth/services/change_password_service.dart';
 
-/// Provider for the [AuthService], responsible for making API calls.
-final authServiceProvider = Provider((ref) => AuthService());
+class ChangePasswordState {
+  final bool isLoading;
+  final String? errorMessage;
+  final String? successMessage;
 
-/// Provider for the [ChangePasswordViewModel], managing the state of the password change process.
-final changePasswordViewModelProvider =
-    StateNotifierProvider<ChangePasswordViewModel, AsyncValue<bool>>((ref) {
-      final authService = ref.read(authServiceProvider);
-      return ChangePasswordViewModel(authService, ref);
-    });
+  ChangePasswordState({
+    this.isLoading = false,
+    this.errorMessage,
+    this.successMessage,
+  });
+}
 
-/// ViewModel class that manages the logic for changing a user's password.
-class ChangePasswordViewModel extends StateNotifier<AsyncValue<bool>> {
-  final AuthService authService;
-  final Ref ref;
+class ChangePasswordViewModel extends StateNotifier<ChangePasswordState> {
+  ChangePasswordViewModel() : super(ChangePasswordState());
 
-  /// Initializes the state as not loading and not successful by default.
-  ChangePasswordViewModel(this.authService, this.ref)
-    : super(const AsyncValue.data(false));
-
-  /// Handles the entire change password process.
-  /// - Sends the change password request.
-  /// - Updates the state based on the result.
-  /// - Sets a status message using [passwordStateProvider].
-  Future<void> changePassword(
+  Future<bool> changePassword(
     String newPassword,
     String currentPassword,
   ) async {
-    state = const AsyncValue.loading();
+    state = ChangePasswordState(isLoading: true);
 
     try {
-      final request = ChangePasswordRequest(
-        newPassword: newPassword,
+      final response = await ChangePasswordService.changePassword(
         currentPassword: currentPassword,
-        //requireSignIn: requireSignIn,
-      );
-
-      final success = await authService.changePasswordRequest(request);
-      state = AsyncValue.data(success);
-      ref
-          .read(passwordStateProvider.notifier)
-          .setStatusMessage(
-            success
-                ? "✅ Password changed successfully"
-                : "❌ Error changing password",
-          );
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
-    }
-  }
-}
-
-/// Service responsible for sending the change password request to the backend.
-class AuthService {
-  final String _baseUrl =
-      "https://a5a7a475-1f05-430d-a300-01cdf67ccb7e.mock.pstmn.io";
-  final http.Client client; // Accepting the client as a constructor parameter
-
-  /// Accepts an optional HTTP client (useful for mocking in tests).
-  AuthService({http.Client? client}) : client = client ?? http.Client();
-
-  /// Sends a PATCH request to change the user's password.
-  /// Returns `true` if the status code is 200, `false` otherwise.
-  Future<bool> changePasswordRequest(ChangePasswordRequest request) async {
-    try {
-      final response = await RequestService.patch(
-        "/user/update-password",
-        body: request.toJson(),
+        newPassword: newPassword,
       );
 
       if (response.statusCode == 200) {
-        print("✅ Success: ${response.body}");
-        return true; // Password changed successfully
+        state = ChangePasswordState(
+          successMessage: 'Password updated successfully',
+        );
+        return true;
       } else {
-        print("❌ API Error: ${response.statusCode} - ${response.body}");
-        return false; // Password change failed
+        state = ChangePasswordState(errorMessage: 'Failed to update password');
+        return false;
       }
     } catch (e) {
-      print("❌ Exception: $e");
-      return false; // Password change failed
+      state = ChangePasswordState(errorMessage: e.toString());
+      return false;
     }
   }
 }
 
-/// Model representing the request to change a user's password.
-class ChangePasswordRequest {
-  final String newPassword;
-  final String currentPassword;
-  //final bool requireSignIn;
-
-  ChangePasswordRequest({
-    required this.newPassword,
-    required this.currentPassword,
-    //this.requireSignIn = true,
-  });
-
-  /// Converts the request to JSON format for the HTTP request body.
-  Map<String, dynamic> toJson() {
-    return {
-      "newPassword": newPassword,
-      "currentPassword": currentPassword,
-      //"requireSignIn": requireSignIn,
-    };
-  }
-}
+final changePasswordViewModelProvider =
+    StateNotifierProvider<ChangePasswordViewModel, ChangePasswordState>((ref) {
+      return ChangePasswordViewModel();
+    });

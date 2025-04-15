@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
-import 'package:lockedin/routing.dart';
 import 'package:sizer/sizer.dart';
 import '../viewModel/home_viewmodel.dart';
 import '../../profile/widgets/post_list.dart';
@@ -17,12 +15,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!ref.read(userDataLoadedProvider)) {
-        ref.read(profileViewModelProvider).fetchUser(context);
-        ref.read(userDataLoadedProvider.notifier).state = true;
-      }
-    });
   }
 
   @override
