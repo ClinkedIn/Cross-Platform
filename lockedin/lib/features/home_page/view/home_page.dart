@@ -15,12 +15,14 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ref.read(homeViewModelProvider.notifier).refreshFeed();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeViewModelProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       body:

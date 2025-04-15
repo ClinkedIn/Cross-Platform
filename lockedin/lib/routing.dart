@@ -25,6 +25,7 @@ import 'package:lockedin/features/profile/view/edit_profile_photo.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
 import 'package:lockedin/features/profile/view/setting_page.dart';
 import 'package:lockedin/features/profile/view/update_page.dart';
+import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
 import 'package:lockedin/shared/widgets/side_bar.dart';
 import 'package:lockedin/shared/widgets/upper_navbar.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
@@ -39,6 +40,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) async {
+      ref.read(profileViewModelProvider).fetchAllProfileData();
       // Define public routes that don't require authentication
       final publicRoutes = ['/login', '/forgot-password', '/sign-up'];
 
@@ -172,6 +174,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               child: Consumer(
                 builder: (context, ref, _) {
                   final currentUser = ref.watch(userProvider);
+
                   return currentUser.when(
                     data:
                         (user) => UpperNavbar(
