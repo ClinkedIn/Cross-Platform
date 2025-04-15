@@ -29,17 +29,10 @@ class JobsPage extends ConsumerWidget {
             ),
             SizedBox(height: 1.h),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 2.h),
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 3.h),
               decoration: BoxDecoration(
                 color: theme.cardColor,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.shade300,
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
               ),
               child: Column(
                 children: [

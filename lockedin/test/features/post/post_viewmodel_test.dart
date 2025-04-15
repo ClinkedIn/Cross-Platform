@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lockedin/features/post/repository/createpost_repository.dart';
 import 'package:lockedin/features/post/viewmodel/post_viewmodel.dart';
@@ -34,5 +33,4 @@ void main() {
     viewModel.removeImage();
     expect(viewModel.state.attachments, null);
   });
-
 }

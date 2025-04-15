@@ -54,8 +54,7 @@ class JobRepository {
   }
 
   Future<void> unsaveJob(String jobId) async {
-    final uri = Uri(path: '/jobs/$jobId/save');
-    final response = await RequestService.delete(uri.toString());
+    final response = await RequestService.delete('/jobs/$jobId/save');
 
     if (response.statusCode != 200) {
       final data = json.decode(response.body);
