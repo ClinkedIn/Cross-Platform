@@ -134,4 +134,17 @@ class JobViewModel extends ChangeNotifier {
       debugPrint('Error applying to job: $e');
     }
   }
+
+  JobModel? _selectedJob;
+
+  JobModel? get selectedJob => _selectedJob;
+
+  Future<void> fetchJobById(String jobId) async {
+    try {
+      _selectedJob = await _repository.getJobById(jobId);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching job by ID: $e');
+    }
+  }
 }
