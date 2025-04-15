@@ -100,6 +100,7 @@ class UserModel {
     required this.createdAt,
     required this.updatedAt,
   });
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['_id'] ?? '',
@@ -246,6 +247,58 @@ class UserModel {
       updatedAt: DateTime.parse(json['updatedAt']),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'firstName': firstName,
+      'lastName': lastName,
+      'email': email,
+      if (additionalName != null) 'additionalName': additionalName,
+      if (headline != null) 'headline': headline,
+      if (profilePicture != null) 'profilePicture': profilePicture,
+      if (coverPicture != null) 'coverPicture': coverPicture,
+      if (resume != null) 'resume': resume,
+      if (website != null) 'website': website,
+      if (contactInfo != null) 'contactInfo': contactInfo!.toJson(),
+      if (about != null)
+        'about': {
+          if (about!.description != null) 'description': about!.description,
+          'skills': about!.skills,
+        },
+      if (location != null) 'location': location,
+      if (lastJobTitle != null) 'lastJobTitle': lastJobTitle,
+      if (industry != null) 'industry': industry,
+      if (mainEducation != null) 'mainEducation': mainEducation,
+      'skills':
+          skills
+              .map(
+                (e) => {
+                  'skillName': e.skillName,
+                  'endorsements': e.endorsements,
+                  'education': e.education,
+                  'experience': e.experience,
+                },
+              )
+              .toList(),
+      'education': education.map((e) => e.toJson()).toList(),
+      'certificates': certificates,
+      'workExperience': workExperience.map((e) => e.toJson()).toList(),
+      'companies': companies,
+      'adminInCompanies': adminInCompanies,
+      'isSuperAdmin': isSuperAdmin,
+      'isPremium': isPremium,
+      if (subscription != null) 'subscription': subscription,
+      'transactions': transactions,
+      'profilePrivacySettings': profilePrivacySettings,
+      'connectionRequestPrivacySetting': connectionRequestPrivacySetting,
+      'connectionList': connectionList,
+      'isConfirmed': isConfirmed,
+      'defaultMode': defaultMode,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
 }
 
 class ContactInfo {
@@ -262,6 +315,7 @@ class ContactInfo {
     required this.birthDay,
     this.website,
   });
+
   factory ContactInfo.fromJson(Map<String, dynamic> json) {
     return ContactInfo(
       phone: json['phone'] ?? '',
@@ -279,6 +333,17 @@ class ContactInfo {
               )
               : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'phone': phone,
+      'phoneType': phoneType,
+      'address': address,
+      'birthDay': {'day': birthDay.day, 'month': birthDay.month},
+      if (website != null)
+        'website': {'url': website!.url, 'type': website!.type},
+    };
   }
 }
 
@@ -399,6 +464,23 @@ class WorkExperience {
     this.skills = const [],
     this.media,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'jobTitle': jobTitle,
+      'companyName': companyName,
+      'fromDate': fromDate,
+      if (toDate != null) 'toDate': toDate,
+      if (currentlyWorking != null) 'currentlyWorking': currentlyWorking,
+      'employmentType': employmentType,
+      if (location != null) 'location': location,
+      if (locationType != null) 'locationType': locationType,
+      if (description != null) 'description': description,
+      if (foundVia != null) 'foundVia': foundVia,
+      'skills': skills,
+      if (media != null) 'media': media,
+    };
+  }
 }
 
 class FollowEntity {

@@ -5,8 +5,6 @@ import 'package:lockedin/features/auth/viewmodel/sign_up_viewmodel.dart';
 import 'package:lockedin/features/auth/state/sign_up_state.dart';
 import 'package:lockedin/features/auth/repository/sign_up_repository.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class MockSignupRepository extends Mock implements SignupRepository {}
 
@@ -104,34 +102,5 @@ void main() {
       await viewModel.submitForm();
       expect(viewModel.state.isLoading, false);
     });
-
-    // test('Submit form handles API failure', () async {
-    //   when(
-    //     mockRepository.registerUser(
-    //       firstName: 'John',
-    //       lastName: 'Doe',
-    //       email: 'test@example.com',
-    //       password: 'securePassword',
-    //       rememberMe: false,
-    //     ),
-    //   ).thenAnswer((_) async => throw Exception('Network error'));
-
-    //   viewModel.setFirstName('John');
-    //   viewModel.setLastName('Doe');
-    //   viewModel.setEmail('test@example.com');
-    //   viewModel.setPassword('securePassword');
-
-    //   await viewModel.submitForm();
-
-    //   expect(viewModel.state.isLoading, false);
-    //   expect(viewModel.state.success, false);
-    // });
-
-    // test('Clearing credentials resets state', () async {
-    //   await viewModel.clearSavedCredentials();
-    //   expect(viewModel.state.email, '');
-    //   expect(viewModel.state.password, '');
-    //   expect(viewModel.state.rememberMe, false);
-    // });
   });
 }
