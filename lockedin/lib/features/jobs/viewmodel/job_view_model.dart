@@ -147,4 +147,21 @@ class JobViewModel extends ChangeNotifier {
       debugPrint('Error fetching job by ID: $e');
     }
   }
+
+  String getApplicationStatus({
+    required String userId,
+    required List<dynamic> applicants,
+    required List<dynamic> accepted,
+    required List<dynamic> rejected,
+  }) {
+    if (accepted.contains(userId)) {
+      return 'Accepted';
+    } else if (rejected.contains(userId)) {
+      return 'Rejected';
+    } else if (applicants.contains(userId)) {
+      return 'Pending';
+    } else {
+      return 'Not Applied';
+    }
+  }
 }

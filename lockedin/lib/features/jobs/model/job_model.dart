@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 class JobModel {
   final String title;
   final String id;
@@ -14,6 +12,11 @@ class JobModel {
   final String? industry;
   final List<Map<String, dynamic>> screeningQuestions;
 
+  // ✅ New fields from API
+  final List<String> applicants;
+  final List<String> accepted;
+  final List<String> rejected;
+
   JobModel({
     required this.title,
     required this.id,
@@ -27,20 +30,27 @@ class JobModel {
     this.logoUrl,
     this.industry,
     required this.screeningQuestions,
+    required this.applicants,
+    required this.accepted,
+    required this.rejected,
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
     final companyData = json['company'] is Map ? json['company'] : null;
     final screeningQuestions = json['screeningQuestions'] as List?;
 
-    print("Raw job JSON: ${jsonEncode(json)}");
-
     final workplaceTypeRaw = json['workplaceType']?.toString() ?? 'Unknown';
     final questions =
-        (json['screeningQuestions'] as List<dynamic>?)
-            ?.map((q) => q as Map<String, dynamic>)
-            .toList() ??
+        (screeningQuestions)?.map((q) => q as Map<String, dynamic>).toList() ??
         [];
+
+    // Parse string lists safely
+    List<String> _parseStringList(dynamic list) {
+      if (list is List) {
+        return list.map((e) => e.toString()).toList();
+      }
+      return [];
+    }
 
     return JobModel(
       id: (json['_id'] ?? json['id'] ?? json['jobId'])?.toString() ?? '',
@@ -61,6 +71,11 @@ class JobModel {
       logoUrl: companyData != null ? companyData['logo'] : null,
       industry: json['industry'],
       screeningQuestions: questions,
+
+      // ✅ Assign lists from API
+      applicants: _parseStringList(json['applicants']),
+      accepted: _parseStringList(json['accepted']),
+      rejected: _parseStringList(json['rejected']),
     );
   }
 }
