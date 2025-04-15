@@ -112,7 +112,10 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                     final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const ContactInfoPage(),
+                        builder:
+                            (_) => ContactInfoPage(
+                              screeningQuestions: job.screeningQuestions,
+                            ),
                       ),
                     );
 
