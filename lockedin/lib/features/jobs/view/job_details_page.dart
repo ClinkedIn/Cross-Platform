@@ -1,19 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/jobs/model/job_model.dart';
 import 'package:lockedin/features/jobs/view/contact_info.dart';
 import 'package:lockedin/features/jobs/viewmodel/job_view_model.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:sizer/sizer.dart';
 
-class JobDetailsPage extends ConsumerWidget {
-  final JobModel job;
+class JobDetailsPage extends ConsumerStatefulWidget {
+  final String jobId;
 
-  const JobDetailsPage({Key? key, required this.job}) : super(key: key);
+  const JobDetailsPage({Key? key, required this.jobId}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<JobDetailsPage> createState() => _JobDetailsPageState();
+}
+
+class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(JobViewModel.provider).fetchJobById(widget.jobId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final jobViewModel = ref.watch(JobViewModel.provider);
+    final job = jobViewModel.selectedJob;
+
+    if (job == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -34,29 +52,31 @@ class JobDetailsPage extends ConsumerWidget {
               ),
             ),
             SizedBox(height: 1.h),
+
+            // Show Company + Location
             Text(
               '${job.company} • ${job.location}',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
               ),
             ),
-            SizedBox(height: 2.h),
-            Text(
-              'Experience Level: ${job.experienceLevel}',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
             SizedBox(height: 1.h),
-            Text(
-              'Salary Range: ${job.salaryRange}',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+
+            // Show Industry
+            if (job.industry != null)
+              Text(
+                'Industry: ${job.industry}',
+                style: theme.textTheme.bodyLarge,
               ),
+
+            // Show Workplace Type (Onsite/Remote/etc.)
+            Text(
+              'Workplace Type: ${job.workplaceType}',
+              style: theme.textTheme.bodyLarge,
             ),
             if (job.isRemote)
               Padding(
-                padding: EdgeInsets.only(top: 1.h),
+                padding: EdgeInsets.only(top: 0.5.h),
                 child: Text(
                   'Remote',
                   style: theme.textTheme.bodyLarge?.copyWith(
@@ -65,7 +85,18 @@ class JobDetailsPage extends ConsumerWidget {
                   ),
                 ),
               ),
+
+            Text(
+              'Experience Level: ${job.experienceLevel}',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 1.h),
+
             SizedBox(height: 2.h),
+
+            // Easy Apply Button
             Row(
               children: [
                 Expanded(
@@ -90,8 +121,6 @@ class JobDetailsPage extends ConsumerWidget {
                       final contactPhone = result['phone'];
                       final answers = result['answers'];
 
-                      final jobViewModel = ref.read(JobViewModel.provider);
-
                       try {
                         await jobViewModel.applyToJob(
                           jobId: job.id,
@@ -101,7 +130,7 @@ class JobDetailsPage extends ConsumerWidget {
                         );
 
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
+                          const SnackBar(
                             content: Text(
                               'Application submitted successfully!',
                             ),
@@ -120,6 +149,8 @@ class JobDetailsPage extends ConsumerWidget {
               ],
             ),
             SizedBox(height: 1.h),
+
+            // Description Scroll
             Expanded(
               child: SingleChildScrollView(
                 child: Text(

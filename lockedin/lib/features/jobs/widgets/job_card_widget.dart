@@ -97,7 +97,7 @@ class JobCardWidget extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => JobDetailsPage(job: job),
+                  builder: (context) => JobDetailsPage(jobId: job.id),
                 ),
               );
             },

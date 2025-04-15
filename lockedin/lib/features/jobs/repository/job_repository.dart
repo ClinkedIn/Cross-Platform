@@ -39,7 +39,6 @@ class JobRepository {
     }
   }
 
-  /// Save Job Functionality
   Future<void> saveJob(String jobId) async {
     final uri = Uri(path: '/jobs/$jobId/save');
 
@@ -88,5 +87,20 @@ class JobRepository {
     }
 
     debugPrint('Application response: ${jsonEncode(data)}');
+  }
+
+  Future<JobModel> getJobById(String jobId) async {
+    final uri = Uri(path: '/jobs/$jobId');
+
+    final response = await RequestService.get(uri.toString());
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print('Fetched job by ID: ${jsonEncode(data)}');
+
+      return JobModel.fromJson(data); // <- use `data` directly
+    } else {
+      throw Exception('Failed to fetch job by ID: ${response.statusCode}');
+    }
   }
 }
