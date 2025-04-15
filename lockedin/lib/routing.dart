@@ -173,7 +173,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: "newsletter-page",
         builder: (context, state) => NewsletterPage(),
       ),
-
+      GoRoute(
         path: '/edit-profile-photo',
         name: 'edit-profile-photo',
         builder: (context, state) => EditProfilePhoto(),
@@ -188,7 +188,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'edit-profile',
         builder: (context, state) => UpdatePage(),
       ),
-
 
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

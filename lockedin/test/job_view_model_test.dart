@@ -17,6 +17,10 @@ void main() {
       salaryRange: '\$100k',
       isRemote: true,
       description: 'Cool job!',
+      workplaceType: 'Remote',
+      screeningQuestions: [
+        {'question': 'Why?', 'answer': 'Because'},
+      ],
     ),
     JobModel(
       id: '2',
@@ -27,6 +31,10 @@ void main() {
       salaryRange: '\$80k',
       isRemote: false,
       description: 'Fun job!',
+      workplaceType: 'Remote',
+      screeningQuestions: [
+        {'question': 'Why?', 'answer': 'Because'},
+      ],
     ),
   ];
 
