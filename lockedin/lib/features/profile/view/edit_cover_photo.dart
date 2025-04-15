@@ -150,8 +150,7 @@ class _EditCoverPhotoState extends ConsumerState<EditCoverPhoto> {
               ? const Center(
                 child: CircularProgressIndicator(color: Colors.white),
               )
-              : user != null
-              ? SingleChildScrollView(
+              : SingleChildScrollView(
                 child: Column(
                   children: [
                     const SizedBox(height: 40),
@@ -220,9 +219,6 @@ class _EditCoverPhotoState extends ConsumerState<EditCoverPhoto> {
                     ),
                   ],
                 ),
-              )
-              : const Center(
-                child: CircularProgressIndicator(color: Colors.white),
               ),
     );
   }

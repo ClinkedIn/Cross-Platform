@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sizer/sizer.dart';
 import '../viewModel/home_viewmodel.dart';
-import '../../profile/widgets/post_list.dart';
+import '../../post/widgets/post_list.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 
 class HomePage extends ConsumerStatefulWidget {
