@@ -11,7 +11,11 @@ import 'package:http_parser/http_parser.dart';
 
 class RequestService {
   static final String _baseUrl = Constants.baseUrl;
-  static final http.Client _client = http.Client();
+  static http.Client _client = http.Client();
+
+  static void setClient(http.Client client) {
+    _client = client;
+  }
 
   /// Prepares request headers, including stored cookies if available.
   static Future<Map<String, String>> _getHeaders({
