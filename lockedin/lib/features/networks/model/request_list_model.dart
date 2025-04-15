@@ -12,7 +12,7 @@ class RequestList {
 
   factory RequestList.fromJson(Map<String, dynamic> json) => RequestList(
     requests: List<Request>.from(
-      json["requests"].map((x) => Request.fromJson(x)),
+      json["pendingRequests"].map((x) => Request.fromJson(x)),
     ),
   );
 
@@ -44,7 +44,7 @@ class Request {
     firstName: json["firstName"],
     lastName: json["lastName"],
     profilePicture: json["profilePicture"],
-    headline: json["headline"],
+    headline: json["headline"] ?? "",
   );
 
   Map<String, dynamic> toJson() => {

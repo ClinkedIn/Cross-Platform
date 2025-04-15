@@ -65,7 +65,6 @@ class _InvitationSectionState extends State<InvitationSection> {
   }
 
   Widget _buildInvitationsContent(RequestViewModel viewModel, ThemeData theme) {
-
     switch (viewModel.state) {
       case RequestViewState.loading:
         return SizedBox(
