@@ -12,6 +12,7 @@ class JobModel {
   final String workplaceType;
   final String? logoUrl;
   final String? industry;
+  final List<Map<String, dynamic>> screeningQuestions;
 
   JobModel({
     required this.title,
@@ -25,6 +26,7 @@ class JobModel {
     required this.workplaceType,
     this.logoUrl,
     this.industry,
+    required this.screeningQuestions,
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +36,11 @@ class JobModel {
     print("Raw job JSON: ${jsonEncode(json)}");
 
     final workplaceTypeRaw = json['workplaceType']?.toString() ?? 'Unknown';
+    final questions =
+        (json['screeningQuestions'] as List<dynamic>?)
+            ?.map((q) => q as Map<String, dynamic>)
+            .toList() ??
+        [];
 
     return JobModel(
       id: (json['_id'] ?? json['id'] ?? json['jobId'])?.toString() ?? '',
@@ -53,6 +60,7 @@ class JobModel {
       workplaceType: workplaceTypeRaw,
       logoUrl: companyData != null ? companyData['logo'] : null,
       industry: json['industry'],
+      screeningQuestions: questions,
     );
   }
 }
