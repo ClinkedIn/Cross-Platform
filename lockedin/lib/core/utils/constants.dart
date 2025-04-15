@@ -97,6 +97,6 @@ class Constants {
   static const String resumeNotificationsEndpoint = '/notifications/resume-notifications';
   static const String restoreNotificationsEndpoint = '/notifications/restore-notification/%s'; // %s will be replaced with the notificationId
   static const String deleteNotificationEndpoint = '/notifications/%s'; // %s will be replaced with the notificationId
-  
+
 }
 
