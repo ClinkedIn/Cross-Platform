@@ -1,20 +1,20 @@
 // chat_conversation_viewmodel.dart
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import 'package:lockedin/core/services/auth_service.dart';
 import 'package:lockedin/features/chat/model/chat_message_model.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
 import 'package:lockedin/features/chat/repository/chat_conversation_repository.dart';
 import 'package:lockedin/features/chat/viewModel/chat_viewmodel.dart';
-import 'package:lockedin/core/services/request_services.dart';
-import 'package:lockedin/core/utils/constants.dart';
 
 // Define attachment types
 enum AttachmentType {
   document,
   image,
   gif,
+  video,
+  audio,
   none
 }
 
@@ -24,12 +24,16 @@ class ChatConversationState {
   final bool isLoading;
   final String? error;
   final Map<String, List<ChatMessage>> messagesByDate;
+  final bool isMarkedAsRead;
+  final bool isSending;
 
   ChatConversationState({
     this.messages = const [],
     this.isLoading = false,
     this.error,
     this.messagesByDate = const {},
+    this.isMarkedAsRead = false,
+    this.isSending = false,
   });
 
   ChatConversationState copyWith({
@@ -37,12 +41,16 @@ class ChatConversationState {
     bool? isLoading,
     String? error,
     Map<String, List<ChatMessage>>? messagesByDate,
+    bool? isMarkedAsRead,
+    bool? isSending,
   }) {
     return ChatConversationState(
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
+      error: error != null ? error : this.error, // Preserve null if null is passed
       messagesByDate: messagesByDate ?? this.messagesByDate,
+      isMarkedAsRead: isMarkedAsRead ?? this.isMarkedAsRead,
+      isSending: isSending ?? this.isSending,
     );
   }
 }
@@ -54,7 +62,11 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
   final AuthService _authService;
   final Chat? chat;
   
-  String get currentUserId => _authService.currentUser?.id ?? '';
+  String get currentUserId {
+    final userId = _authService.currentUser?.id ?? '';
+    debugPrint('Getting currentUserId: ${userId.isEmpty ? "EMPTY" : userId}');
+    return userId;
+  }
 
   ChatConversationNotifier(this.chatId, this._repository, this._authService, this.chat) 
       : super(ChatConversationState(isLoading: true)) {
@@ -64,75 +76,23 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
   Future<void> _initialize() async {
     // First ensure the current user is loaded
     try {
-      if (_authService.currentUser == null) {
-        debugPrint('Fetching current user data');
-        final user = await _authService.fetchCurrentUser();
-        if (user == null) {
-          state = state.copyWith(
-            error: 'Not authenticated. Please log in.',
-            isLoading: false
-          );
-          return;
-        }
-      }
-      
-      // Check server connectivity before loading conversation
-      await _checkServerConnectivity();
+      // Load the current user before loading the conversation
+      await _authService.fetchCurrentUser();
       
       // Then load the conversation
       await _loadConversation();
+      
+      // Mark as read when opening the conversation
+      await markChatAsRead();
     } catch (e) {
       debugPrint('Error in initialization: $e');
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
   
-  /// Check if the server is reachable and responding properly
-  Future<bool> _checkServerConnectivity() async {
-    try {
-      final endpoint = Constants.getUserDataEndpoint;
-      
-      try {
-        final response = await RequestService.get(endpoint);
-        final isConnected = response.statusCode >= 200 && response.statusCode < 400;
-        
-        if (!isConnected) {
-          state = state.copyWith(
-            error: 'Server connection issue. Status: ${response.statusCode}',
-            isLoading: false
-          );
-        }
-        
-        return isConnected;
-      } catch (e) {
-        state = state.copyWith(
-          error: 'Server connection error: Unable to reach API server',
-          isLoading: false
-        );
-        return false;
-      }
-    } catch (e) {
-      state = state.copyWith(
-        error: 'Error checking server connectivity',
-        isLoading: false
-      );
-      return false;
-    }
-  }
-
   Future<void> _loadConversation() async {
     try {
       state = state.copyWith(isLoading: true, error: null);
-      
-      // Log the chatId we're using
-      debugPrint('Loading conversation for chat ID: $chatId');
-      if (chatId.isEmpty) {
-        state = state.copyWith(
-          isLoading: false,
-          error: 'Invalid chat ID'
-        );
-        return;
-      }
       
       final conversationData = await _repository.fetchConversation(chatId);
       
@@ -218,11 +178,7 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     debugPrint('Manually refreshing conversation for chat ID: $chatId');
     state = state.copyWith(isLoading: true, error: null);
     try {
-      // Check server connectivity first
-      final isConnected = await _checkServerConnectivity();
-      if (isConnected) {
-        await _loadConversation();
-      }
+      await _loadConversation();
     } catch (e) {
       debugPrint('Error refreshing conversation: $e');
       state = state.copyWith(
@@ -237,10 +193,13 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     if (messageText.isEmpty) return;
     
     try {
-      // Check if user is authenticated
-      if (_authService.currentUser == null) {
-        throw Exception('You must be logged in to send messages');
-      }
+      // Update state to indicate sending in progress
+      state = state.copyWith(isSending: true, error: null);
+      
+      // // Check if user is authenticated
+      // if (_authService.currentUser == null) {
+      //   throw Exception('You must be logged in to send messages');
+      // }
       
       // Create a temporary message to display immediately
       final temporaryMessage = ChatMessage(
@@ -254,25 +213,45 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         messageText: messageText,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        messageAttachment: const [], // Initialize as empty list
+        attachmentType: AttachmentType.none,
       );
       
       // Add the temporary message to the UI for immediate feedback
       _addTemporaryMessage(temporaryMessage);
       
+      // Determine chat type from the chat object if available
+      String chatType = chat?.chatType ?? 'direct';
+      
       try {
         // Send the message to the server using the repository
-        await _repository.sendMessage(
+        final result = await _repository.sendMessage(
           chatId: chatId,
           messageText: messageText,
+          chatType: chatType,
         );
+        
+        // Check if the message was sent successfully
+        if (result['success'] != true) {
+          throw Exception(result['error'] ?? 'Failed to send message');
+        }
         
         // Message sent successfully
         debugPrint('Message sent successfully');
+        
+        // Refresh the conversation to get the actual message from the server
+        // Wait a moment to give the server time to process the message
+        await Future.delayed(const Duration(milliseconds: 500));
+        await refreshConversation();
+        
+        // Update state to indicate sending is complete
+        state = state.copyWith(isSending: false);
       } catch (e) {
         // Set detailed error state with the specific API error
         debugPrint('Error sending message: ${e.toString()}');
         state = state.copyWith(
           error: 'Failed to send message: ${e.toString()}',
+          isSending: false,
         );
         
         // Rethrow to allow the UI to show a toast/snackbar
@@ -281,6 +260,7 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     } catch (e) {
       // Handle errors - but keep the temporary message in UI
       debugPrint('Error sending message: ${e.toString()}');
+      state = state.copyWith(isSending: false);
       rethrow;
     }
   }
@@ -294,8 +274,20 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     final Map<String, List<ChatMessage>> updatedMessagesByDate = 
         Map<String, List<ChatMessage>>.from(state.messagesByDate);
     
+    // Format today's date
+    final today = DateFormat('MMMM d, yyyy').format(DateTime.now());
+    
     // Add to today's group if it exists
-    const todayKey = 'Today'; // For simplicity, we use 'Today' as the key
+    String todayKey = 'Today';
+    
+    // Check if we have a date formatted key for today in the existing keys
+    for (final key in updatedMessagesByDate.keys) {
+      if (key == today) {
+        todayKey = key;
+        break;
+      }
+    }
+    
     if (updatedMessagesByDate.containsKey(todayKey)) {
       updatedMessagesByDate[todayKey] = [...updatedMessagesByDate[todayKey]!, message];
     } else {
@@ -309,12 +301,38 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       messagesByDate: updatedMessagesByDate,
     );
   }
+  
+  /// Mark chat as read
+  /// This sets the unread count to zero for the current user
+  Future<bool> markChatAsRead() async {
+    try {
+      
+      // Call the repository method to mark as read
+      final success = await _repository.markChatAsRead(chatId);
+      
+      // Update the state to reflect the read status
+      if (success) {
+        state = state.copyWith(isMarkedAsRead: true);
+        
+        // Also update the unread count in the parent chat list if possible
+        try {
+          // This would be implemented in a real app to update the chat list
+          // For now just log it
+          debugPrint('Chat marked as read successfully');
+        } catch (e) {
+          debugPrint('Error updating chat list unread count: $e');
+        }
+      } else {
+        debugPrint('Failed to mark chat as read');
+      }
+      
+      return success;
+    } catch (e) {
+      debugPrint('Error in markChatAsRead: $e');
+      return false;
+    }
+  }
 }
-
-// Auth service provider
-final authServiceProvider = Provider<AuthService>((ref) {
-  return AuthService();
-});
 
 // Define the provider correctly
 final chatConversationProvider = StateNotifierProvider.family<ChatConversationNotifier, ChatConversationState, String>(
@@ -334,4 +352,4 @@ final chatConversationProvider = StateNotifierProvider.family<ChatConversationNo
     
     return ChatConversationNotifier(chatId, repository, authService, chat);
   },
-); 
+);

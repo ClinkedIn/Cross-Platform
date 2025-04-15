@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/core/utils/constants.dart';
+import 'package:lockedin/features/chat/repository/chat_conversation_repository.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/routing.dart';
@@ -48,32 +49,8 @@ class _MyAppState extends ConsumerState<MyApp> {
 
   Future<void> _initializeAuth() async {
     try {
-      // Get the auth service and check if user is logged in
-      final authService = ref.read(authServiceProvider);
 
-      // Check if user is logged in first
-      final isLoggedIn = await authService.isLoggedIn();
-      if (!isLoggedIn) {
-        debugPrint('No auth token found, should navigate to login');
-        // We'll set _isInitialized to true and let the router handle redirection
-        setState(() {
-          _isInitialized = true;
-        });
-        return;
-      }
-
-      // Try to fetch user data
-      final user = await authService.fetchCurrentUser();
-
-      if (user != null) {
-        debugPrint('User initialized: ${user.id}');
-      } else {
-        debugPrint(
-          'No authenticated user available, removing any stale tokens',
-        );
-        // Clear any stale tokens
-        await _clearAuthAndPrepareForLogin();
-      }
+      await _clearAuthAndPrepareForLogin();      
 
       setState(() {
         _isInitialized = true;

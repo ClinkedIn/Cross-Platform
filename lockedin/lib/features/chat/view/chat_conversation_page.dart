@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
-import 'package:lockedin/features/chat/viewModel/chat_viewmodel.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
-import 'package:lockedin/features/chat/widgets/chat_app_bar.dart';
 import 'package:lockedin/features/chat/widgets/chat_bubble_widget.dart';
 import 'package:lockedin/features/chat/widgets/chat_input_field_widget.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
-import 'package:lockedin/core/utils/constants.dart';
+
 
 class ChatConversationScreen extends ConsumerStatefulWidget {
   final Chat chat;
@@ -29,6 +27,10 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     super.initState();
     // Mark chat as read when opening the conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Make sure user profile is loaded
+      _ensureUserDataLoaded();
+      // Mark messages as read
+      ref.read(chatConversationProvider(widget.chat.id).notifier).markChatAsRead();
       // Check connection to help debug server issues
       _checkServerConnection();
     });
@@ -62,14 +64,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
     final userId = chatViewModel.currentUserId;
     debugPrint('Sending message with user ID: ${userId.isNotEmpty ? userId : "EMPTY"}');
-    
-    // Show a loading indicator
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Sending message...'),
-        duration: Duration(seconds: 1),
-      ),
-    );
     
     // Call the viewModel's sendMessage method
     chatViewModel.sendMessage(messageText).then((_) {
@@ -180,6 +174,22 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     );
   }
   
+  // Ensure the user data is loaded
+  Future<void> _ensureUserDataLoaded() async {
+    try {
+      final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+      final currentUserId = chatViewModel.currentUserId;
+      
+      if (currentUserId.isEmpty) {
+        debugPrint('Current user ID is empty, trying to reload user data');
+        // Force a refresh of the conversation which now fetches user data first
+        await chatViewModel.refreshConversation();
+      }
+    } catch (e) {
+      debugPrint('Error ensuring user data is loaded: $e');
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
@@ -200,12 +210,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Refreshing conversation...'),
-                  duration: Duration(seconds: 1),
-                )
-              );
               ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
             },
           ),
@@ -383,8 +387,10 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   
   Widget _buildMessageBubble(message) {
     final currentUserId = ref.read(chatConversationProvider(widget.chat.id).notifier).currentUserId;
+    
     // Normal mode: check if the message sender is the current user
-    final isMe = message.sender.id == currentUserId;
+    // Handle empty current user ID case
+    final isMe = currentUserId.isNotEmpty && message.sender.id == currentUserId;
     
     // Default to empty string for messageText if null
     final messageText = message.messageText ?? '';
@@ -404,4 +410,4 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       attachmentType: message.attachmentType,
     );
   }
-} 
+}

@@ -76,6 +76,7 @@ class Constants {
   // Chat endpoints
   /// Endpoint to fetch all chats for the current user
   static const String allChatsEndpoint = '/chats/all-chats';
+  static const String chatMarkAsReadEndpoint = '/chats/mark-as-read/{chatId}';
   
   /// Endpoint to fetch a specific chat conversation
   /// Use: '/chats/direct-chat/{actualChatId}'
@@ -83,7 +84,7 @@ class Constants {
   
   /// Endpoint to send a message to a specific chat
   /// Format: '/chats/direct-chat/{chatId}/messages' 
-  static const String chatMessagesEndpoint = '/chats/direct-chat/{chatId}/messages';
+  static const String chatMessagesEndpoint = '/messages';
 
   static const String savePostEndpoint = '/posts/%s/save'; // %s will be replaced with the postId
   static const String togglelikePostEndpoint = '/posts/%s/like'; // %s will be replaced with the postId
