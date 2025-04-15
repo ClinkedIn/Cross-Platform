@@ -107,13 +107,6 @@ class Constants {
       '/posts/%s/repost'; // %s will be replaced with the postId
   //static const String unlikePostEndpoint = '/posts/%s/unlike'; // %s will be replaced with the postId
   static const String getNotificationsEndpoint = '/notifications';
-  static const String markNotificationAsReadEndpoint = '/notifications/mark-read/%s'; // %s will be replaced with the notificationId
-  static const String markNotificationAsUnreadEndpoint = '/notifications/mark-unread/%s'; // %s will be replaced with the notificationId
-  static const String getNotificationsUnreadCountEndpoint = '/notifications/unread-count';
-  static const String pauseNotificationsEndpoint = '/notifications/pause-notifications';
-  static const String resumeNotificationsEndpoint = '/notifications/resume-notifications';
-  static const String restoreNotificationsEndpoint = '/notifications/restore-notification/%s'; // %s will be replaced with the notificationId
-  static const String deleteNotificationEndpoint = '/notifications/%s'; // %s will be replaced with the notificationId
   static const String markNotificationAsReadEndpoint =
       '/notifications/mark-read/%s'; // %s will be replaced with the notificationId
   static const String markNotificationAsUnreadEndpoint =
@@ -128,5 +121,4 @@ class Constants {
       '/notifications/restore-notification/%s'; // %s will be replaced with the notificationId
   static const String deleteNotificationEndpoint =
       '/notifications/%s'; // %s will be replaced with the notificationId
-
 }

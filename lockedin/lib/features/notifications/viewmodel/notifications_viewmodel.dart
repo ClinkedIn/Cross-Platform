@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
 import 'package:lockedin/features/auth/view/main_page.dart';
@@ -20,14 +21,14 @@ class NotificationsViewModel
   }
 
   NotificationModel? deletedNotification, showLessNotification;
-  int? deletedNotificationIndex, showLessNotificationIndex; // For undo deleting notification
+  int? deletedNotificationIndex,
+      showLessNotificationIndex; // For undo deleting notification
 
   Map<String, NotificationModel> showLessNotifications =
       {}; // For show less like this
 
   /// Fetches the list of notifications from the backend.
   Future<void> fetchNotifications() async {
-  
     try {
       final response = await RequestService.get(
         Constants.getNotificationsEndpoint,
@@ -114,31 +115,7 @@ class NotificationsViewModel
     //int index needed as well
 
     //final notification = state[index]; // ✅ Navigate to the related post
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MainPage(),
-        //     PostCard(
-        //   post: PostModel(
-        //     id: '1',
-        //     userId: '100',
-        //     username: 'Test User 1',
-        //     profileImageUrl: 'https://i.pravatar.cc/150?img=10',
-        //     content: 'This is a test post',
-        //     time: '2d',
-        //     isEdited: false,
-        //     imageUrl: 'https://picsum.photos/800/600?random=1',
-        //     likes: 10,
-        //     comments: 3,
-        //     reposts: 2,
-        //   ),
-        //   onLike: () {},
-        //   onComment: () {},
-        //   onShare: () {},
-        //   onFollow: () {},
-        // ),
-      ),
-    );
+    context.go("/notifications");
   }
 
   /// Marks all notifications as seen (for UI highlighting).
@@ -168,7 +145,6 @@ class NotificationsViewModel
 
   /// Deletes a notification by its [id].
   void deleteNotification(String id) async {
-
     final currentNotifications = state.value ?? [];
 
     final target = currentNotifications.firstWhere(
@@ -191,12 +167,15 @@ class NotificationsViewModel
       if (response.statusCode == 204) {
         print("✅ Notification $id deleted.");
 
-        final updatedNotifications = List<NotificationModel>.from(currentNotifications)
-          ..removeAt(deletedNotificationIndex!);
+        final updatedNotifications = List<NotificationModel>.from(
+          currentNotifications,
+        )..removeAt(deletedNotificationIndex!);
 
         state = AsyncValue.data(updatedNotifications);
       } else {
-        print("❌ Failed to delete notification. Status: ${response.statusCode}");
+        print(
+          "❌ Failed to delete notification. Status: ${response.statusCode}",
+        );
       }
     } catch (e) {
       print("❌ Error during delete operation: $e");
@@ -205,7 +184,6 @@ class NotificationsViewModel
 
   /// Undoes the deletion of the most recently deleted notification.
   void undoDeleteNotification() async {
-
     if (deletedNotification == null || deletedNotificationIndex == null) {
       print("No notification to undo delete.");
       return;
@@ -221,10 +199,10 @@ class NotificationsViewModel
       );
 
       if (response.statusCode == 200) {
-
         final currentNotifications = state.value ?? [];
-        final updatedNotifications = List<NotificationModel>.from(currentNotifications)
-          ..insert(deletedNotificationIndex!, deletedNotification!);
+        final updatedNotifications = List<NotificationModel>.from(
+          currentNotifications,
+        )..insert(deletedNotificationIndex!, deletedNotification!);
 
         state = AsyncValue.data(updatedNotifications);
 
@@ -233,7 +211,9 @@ class NotificationsViewModel
 
         print("✅ Notification restored.");
       } else {
-        print("❌ Failed to restore notification. Status: ${response.statusCode}");
+        print(
+          "❌ Failed to restore notification. Status: ${response.statusCode}",
+        );
       }
     } catch (e) {
       print("❌ Error during restore operation: $e");
@@ -253,29 +233,29 @@ class NotificationsViewModel
     showLessNotifications[id] = target;
     final index = notifications.indexOf(target);
 
-    final updatedNotifications = List<NotificationModel>.from(notifications)
-      ..removeAt(index)
-      ..insert(
-        index,
-        NotificationModel(
-          id: id,
-          from: "",
-          to: "",
-          subject: "Show less like this",
-          content: "Show less like this",
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          isPlaceholder: true,
-          sendingUser: SendingUser.empty(),
-        ),
-      );
+    final updatedNotifications =
+        List<NotificationModel>.from(notifications)
+          ..removeAt(index)
+          ..insert(
+            index,
+            NotificationModel(
+              id: id,
+              from: "",
+              to: "",
+              subject: "Show less like this",
+              content: "Show less like this",
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              isPlaceholder: true,
+              sendingUser: SendingUser.empty(),
+            ),
+          );
 
     state = AsyncValue.data(updatedNotifications);
-}
+  }
 
   /// Undoes the "show less like this" action and restores the original notification.
   void undoShowLessLikeThis(String id) {
-
     if (!showLessNotifications.containsKey(id)) {
       print("No notification to undo show less like this.");
       return;
@@ -285,7 +265,9 @@ class NotificationsViewModel
     if (originalNotification == null) return;
 
     final currentNotifications = state.value ?? [];
-    final updatedNotifications = List<NotificationModel>.from(currentNotifications);
+    final updatedNotifications = List<NotificationModel>.from(
+      currentNotifications,
+    );
 
     final index = updatedNotifications.indexWhere(
       (n) => n.id == id && n.isPlaceholder,
@@ -293,7 +275,7 @@ class NotificationsViewModel
 
     if (index != -1) {
       updatedNotifications[index] = originalNotification;
-      
+
       state = AsyncValue.data(updatedNotifications);
       showLessNotifications.remove(id);
 
