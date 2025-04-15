@@ -120,42 +120,42 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   }
   
   /// Show a dialog with connection diagnostic information
-  void _showConnectionDiagnosticDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Server Connection Issue'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Unable to load messages from the server.'),
-            SizedBox(height: 16),
-            Text('Potential issues:', style: TextStyle(fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            Text('• The server may be offline or unreachable'),
-            Text('• You may need to check your network connection'),
-            Text('• The chat ID may be invalid'),
-            SizedBox(height: 16),
-            Text('Try refreshing the conversation or checking the server status.'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: Text('CLOSE'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.pop();
-              ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
-            },
-            child: Text('RETRY'),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _showConnectionDiagnosticDialog() {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: Text('Server Connection Issue'),
+  //       content: Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Text('Unable to load messages from the server.'),
+  //           SizedBox(height: 16),
+  //           Text('Potential issues:', style: TextStyle(fontWeight: FontWeight.bold)),
+  //           SizedBox(height: 8),
+  //           Text('• The server may be offline or unreachable'),
+  //           Text('• You may need to check your network connection'),
+  //           Text('• The chat ID may be invalid'),
+  //           SizedBox(height: 16),
+  //           Text('Try refreshing the conversation or checking the server status.'),
+  //         ],
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => context.pop(),
+  //           child: Text('CLOSE'),
+  //         ),
+  //         ElevatedButton(
+  //           onPressed: () {
+  //             context.pop();
+  //             ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
+  //           },
+  //           child: Text('RETRY'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
   
   // Ensure the user data is loaded
   Future<void> _ensureUserDataLoaded() async {
@@ -203,37 +203,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
         ],
       ),
       body: Column(
-        children: [
-          // Show error banner if there's an API error
-          if (chatState.error != null)
-            Material(
-              color: Colors.red.shade700,
-              child: InkWell(
-                onTap: () {
-                  // Show dialog with full error details and connection info
-                  _showConnectionDiagnosticDialog();
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.white),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          chatState.error!.contains('Server') || 
-                          chatState.error!.contains('connect') ? 
-                            'Server connection issue. Tap for details.' :
-                            'Could not load messages. Tap for details.',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      Icon(Icons.refresh, color: Colors.white, size: 16),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+        children: [      
           Expanded(
             child: chatState.messages.isEmpty && chatState.messagesByDate.isEmpty
                     ? RefreshIndicator(
@@ -302,6 +272,9 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   Widget _buildChatMessagesList(ChatConversationState chatState) {
     // Check if we should display by date
     if (chatState.messagesByDate.isNotEmpty) {
+      // Get date keys sorted from newest to oldest
+      final dateKeys = chatState.messagesByDate.keys.toList();
+      
       return RefreshIndicator(
         onRefresh: () async {
           // Refresh the conversation
@@ -310,14 +283,42 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
         child: ListView.builder(
           controller: _scrollController,
           padding: const EdgeInsets.all(16),
-          itemCount: chatState.messagesByDate.length,
+          itemCount: dateKeys.length,
           itemBuilder: (context, index) {
-            final dateKey = chatState.messagesByDate.keys.toList()[index];
+            final dateKey = dateKeys[index];
             final messagesForDate = chatState.messagesByDate[dateKey]!;
+            
+            // Determine if we should show the date divider
+            bool showDivider = true;
+
+            // Check if previous date exists
+            if (index > 0) {
+              final prevDateKey = dateKeys[index - 1];
+              
+              // Try to convert string dates to DateTime objects for comparison
+              final DateTime? currentDate = _parseDate(dateKey);
+              final DateTime? prevDate = _parseDate(prevDateKey);
+              
+              // Skip divider if both dates are valid and are the same day or consecutive days
+              if (currentDate != null && prevDate != null) {
+                // Calculate difference in days
+                final difference = currentDate.difference(prevDate).inDays.abs();
+                
+                // If the difference is 0 (same day), don't show divider
+                if (difference == 0) {
+                  showDivider = false;
+                }
+              } 
+              // If we can't parse dates, fall back to comparing special strings
+              else if (prevDateKey == dateKey) {
+                showDivider = false;
+              }
+            }
             
             return Column(
               children: [
-                _buildDateDivider(dateKey),
+                if (showDivider)
+                  _buildDateDivider(dateKey),
                 ...messagesForDate.map((message) => _buildMessageBubble(message)),
               ],
             );
@@ -344,7 +345,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   }
   
   Widget _buildDateDivider(String date) {
-    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: Row(
@@ -391,5 +391,30 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       attachmentUrl: attachmentUrl,
       attachmentType: message.attachmentType,
     );
+  }
+  
+  // Helper to parse date strings to DateTime objects
+  DateTime? _parseDate(String dateString) {
+    // Skip special date strings
+    if (dateString == 'Today' || dateString == 'Yesterday') {
+      return null;
+    }
+    
+    // Try to parse date formats like "March 25, 2023"
+    try {
+      return DateFormat('MMMM d, yyyy').parse(dateString);
+    } catch (_) {}
+    
+    // Try other common date formats
+    try {
+      return DateFormat('yyyy-MM-dd').parse(dateString);
+    } catch (_) {}
+    
+    try {
+      return DateFormat('MM/dd/yyyy').parse(dateString);
+    } catch (_) {}
+    
+    // Return null if date couldn't be parsed
+    return null;
   }
 }
