@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../state/post_state.dart';
 import '../repository/createpost_APi.dart';
+import 'package:file_picker/file_picker.dart';
 
 /// Provider for the post view model
 final postViewModelProvider = StateNotifierProvider.autoDispose<PostViewModel, PostState>((ref) {
@@ -74,12 +75,34 @@ class PostViewModel extends StateNotifier<PostState> {
     state = state.copyWith(error: null);
   }
 
-  // Add this method to your PostViewModel class:
 
   /// Update the visibility setting for the post
   void updateVisibility(String visibility) {
     state = state.copyWith(visibility: visibility);
 
   }
-  
+  /// Pick a document from storage
+    Future<List<File>?> pickDocument() async {
+      try {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'],
+        );
+        
+        if (result != null && result.files.single.path != null) {
+          final attachments = [File(result.files.single.path!)];
+          state = state.copyWith(attachments: attachments, fileType: 'document');
+          return attachments;
+        }
+        return null;
+      } catch (e) {
+        debugPrint('Error picking document: $e');
+        state = state.copyWith(error: 'Failed to select document');
+        return null;
+      }
+    }
+    /// Remove the selected document
+    void removeAttachment() {
+      state = state.copyWith(attachments: null, fileType: null);
+    }
 }

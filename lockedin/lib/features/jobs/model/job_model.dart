@@ -9,8 +9,10 @@ class JobModel {
   final String experienceLevel;
   final String salaryRange;
   final bool isRemote;
+  final String workplaceType;
   final String? logoUrl;
   final String? industry;
+  final List<Map<String, dynamic>> screeningQuestions;
 
   JobModel({
     required this.title,
@@ -21,36 +23,44 @@ class JobModel {
     required this.experienceLevel,
     required this.salaryRange,
     required this.isRemote,
+    required this.workplaceType,
     this.logoUrl,
     this.industry,
+    required this.screeningQuestions,
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
-    final company = json['company'] ?? {};
+    final companyData = json['company'] is Map ? json['company'] : null;
+    final screeningQuestions = json['screeningQuestions'] as List?;
 
-    // Debug: log the raw job data to investigate structure
     print("Raw job JSON: ${jsonEncode(json)}");
 
-    // Attempt to extract the job ID safely
-    final parsedId = json['_id'] ?? json['id'] ?? json['jobId'];
-    print("Parsed job ID: $parsedId");
+    final workplaceTypeRaw = json['workplaceType']?.toString() ?? 'Unknown';
+    final questions =
+        (json['screeningQuestions'] as List<dynamic>?)
+            ?.map((q) => q as Map<String, dynamic>)
+            .toList() ??
+        [];
 
     return JobModel(
-      id: parsedId?.toString() ?? '',
+      id: (json['_id'] ?? json['id'] ?? json['jobId'])?.toString() ?? '',
       title: json['title'] ?? 'Unknown Position',
-      company: company['name'] ?? 'Unknown Company',
+      company:
+          companyData != null
+              ? (companyData['name'] ?? 'Unknown Company')
+              : 'Unknown Company',
       location: json['jobLocation'] ?? 'Unknown Location',
       description: json['description'] ?? '',
       experienceLevel:
-          json['screeningQuestions'] != null &&
-                  json['screeningQuestions'].isNotEmpty
-              ? json['screeningQuestions'][0]['specification'] ?? 'Unknown'
+          screeningQuestions != null && screeningQuestions.isNotEmpty
+              ? screeningQuestions.first['idealAnswer']?.toString() ?? 'Unknown'
               : 'Unknown',
-      salaryRange:
-          'N/A', // You can update this if your API provides salary info
-      isRemote: (json['workplaceType']?.toLowerCase() ?? '') == 'remote',
-      logoUrl: company['logo'],
+      salaryRange: json['salaryRange']?.toString() ?? 'N/A',
+      isRemote: workplaceTypeRaw.toLowerCase() == 'remote',
+      workplaceType: workplaceTypeRaw,
+      logoUrl: companyData != null ? companyData['logo'] : null,
       industry: json['industry'],
+      screeningQuestions: questions,
     );
   }
 }

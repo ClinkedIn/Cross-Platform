@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:lockedin/features/profile/state/user_state.dart';
+import 'package:lockedin/features/profile/model/user_model.dart';
+import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
+import 'package:lockedin/features/profile/viewmodel/update_profile_viewmodel.dart';
+import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
-import 'package:lockedin/shared/widgets/custom_appbar.dart';
 
 class UpdatePage extends ConsumerStatefulWidget {
   @override
@@ -20,13 +22,27 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
   @override
   void initState() {
     super.initState();
-    final user = ref.read(userProvider);
 
-    firstNameController = TextEditingController(text: user?.firstName ?? '');
-    lastNameController = TextEditingController(text: user?.lastName ?? '');
-    additionalNameController = TextEditingController();
-    headlineController = TextEditingController(text: user?.bio ?? '');
-    linkController = TextEditingController();
+    final userState = ref.read(userProvider);
+
+    if (userState is AsyncData<UserModel>) {
+      final user = userState.value;
+      firstNameController = TextEditingController(text: user.firstName);
+      lastNameController = TextEditingController(text: user.lastName);
+      additionalNameController = TextEditingController(
+        text: user.additionalName ?? '',
+      );
+      headlineController = TextEditingController(text: user.headline ?? '');
+      linkController = TextEditingController(
+        text: user.contactInfo?.website?.url ?? '',
+      );
+    } else {
+      firstNameController = TextEditingController();
+      lastNameController = TextEditingController();
+      additionalNameController = TextEditingController();
+      headlineController = TextEditingController();
+      linkController = TextEditingController();
+    }
   }
 
   @override
@@ -36,67 +52,165 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
     additionalNameController.dispose();
     headlineController.dispose();
     linkController.dispose();
+    // Reset the update state when leaving the page
+    ref.read(updateProfileProvider.notifier).resetState();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch the update state
+    final updateState = ref.watch(updateProfileProvider);
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: CustomAppbar(
-        leftIcon: const Icon(Icons.close),
-        leftOnPress: () {
-          ref.read(navProvider.notifier).changeTab(0);
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => ProfilePage()),
-          );
-        },
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                children: [
-                  const SizedBox(height: 10),
-                  PersonalInfo(
-                    firstNameController: firstNameController,
-                    lastNameController: lastNameController,
-                    additionalNameController: additionalNameController,
-                    headlineController: headlineController,
-                  ),
-                  const SizedBox(height: 20),
-                  const ProfessionalInfo(),
-                  const SizedBox(height: 20),
-                  const ConnectionInfo(),
-                ],
-              ),
-            ),
-            const Divider(thickness: 1),
-            ElevatedButton(
-              onPressed: () {
-                Map<String, String> userInput = {
-                  "firstName": firstNameController.text,
-                  "lastName": lastNameController.text,
-                  "additionalName": additionalNameController.text,
-                  "headline": headlineController.text,
-                  "link": linkController.text,
-                };
-                print(userInput); // Debugging output
-                // Call your API here: UpdateProfileApi.updateProfileApi(userInput);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0A66C2),
-                minimumSize: const Size(400, 20),
-              ),
-              child: const Text(
-                'Save',
-                style: TextStyle(color: Colors.white, fontSize: 20),
-              ),
-            ),
-          ],
+      appBar: AppBar(
+        title: Text(
+          "update profile",
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        elevation: 0,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        iconTheme: IconThemeData(color: AppColors.primary),
+      ),
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              children: [
+                // Show success message if update was successful
+                if (updateState.isSuccess)
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    margin: EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Profile updated successfully!',
+                            style: TextStyle(color: Colors.green),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // Show error message if there was an error
+                if (updateState.errorMessage != null)
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    margin: EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            updateState.errorMessage!,
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                Expanded(
+                  child: ListView(
+                    children: [
+                      const SizedBox(height: 10),
+                      PersonalInfo(
+                        firstNameController: firstNameController,
+                        lastNameController: lastNameController,
+                        additionalNameController: additionalNameController,
+                        headlineController: headlineController,
+                      ),
+                      const SizedBox(height: 20),
+                      const ProfessionalInfo(),
+                      const SizedBox(height: 20),
+                      const ConnectionInfo(),
+                    ],
+                  ),
+                ),
+                const Divider(thickness: 1),
+                ElevatedButton(
+                  onPressed:
+                      updateState.isLoading
+                          ? null // Disable button when loading
+                          : () async {
+                            // Gather form data
+                            Map<String, String> userInput = {
+                              "firstName": firstNameController.text,
+                              "lastName": lastNameController.text,
+                              "additionalName": additionalNameController.text,
+                              "headline": headlineController.text,
+                              "link": linkController.text,
+                            };
+
+                            print("Submitting profile update: $userInput");
+
+                            // Call the update method through the ViewModel
+                            final success = await ref
+                                .read(updateProfileProvider.notifier)
+                                .updateProfile(userInput);
+
+                            if (success && mounted) {
+                              // Show success and navigate back after a short delay
+                              Future.delayed(Duration(seconds: 2), () {
+                                if (mounted) {
+                                  ref.read(navProvider.notifier).changeTab(0);
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ProfilePage(),
+                                    ),
+                                  );
+                                }
+                              });
+                            }
+                          },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0A66C2),
+                    minimumSize: const Size(400, 20),
+                  ),
+                  child:
+                      updateState.isLoading
+                          ? SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Text(
+                            'Save',
+                            style: TextStyle(color: Colors.white, fontSize: 20),
+                          ),
+                ),
+              ],
+            ),
+          ),
+
+          // Overlay loading indicator
+          if (updateState.isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+        ],
       ),
     );
   }
@@ -212,7 +326,6 @@ class ProfessionalInfo extends StatelessWidget {
           ],
           label: Text('Industry'),
         ),
-
         RichText(
           text: TextSpan(
             children: [

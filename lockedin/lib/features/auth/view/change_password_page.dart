@@ -5,8 +5,6 @@ import 'package:lockedin/features/auth/viewmodel/change_password_viewmodel.dart'
 
 import 'package:lockedin/features/auth/view/Forget password/forgot_password_page.dart';
 
-//import 'package:lockedin/shared/theme/app_theme.dart';
-
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
 
@@ -172,6 +170,48 @@ class ChangePasswordPage extends ConsumerWidget {
     final visibilityState = ref.watch(passwordVisibilityProvider);
     final passwordState = ref.watch(passwordStateProvider);
 
+    // Show a SnackBar when the status changes
+    ref.listen<ChangePasswordState>(changePasswordViewModelProvider, (
+      previous,
+      current,
+    ) {
+      if (current.successMessage != null &&
+          previous?.successMessage != current.successMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 10),
+                Expanded(child: Text(current.successMessage!)),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      if (current.errorMessage != null &&
+          previous?.errorMessage != current.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 10),
+                Expanded(child: Text(current.errorMessage!)),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Change Password', style: AppTextStyles.headline1),
@@ -293,20 +333,52 @@ class ChangePasswordPage extends ConsumerWidget {
             ElevatedButton(
               style: AppButtonStyles.elevatedButton,
               onPressed:
-                  passwordState.isSaveEnabled
-                      ? () {
+                  passwordState.isSaveEnabled &&
+                          !ref.watch(changePasswordViewModelProvider).isLoading
+                      ? () async {
+                        // Validate password
                         ref
                             .read(passwordStateProvider.notifier)
                             .isValidPassword(passwordState.newPassword);
-                        ref
-                            .read(changePasswordViewModelProvider.notifier)
-                            .changePassword(
-                              passwordState.newPassword,
-                              passwordState.currentPassword,
+
+                        if (passwordState.errorMessage.isEmpty) {
+                          // Attempt to change password
+                          final success = await ref
+                              .read(changePasswordViewModelProvider.notifier)
+                              .changePassword(
+                                passwordState.newPassword,
+                                passwordState.currentPassword,
+                              );
+
+                          if (success && context.mounted) {
+                            // Show success message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Password updated successfully'),
+                                backgroundColor: Colors.green,
+                                duration: Duration(seconds: 3),
+                              ),
                             );
+
+                            // Navigate back after 3 seconds
+                            Future.delayed(Duration(seconds: 3), () {
+                              if (context.mounted) Navigator.pop(context);
+                            });
+                          }
+                        }
                       }
                       : null,
-              child: const Text("Save Password"),
+              child:
+                  ref.watch(changePasswordViewModelProvider).isLoading
+                      ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : const Text("Save Password"),
             ),
 
             // Status message display

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+
 /// State class for the post creation page
 class PostState {
   /// Text content of the post
@@ -17,6 +18,8 @@ class PostState {
   /// Post visibility setting (Anyone/Connections)
   final String visibility;
 
+  final String fileType; // Add this field
+
   /// Constructor
   const PostState({
     this.content = '',
@@ -24,6 +27,7 @@ class PostState {
     this.isSubmitting = false,
     this.error,
     this.visibility = 'Anyone',
+    this.fileType = 'image', // Default to image
   });
 
   /// Creates a copy of this state with the given fields replaced
@@ -33,6 +37,7 @@ class PostState {
     bool? isSubmitting,
     String? error,
     String? visibility,
+    String? fileType, // Add this parameter
   }) {
     return PostState(
       content: content ?? this.content,
@@ -40,6 +45,7 @@ class PostState {
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: error ?? this.error,
       visibility: visibility ?? this.visibility,
+      fileType: fileType ?? this.fileType,
     );
   }
 
@@ -48,4 +54,6 @@ class PostState {
 
   /// Initial empty state
   factory PostState.initial() => const PostState();
+
+  
 }

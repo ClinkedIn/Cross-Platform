@@ -9,6 +9,7 @@ import 'package:lockedin/features/chat/widgets/chat_bubble_widget.dart';
 import 'package:lockedin/features/chat/widgets/chat_input_field_widget.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
+import 'package:lockedin/core/utils/constants.dart';
 
 class ChatConversationScreen extends ConsumerStatefulWidget {
   final Chat chat;
@@ -28,8 +29,8 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     super.initState();
     // Mark chat as read when opening the conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Commenting out the mark as read call to test without it
-      // ref.read(chatProvider.notifier).markChatAsRead(widget.chat);
+      // Check connection to help debug server issues
+      _checkServerConnection();
     });
   }
 
@@ -123,6 +124,62 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     });
   }
   
+  /// Check server connection and show diagnostic info if needed
+  Future<void> _checkServerConnection() async {
+    try {
+      final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+      final hasError = chatViewModel.state.error != null;
+      
+      if (hasError) {
+        // Show connection diagnostic dialog after a short delay
+        await Future.delayed(Duration(seconds: 1));
+        if (mounted) {
+          _showConnectionDiagnosticDialog();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking server connection: $e');
+    }
+  }
+  
+  /// Show a dialog with connection diagnostic information
+  void _showConnectionDiagnosticDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Server Connection Issue'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Unable to load messages from the server.'),
+            SizedBox(height: 16),
+            Text('Potential issues:', style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text('• The server may be offline or unreachable'),
+            Text('• You may need to check your network connection'),
+            Text('• The chat ID may be invalid'),
+            SizedBox(height: 16),
+            Text('Try refreshing the conversation or checking the server status.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('CLOSE'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
+            },
+            child: Text('RETRY'),
+          ),
+        ],
+      ),
+    );
+  }
+  
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
@@ -131,14 +188,32 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     // Scroll to bottom when new messages are loaded
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
-    final otherUserName = chatState.otherUserName ?? widget.chat.name;
-    final otherUserProfilePic = chatState.otherUserProfilePic ?? widget.chat.imageUrl;
-
     return Scaffold(
-      appBar: ChatAppBar(
-        name: otherUserName,
-        imageUrl: otherUserProfilePic,
-        isDarkMode: Theme.of(context).brightness == Brightness.dark,
+      appBar: AppBar(
+        title: Text(widget.chat.name),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          // Add refresh button
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Refreshing conversation...'),
+                  duration: Duration(seconds: 1),
+                )
+              );
+              ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.more_vert),
+            onPressed: () {},
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -148,22 +223,8 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
               color: Colors.red.shade700,
               child: InkWell(
                 onTap: () {
-                  // Show dialog with full error details
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text('API Error Details'),
-                      content: SingleChildScrollView(
-                        child: Text(chatState.error!),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text('CLOSE'),
-                        ),
-                      ],
-                    ),
-                  );
+                  // Show dialog with full error details and connection info
+                  _showConnectionDiagnosticDialog();
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -173,11 +234,14 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'API Error: Tap for details',
+                          chatState.error!.contains('Server') || 
+                          chatState.error!.contains('connect') ? 
+                            'Server connection issue. Tap for details.' :
+                            'Could not load messages. Tap for details.',
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
-                      Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+                      Icon(Icons.refresh, color: Colors.white, size: 16),
                     ],
                   ),
                 ),
@@ -187,21 +251,53 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
             child: chatState.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : chatState.messages.isEmpty && chatState.messagesByDate.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                    ? RefreshIndicator(
+                        onRefresh: () async {
+                          await ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
+                        },
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           children: [
-                            Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
-                            SizedBox(height: 16),
-                            Text('No messages yet', style: TextStyle(color: Colors.grey)),
-                            if (chatState.error != null)
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  'Could not load messages from server',
-                                  style: TextStyle(color: Colors.red),
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.7,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
+                                    SizedBox(height: 16),
+                                    Text('No messages yet', style: TextStyle(color: Colors.grey)),
+                                    if (chatState.error != null)
+                                      Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Column(
+                                          children: [
+                                            Text(
+                                              'Could not load messages from server',
+                                              style: TextStyle(color: Colors.red),
+                                            ),
+                                            SizedBox(height: 8),
+                                            Text(
+                                              'Pull down to refresh or check your connection',
+                                              style: TextStyle(color: Colors.grey),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            SizedBox(height: 16),
+                                            ElevatedButton.icon(
+                                              onPressed: () {
+                                                // Retry loading conversation
+                                                ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
+                                              },
+                                              icon: Icon(Icons.refresh),
+                                              label: Text('Try Again'),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
+                            ),
                           ],
                         ),
                       )
@@ -221,32 +317,44 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   Widget _buildChatMessagesList(ChatConversationState chatState) {
     // Check if we should display by date
     if (chatState.messagesByDate.isNotEmpty) {
-      return ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(16),
-        itemCount: chatState.messagesByDate.length,
-        itemBuilder: (context, index) {
-          final dateKey = chatState.messagesByDate.keys.toList()[index];
-          final messagesForDate = chatState.messagesByDate[dateKey]!;
-          
-          return Column(
-            children: [
-              _buildDateDivider(dateKey),
-              ...messagesForDate.map((message) => _buildMessageBubble(message)),
-            ],
-          );
+      return RefreshIndicator(
+        onRefresh: () async {
+          // Refresh the conversation
+          await ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
         },
+        child: ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.all(16),
+          itemCount: chatState.messagesByDate.length,
+          itemBuilder: (context, index) {
+            final dateKey = chatState.messagesByDate.keys.toList()[index];
+            final messagesForDate = chatState.messagesByDate[dateKey]!;
+            
+            return Column(
+              children: [
+                _buildDateDivider(dateKey),
+                ...messagesForDate.map((message) => _buildMessageBubble(message)),
+              ],
+            );
+          },
+        ),
       );
     }
     
     // Fall back to flat list if messagesByDate is empty
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(16),
-      itemCount: chatState.messages.length,
-      itemBuilder: (context, index) {
-        return _buildMessageBubble(chatState.messages[index]);
+    return RefreshIndicator(
+      onRefresh: () async {
+        // Refresh the conversation
+        await ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
       },
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.all(16),
+        itemCount: chatState.messages.length,
+        itemBuilder: (context, index) {
+          return _buildMessageBubble(chatState.messages[index]);
+        },
+      ),
     );
   }
   
@@ -275,16 +383,8 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   
   Widget _buildMessageBubble(message) {
     final currentUserId = ref.read(chatConversationProvider(widget.chat.id).notifier).currentUserId;
-    // Debug fix: In demo mode, alternate messages between "me" and "other"
-    // to show different bubble colors (remove this in production)
-    bool isMe;
-    if (currentUserId == 'demo-user-123') {
-      // We're in demo mode, so we'll make every other message appear as "me"
-      isMe = message.id.hashCode % 2 == 0;
-    } else {
-      // Normal mode: check if the message sender is the current user
-      isMe = message.sender.id == currentUserId;
-    }
+    // Normal mode: check if the message sender is the current user
+    final isMe = message.sender.id == currentUserId;
     
     // Default to empty string for messageText if null
     final messageText = message.messageText ?? '';

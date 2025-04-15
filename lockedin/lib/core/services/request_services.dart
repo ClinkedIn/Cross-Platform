@@ -30,7 +30,7 @@ class RequestService {
   static Future<http.Response> postMultipart(
     String endpoint, {
     File? file,
-    String fileFieldName = 'file', // <-- Add this parameter
+    String fileFieldName = 'file',
     Map<String, dynamic>? additionalFields,
     Map<String, String>? headers,
   }) async {
@@ -41,11 +41,65 @@ class RequestService {
 
     // Add file if present
     if (file != null) {
+      // Determine file extension and content type
+      final String path = file.path;
+      final String extension = path.split('.').last.toLowerCase();
+
+      // Set appropriate content type based on file extension
+      MediaType contentType;
+      switch (extension) {
+        case 'pdf':
+          contentType = MediaType('application', 'pdf');
+          break;
+        case 'doc':
+          contentType = MediaType('application', 'msword');
+          break;
+        case 'docx':
+          contentType = MediaType(
+            'application',
+            'vnd.openxmlformats-officedocument.wordprocessingml.document',
+          );
+          break;
+        case 'xls':
+          contentType = MediaType('application', 'vnd.ms-excel');
+          break;
+        case 'xlsx':
+          contentType = MediaType(
+            'application',
+            'vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          );
+          break;
+        case 'ppt':
+          contentType = MediaType('application', 'vnd.ms-powerpoint');
+          break;
+        case 'pptx':
+          contentType = MediaType(
+            'application',
+            'vnd.openxmlformats-officedocument.presentationml.presentation',
+          );
+          break;
+        case 'txt':
+          contentType = MediaType('text', 'plain');
+          break;
+        case 'jpg':
+        case 'jpeg':
+          contentType = MediaType('image', 'jpeg');
+          break;
+        case 'png':
+          contentType = MediaType('image', 'png');
+          break;
+        case 'gif':
+          contentType = MediaType('image', 'gif');
+          break;
+        default:
+          contentType = MediaType('application', 'octet-stream');
+      }
+
       request.files.add(
         await http.MultipartFile.fromPath(
-          fileFieldName, // <-- Use the passed field name
+          fileFieldName,
           file.path,
-          contentType: MediaType('image', 'jpeg'),
+          contentType: contentType,
         ),
       );
     }
@@ -85,6 +139,7 @@ class RequestService {
     String endpoint, {
     Map<String, String>? additionalHeaders,
     Map<String, String>? queryParameters,
+    int retryCount = 0,
   }) async {
     // Ensure the endpoint starts with '/'
     if (!endpoint.startsWith('/')) {
@@ -96,20 +151,25 @@ class RequestService {
     ).replace(queryParameters: queryParameters);
 
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
-    debugPrint('GET Request: ${uri.toString()}');
 
     try {
       final response = await _client.get(uri, headers: headers);
-      _storeCookiesFromResponse(response);
 
-      // Check if we got HTML instead of JSON
-      if (_isHtmlResponse(response)) {
-        debugPrint('Warning: Received HTML instead of JSON in GET request');
-      }
+      // Debug response information
 
       return response;
     } catch (e) {
-      debugPrint('GET request failed: $e');
+      // Retry network errors as well
+      if (retryCount < 2) {
+        await Future.delayed(Duration(seconds: 1));
+        return get(
+          endpoint,
+          additionalHeaders: additionalHeaders,
+          queryParameters: queryParameters,
+          retryCount: retryCount + 1,
+        );
+      }
+
       throw Exception('GET request failed: $e');
     }
   }
@@ -119,6 +179,7 @@ class RequestService {
     String endpoint, {
     required Map<String, dynamic> body,
     Map<String, String>? additionalHeaders,
+    int retryCount = 0,
   }) async {
     try {
       // Ensure the endpoint starts with '/'
@@ -130,11 +191,7 @@ class RequestService {
       final Uri uri = Uri.parse(url);
       final headers = await _getHeaders(additionalHeaders: additionalHeaders);
 
-      // Debug information
-      debugPrint('POST Request URL: $url');
-      debugPrint('POST Request Headers: $headers');
       final jsonBody = jsonEncode(body);
-      debugPrint('POST Request Body: $jsonBody');
 
       final response = await _client.post(
         uri,
@@ -142,13 +199,22 @@ class RequestService {
         body: jsonBody,
       );
 
-      // Debug response information
-      debugPrint('POST Response Status: ${response.statusCode}');
-      debugPrint('POST Response Headers: ${response.headers}');
-
       // Check if we got HTML instead of JSON
       if (_isHtmlResponse(response)) {
-        debugPrint('Warning: Received HTML instead of JSON in POST request');
+        // Retry logic for HTML responses (max 2 retries)
+        if (retryCount < 2) {
+          // Refresh the authentication token if we have one
+          await TokenService.getCookie(); // Ensure we have latest token
+          // Wait a bit before retrying
+          await Future.delayed(Duration(seconds: 1));
+          // Retry the request with incremented retry count
+          return post(
+            endpoint,
+            body: body,
+            additionalHeaders: additionalHeaders,
+            retryCount: retryCount + 1,
+          );
+        }
       }
 
       if (response.body.length < 1000) {
@@ -159,11 +225,25 @@ class RequestService {
         );
       }
 
-      _storeCookiesFromResponse(response);
       return response;
     } catch (e, stackTrace) {
       debugPrint('POST request failed: $e');
       debugPrint('Stack trace: $stackTrace');
+
+      // Retry network errors as well
+      if (retryCount < 2) {
+        debugPrint(
+          'Retrying failed POST request (attempt ${retryCount + 1})...',
+        );
+        await Future.delayed(Duration(seconds: 1));
+        return post(
+          endpoint,
+          body: body,
+          additionalHeaders: additionalHeaders,
+          retryCount: retryCount + 1,
+        );
+      }
+
       throw Exception('POST request failed: $e');
     }
   }
@@ -183,7 +263,6 @@ class RequestService {
         headers: headers,
         body: jsonEncode(body),
       );
-      _storeCookiesFromResponse(response);
       return response;
     } catch (e) {
       throw Exception('PATCH request failed: $e');
@@ -206,7 +285,7 @@ class RequestService {
         headers: headers,
         body: jsonEncode(body),
       );
-      _storeCookiesFromResponse(response);
+
       return response;
     } catch (e) {
       debugPrint('PUT request failed: $e');
@@ -225,7 +304,6 @@ class RequestService {
 
     try {
       final response = await _client.delete(Uri.parse(url), headers: headers);
-      _storeCookiesFromResponse(response);
       return response;
     } catch (e) {
       debugPrint('DELETE request failed: $e');

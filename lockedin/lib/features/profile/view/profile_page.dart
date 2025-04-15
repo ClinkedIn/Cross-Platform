@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
-import 'package:lockedin/features/profile/state/user_state.dart';
+import 'package:lockedin/features/profile/utils/picture_loader.dart';
 import 'package:lockedin/features/profile/utils/profile_converters.dart';
-import 'package:lockedin/features/profile/view/edit_profile_photo.dart';
-import 'package:lockedin/features/profile/view/update_page.dart';
 import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
 import 'package:lockedin/features/profile/widgets/profile_buttons.dart';
 import 'package:lockedin/features/profile/widgets/profile_data_component.dart';
@@ -21,17 +19,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(profileViewModelProvider).fetchEducation();
-      ref.read(profileViewModelProvider).fetchExperience();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ref.read(profileViewModelProvider).fetchAllProfileData();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(userProvider);
+    print("Profile page build called, user state: ${ref.watch(userProvider)}");
+    final userState = ref.watch(userProvider);
     final theme = Theme.of(context);
-    print("User: ${user?.profilePicture}");
 
     return Scaffold(
       appBar: UpperNavbar(
@@ -40,213 +37,200 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           context.pop();
         },
       ),
-      body:
-          user == null
-              ? Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
-                onRefresh:
-                    () => ref
-                        .read(profileViewModelProvider)
-                        .fetchAllProfileData(context),
-                child: SingleChildScrollView(
-                  physics: AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            height: 120,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image:
-                                    user.coverPicture.isNotEmpty
-                                        ? NetworkImage(user.coverPicture)
-                                        : const AssetImage(
-                                              'assets/images/default_cover_photo.png',
-                                            )
-                                            as ImageProvider,
-                                fit: BoxFit.cover,
-                              ),
+      body: userState.when(
+        data:
+            (user) => RefreshIndicator(
+              onRefresh:
+                  () =>
+                      ref.read(profileViewModelProvider).fetchAllProfileData(),
+              child: SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          height: 120,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: getUsercoverImage(userState),
+                              fit: BoxFit.cover,
                             ),
                           ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: GestureDetector(
-                              onTap: () {},
-                              child: Container(
-                                padding: EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.white,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () {},
+                            child: Container(
+                              padding: EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: AppColors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                icon: Icon(
                                   Icons.edit,
                                   color: AppColors.gray,
                                   size: 20,
                                 ),
+                                onPressed: () {
+                                  context.push('/edit-cover-photo');
+                                },
                               ),
                             ),
                           ),
-                          Positioned(
-                            bottom: -40,
-                            left: 16,
-                            child: Material(
-                              elevation: 5,
-                              shape: CircleBorder(),
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => EditProfilePhoto(),
-                                    ),
-                                  );
-                                },
-                                child: CircleAvatar(
-                                  radius: 40,
-                                  backgroundImage:
-                                      user.profilePicture.isNotEmpty
-                                          ? NetworkImage(user.profilePicture)
-                                          : const AssetImage(
-                                                'assets/images/default_profile_photo.png',
-                                              )
-                                              as ImageProvider,
-                                ),
+                        ),
+                        Positioned(
+                          bottom: -40,
+                          left: 16,
+                          child: Material(
+                            elevation: 5,
+                            shape: CircleBorder(),
+                            child: GestureDetector(
+                              onTap: () {
+                                context.push('/edit-profile-photo');
+                              },
+                              child: CircleAvatar(
+                                radius: 40,
+                                backgroundImage: getUserProfileImage(userState),
                               ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 50),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                "${user.firstName}  ${user.lastName}",
+                                style: theme.textTheme.headlineLarge,
+                              ),
+                              Spacer(),
+                              IconButton(
+                                onPressed: () {
+                                  context.push('/edit-profile');
+                                },
+                                icon: Icon(Icons.edit, color: AppColors.gray),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            user.headline ?? "",
+                            style: theme.textTheme.bodyLarge,
+                          ),
+                          Text(
+                            user.location ?? "unknown location",
+                            style: theme.textTheme.bodyLarge,
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            "${user.connectionList.length}+ connections",
+                            style: TextStyle(
+                              color: AppColors.secondary,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 50),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  "${user.firstName}  ${user.lastName}",
-                                  style: theme.textTheme.headlineLarge,
-                                ),
-                                Spacer(),
-                                IconButton(
-                                  onPressed: () {
-                                    ref
-                                        .read(userProvider.notifier)
-                                        .setUser(user);
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => UpdatePage(),
-                                      ),
-                                    );
-                                  },
-                                  icon: Icon(Icons.edit, color: AppColors.gray),
-                                ),
-                              ],
+                    ),
+                    SizedBox(height: 10),
+                    ProfileButtons(),
+                    SizedBox(height: 10),
+                    Divider(),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("About", style: theme.textTheme.headlineSmall),
+                          SizedBox(height: 5),
+                          Text(
+                            user.headline ?? "",
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Divider(),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Suggested for you",
+                            style: theme.textTheme.headlineLarge,
+                          ),
+                          ListTile(
+                            leading: Icon(
+                              Icons.remove_red_eye,
+                              color: theme.iconTheme.color,
                             ),
-                            Text(user.bio, style: theme.textTheme.bodyLarge),
-                            Text(
-                              user.location,
+                            title: Text(
+                              "Private to you",
                               style: theme.textTheme.bodyLarge,
                             ),
-                            SizedBox(height: 10),
-                            Text(
-                              "${user.connectionList.length}+ connections",
-                              style: TextStyle(
-                                color: AppColors.secondary,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          ),
+                          ListTile(
+                            leading: Icon(
+                              Icons.question_answer,
+                              color: theme.iconTheme.color,
                             ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      ProfileButtons(),
-                      SizedBox(height: 10),
-                      Divider(),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("About", style: theme.textTheme.headlineSmall),
-                            SizedBox(height: 5),
-                            Text(user.bio, style: theme.textTheme.bodySmall),
-                          ],
-                        ),
-                      ),
-                      Divider(),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Suggested for you",
-                              style: theme.textTheme.headlineLarge,
+                            title: Text(
+                              "Are you still working at Microsoft?",
+                              style: theme.textTheme.bodyLarge,
                             ),
-                            ListTile(
-                              leading: Icon(
-                                Icons.remove_red_eye,
-                                color: theme.iconTheme.color,
-                              ),
-                              title: Text(
-                                "Private to you",
-                                style: theme.textTheme.bodyLarge,
-                              ),
-                            ),
-                            ListTile(
-                              leading: Icon(
-                                Icons.question_answer,
-                                color: theme.iconTheme.color,
-                              ),
-                              title: Text(
-                                "Are you still working at Microsoft?",
-                                style: theme.textTheme.bodyLarge,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      Divider(),
-                      ProfileDataComponent(
-                        sectionTitle: "Experience",
-                        addRoute: '/add-position',
-                        editRoute: '/edit-experience',
-                        dataProvider: ref.watch(experienceProvider),
-                        itemConverter:
-                            (item) =>
-                                ProfileConverters.experienceToProfileItem(item),
-                      ),
-                      ProfileDataComponent(
-                        sectionTitle: "Education",
-                        addRoute: '/add-education',
-                        editRoute: '/edit-education',
-                        dataProvider: ref.watch(educationProvider),
-                        itemConverter:
-                            (item) =>
-                                ProfileConverters.educationToProfileItem(item),
-                      ),
-                      // ProfileDataComponent(
-                      //   sectionTitle: "Licenses & Certifications",
-                      //   addRoute: '/add-license',
-                      //   editRoute: '/edit-licenses',
-                      //   dataProvider: ref.watch(licensesProvider),
-                      //   itemConverter:
-                      //       (item) =>
-                      //           ProfileConverters.licenseToProfileItem(item),
-                      // ),
-                      SizedBox(height: 20),
-                    ],
-                  ),
+                    ),
+                    Divider(),
+                    ProfileDataComponent(
+                      sectionTitle: "Experience",
+                      addRoute: '/add-position',
+                      editRoute: '/edit-experience',
+                      dataProvider: ref.watch(experienceProvider),
+                      itemConverter:
+                          (item) =>
+                              ProfileConverters.experienceToProfileItem(item),
+                    ),
+                    ProfileDataComponent(
+                      sectionTitle: "Education",
+                      addRoute: '/add-education',
+                      editRoute: '/edit-education',
+                      dataProvider: ref.watch(educationProvider),
+                      itemConverter:
+                          (item) =>
+                              ProfileConverters.educationToProfileItem(item),
+                    ),
+                    // ProfileDataComponent(
+                    //   sectionTitle: "Licenses & Certifications",
+                    //   addRoute: '/add-license',
+                    //   editRoute: '/edit-licenses',
+                    //   dataProvider: ref.watch(licensesProvider),
+                    //   itemConverter:
+                    //       (item) =>
+                    //           ProfileConverters.licenseToProfileItem(item),
+                    // ),
+                    SizedBox(height: 20),
+                  ],
                 ),
               ),
+            ),
+        loading: () => const Text("Loading..."),
+        error: (error, _) => const Text("Error"),
+      ),
     );
   }
 }

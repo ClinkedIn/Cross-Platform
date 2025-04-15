@@ -175,6 +175,9 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                     onFollow: () {
                       // Handle follow functionality
                     },
+                    onRepost: () {
+                      // Handle repost functionality
+                    },
                   ),
                 ),
                 
