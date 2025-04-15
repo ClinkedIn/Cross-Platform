@@ -11,12 +11,27 @@ import 'package:sizer/sizer.dart';
 
 /// State provider to manage the currently selected notification category
 final selectedCategoryProvider = StateProvider<String>((ref) => "All");
+
 /// Notifications page UI
-class NotificationsPage extends ConsumerWidget {
+class NotificationsPage extends ConsumerStatefulWidget {
   const NotificationsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationsPage> createState() => NotificationsPageState();
+}
+
+class NotificationsPageState extends ConsumerState<NotificationsPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Re-fetch notifications when page is built
+    Future.microtask(() {
+      ref.read(notificationsProvider.notifier).fetchNotifications();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
     /// Watch the overall notifications provider (async state)
     final allNotifications = ref.watch(notificationsProvider);

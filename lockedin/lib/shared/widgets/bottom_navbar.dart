@@ -21,15 +21,6 @@ final unseenNotificationsCountProvider = Provider<int>((ref) {
   );
 });
 
-final unseenNotificationsCountProvider = Provider<int>((ref) {
-  final state = ref.watch(notificationsProvider);
-  return state.when(
-    data: (notifications) => notifications.where((n) => !n.isSeen).length,
-    loading: () => 0,
-    error: (_, __) => 0,
-  );
-});
-
 class BottomNavBar extends ConsumerWidget {
   final int currentIndex;
   final Function(int) onTap;
