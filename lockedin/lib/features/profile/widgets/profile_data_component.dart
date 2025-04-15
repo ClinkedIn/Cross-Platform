@@ -32,6 +32,28 @@ class _ProfileDataComponentState extends ConsumerState<ProfileDataComponent> {
   Widget build(BuildContext context) {
     return widget.dataProvider.when(
       data: (items) {
+        // Handle empty data case
+        if (items.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.sectionTitle,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                SizedBox(height: 8),
+                Text("No data to display"),
+                TextButton(
+                  onPressed: () => context.push(widget.addRoute),
+                  child: Text("Add ${widget.sectionTitle}"),
+                ),
+              ],
+            ),
+          );
+        }
+
         final profileItems = items.map(widget.itemConverter).toList();
 
         // Determine how many items to show
@@ -75,45 +97,8 @@ class _ProfileDataComponentState extends ConsumerState<ProfileDataComponent> {
           ),
         );
       },
-      loading:
-          () => Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.sectionTitle,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 16),
-                const Center(child: CircularProgressIndicator()),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-      error:
-          (error, stack) => Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.sectionTitle,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Error loading ${widget.sectionTitle} data. Tap to retry.",
-                  style: const TextStyle(color: Colors.red),
-                ),
-                // Uncomment if you want retry support
-                // TextButton(
-                //   onPressed: () => ref.refresh(widget.dataProvider),
-                //   child: const Text("Retry"),
-                // ),
-              ],
-            ),
-          ),
+      loading: () => Center(child: CircularProgressIndicator()),
+      error: (error, _) => Text("Error: ${error.toString()}"),
     );
   }
 }

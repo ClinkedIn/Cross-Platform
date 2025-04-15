@@ -52,20 +52,22 @@ class JobFiltersWidget extends StatelessWidget {
   }
 
   Widget _buildDropdown({
+    required BuildContext context,
     required String hint,
     required String? value,
     required List<String> items,
     required void Function(String?) onChanged,
   }) {
+    final theme = Theme.of(context);
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 2.w),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300),
+        color: theme.cardColor,
+        border: Border.all(color: theme.dividerColor),
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade100,
+            color: theme.shadowColor.withOpacity(0.05),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -75,13 +77,21 @@ class JobFiltersWidget extends StatelessWidget {
         child: DropdownButton<String>(
           isDense: true,
           value: value,
-          hint: Text(hint, style: TextStyle(fontSize: 12.sp)),
+          hint: Text(
+            hint,
+            style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12.sp),
+          ),
           onChanged: onChanged,
           items:
               items.map<DropdownMenuItem<String>>((String val) {
                 return DropdownMenuItem<String>(
                   value: val,
-                  child: Text(val, style: TextStyle(fontSize: 12.sp)),
+                  child: Text(
+                    val,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontSize: 12.sp,
+                    ),
+                  ),
                 );
               }).toList(),
         ),
@@ -91,6 +101,8 @@ class JobFiltersWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Padding(
@@ -99,7 +111,10 @@ class JobFiltersWidget extends StatelessWidget {
           children: [
             // Reset Filters
             FilterChip(
-              label: Text('Jobs', style: TextStyle(fontSize: 12.sp)),
+              label: Text(
+                'Jobs',
+                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12.sp),
+              ),
               selected:
                   selectedExperienceLevel == null &&
                   selectedLocation == null &&
@@ -108,16 +123,19 @@ class JobFiltersWidget extends StatelessWidget {
               onSelected: (_) {
                 onFiltersChanged(null, null, null, null);
               },
-              backgroundColor: Colors.grey.shade100,
-              selectedColor: Colors.blue.shade100,
-              side: const BorderSide(color: Colors.blue),
-              labelStyle: const TextStyle(color: Colors.black),
+              backgroundColor: theme.cardColor,
+              selectedColor: theme.primaryColor.withOpacity(0.2),
+              side: BorderSide(color: theme.primaryColor),
+              labelStyle: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
             ),
 
             SizedBox(width: 3.w),
 
             // Experience Dropdown
             _buildDropdown(
+              context: context,
               hint: 'Experience',
               value: _mapIntToExperience(selectedExperienceLevel),
               items: experienceLevels,
@@ -135,6 +153,7 @@ class JobFiltersWidget extends StatelessWidget {
 
             // Location Dropdown
             _buildDropdown(
+              context: context,
               hint: 'Location',
               value: selectedLocation,
               items: locations,
@@ -152,6 +171,7 @@ class JobFiltersWidget extends StatelessWidget {
 
             // Industry Dropdown
             _buildDropdown(
+              context: context,
               hint: 'Industry',
               value: selectedIndustry,
               items: industries,
@@ -169,6 +189,7 @@ class JobFiltersWidget extends StatelessWidget {
 
             // Company Dropdown
             _buildDropdown(
+              context: context,
               hint: 'Company',
               value: selectedCompany,
               items: companies,

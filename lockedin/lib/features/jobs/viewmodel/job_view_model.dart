@@ -3,21 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/jobs/model/job_model.dart';
 import 'package:lockedin/features/jobs/repository/job_repository.dart';
 
-/// Define the job repository provider here
+/// Provides an instance of [JobRepository] to be used with Riverpod.
 final jobRepositoryProvider = Provider<JobRepository>((ref) {
   return JobRepository();
 });
 
-/// Job ViewModel
+/// ViewModel that manages job listings, filters, search, and job actions.
 class JobViewModel extends ChangeNotifier {
-  String? get selectedLocation => _selectedLocation;
-  String? get selectedIndustry => _selectedIndustry;
-  String? get selectedCompanyId => _selectedCompanyId;
-  int get minExperience => _minExperience;
-  final Set<String> _savedJobIds = {};
-  List<String> get savedJobs => _savedJobIds.toList();
-
-  /// Riverpod provider for JobViewModel
+  /// Riverpod provider for [JobViewModel].
   static final provider = ChangeNotifierProvider<JobViewModel>((ref) {
     final repository = ref.watch(jobRepositoryProvider);
     return JobViewModel(repository);
@@ -25,11 +18,14 @@ class JobViewModel extends ChangeNotifier {
 
   final JobRepository _repository;
 
+  /// Creates an instance of [JobViewModel] and fetches initial jobs.
   JobViewModel(this._repository) {
     fetchJobs();
   }
 
   List<JobModel> _jobs = [];
+
+  /// List of jobs fetched from the repository.
   List<JobModel> get jobs => _jobs;
 
   String _searchQuery = '';
@@ -37,7 +33,24 @@ class JobViewModel extends ChangeNotifier {
   String? _selectedIndustry;
   String? _selectedCompanyId;
   int _minExperience = 0;
+  final Set<String> _savedJobIds = {};
 
+  /// The selected location filter.
+  String? get selectedLocation => _selectedLocation;
+
+  /// The selected industry filter.
+  String? get selectedIndustry => _selectedIndustry;
+
+  /// The selected company ID filter.
+  String? get selectedCompanyId => _selectedCompanyId;
+
+  /// The selected minimum experience level filter.
+  int get minExperience => _minExperience;
+
+  /// List of saved job IDs.
+  List<String> get savedJobs => _savedJobIds.toList();
+
+  /// Fetches jobs from the repository based on current filters and query.
   Future<void> fetchJobs() async {
     try {
       _jobs = await _repository.fetchJobs(
@@ -53,11 +66,13 @@ class JobViewModel extends ChangeNotifier {
     }
   }
 
+  /// Updates the search query and refetches jobs.
   void updateSearchQuery(String query) {
     _searchQuery = query;
     fetchJobs();
   }
 
+  /// Updates filter values and refetches jobs.
   void updateFilters({
     String? location,
     String? industry,
@@ -71,6 +86,7 @@ class JobViewModel extends ChangeNotifier {
     fetchJobs();
   }
 
+  /// Saves a job by ID and updates the saved list.
   void saveJob(String jobId) async {
     try {
       _savedJobIds.add(jobId);
@@ -82,6 +98,7 @@ class JobViewModel extends ChangeNotifier {
     }
   }
 
+  /// Unsaves a job by ID and updates the saved list.
   void unsaveJob(String jobId) async {
     try {
       await _repository.unsaveJob(jobId);
@@ -93,10 +110,12 @@ class JobViewModel extends ChangeNotifier {
     }
   }
 
+  /// Checks if a job is saved.
   bool isJobSaved(String jobId) {
     return _savedJobIds.contains(jobId);
   }
 
+  /// Applies to a job with provided contact details and answers.
   Future<void> applyToJob({
     required String jobId,
     required String contactEmail,

@@ -13,15 +13,14 @@ class JobDetailsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.white, // Set page background to white
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.primary, // AppBar background
-        title: Text(
-          job.title,
-          style: TextStyle(color: Colors.white), // Title color white
-        ),
-        iconTheme: IconThemeData(color: Colors.white), // Back icon color white
+        backgroundColor: theme.appBarTheme.backgroundColor ?? AppColors.primary,
+        title: Text(job.title, style: theme.appBarTheme.titleTextStyle),
+        iconTheme: theme.appBarTheme.iconTheme,
       ),
       body: Padding(
         padding: EdgeInsets.all(4.w),
@@ -30,39 +29,37 @@ class JobDetailsPage extends ConsumerWidget {
           children: [
             Text(
               job.title,
-              style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             SizedBox(height: 1.h),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${job.company} • ${job.location}',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                ),
-              ],
+            Text(
+              '${job.company} • ${job.location}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+              ),
             ),
             SizedBox(height: 2.h),
             Text(
               'Experience Level: ${job.experienceLevel}',
-              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             SizedBox(height: 1.h),
             Text(
               'Salary Range: ${job.salaryRange}',
-              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             if (job.isRemote)
               Padding(
                 padding: EdgeInsets.only(top: 1.h),
                 child: Text(
                   'Remote',
-                  style: TextStyle(
-                    fontSize: 16.sp,
+                  style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
                   ),
@@ -74,8 +71,7 @@ class JobDetailsPage extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     'Job Description:',
-                    style: TextStyle(
-                      fontSize: 18.sp,
+                    style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -118,25 +114,18 @@ class JobDetailsPage extends ConsumerWidget {
                       }
                     }
                   },
-                  child: Text(' Easy Apply'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.blueAccent,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 6.w,
-                      vertical: 1.2.h,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  child: Text('Easy Apply', style: theme.textTheme.labelLarge),
+                  style: theme.elevatedButtonTheme.style,
                 ),
               ],
             ),
             SizedBox(height: 1.h),
             Expanded(
               child: SingleChildScrollView(
-                child: Text(job.description, style: TextStyle(fontSize: 14.sp)),
+                child: Text(
+                  job.description,
+                  style: theme.textTheme.bodyMedium?.copyWith(fontSize: 14.sp),
+                ),
               ),
             ),
           ],

@@ -7,7 +7,7 @@ class ProfilePhotoService {
     try {
       final response = await RequestService.postMultipart(
         "/user/pictures/profile-picture",
-        photoFile,
+        file: photoFile,
       );
       print(
         "Response status code: ${response.statusCode}, body: ${response.body} type of file: ${photoFile.uri}",

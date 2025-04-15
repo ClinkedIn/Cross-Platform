@@ -3,13 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/notifications/model/notification_model.dart';
 import 'package:lockedin/features/notifications/viewmodel/notifications_viewmodel.dart';
 import 'package:sizer/sizer.dart';
+
 ///////
-//CAN IT BE ASYNC TO LOAD UNSEEN NOTIFICATIONS COUNT AND CONNECTION REQUESTS COUNT? 
+//CAN IT BE ASYNC TO LOAD UNSEEN NOTIFICATIONS COUNT AND CONNECTION REQUESTS COUNT?
 ///////
-final notificationsProvider =
-    StateNotifierProvider<NotificationsViewModel, AsyncValue<List<NotificationModel>>>(
-      (ref) => NotificationsViewModel(),
-    );
+final notificationsProvider = StateNotifierProvider<
+  NotificationsViewModel,
+  AsyncValue<List<NotificationModel>>
+>((ref) => NotificationsViewModel());
+
+final unseenNotificationsCountProvider = Provider<int>((ref) {
+  final state = ref.watch(notificationsProvider);
+  return state.when(
+    data: (notifications) => notifications.where((n) => !n.isSeen).length,
+    loading: () => 0,
+    error: (_, __) => 0,
+  );
+});
 
 final unseenNotificationsCountProvider = Provider<int>((ref) {
   final state = ref.watch(notificationsProvider);
@@ -43,9 +53,27 @@ class BottomNavBar extends ConsumerWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavItem(context, 0, Icons.home, 'Home', onTap: () => onTap(0)),
-            _buildNavItem(context, 1, Icons.group, 'My Network', onTap: () => onTap(1)),
-            _buildNavItem(context, 2, Icons.add_box_outlined, 'Post', onTap: () => onTap(2)),
+            _buildNavItem(
+              context,
+              0,
+              Icons.home,
+              'Home',
+              onTap: () => onTap(0),
+            ),
+            _buildNavItem(
+              context,
+              1,
+              Icons.group,
+              'My Network',
+              onTap: () => onTap(1),
+            ),
+            _buildNavItem(
+              context,
+              2,
+              Icons.add_box_outlined,
+              'Post',
+              onTap: () => onTap(2),
+            ),
             _buildNavItem(
               context,
               3,
@@ -55,9 +83,15 @@ class BottomNavBar extends ConsumerWidget {
               onTap: () {
                 ref.read(notificationsProvider.notifier).markAllAsSeen();
                 onTap(3); // Navigate to the Notifications page
-              }
+              },
             ),
-            _buildNavItem(context, 4, Icons.work, 'Jobs', onTap: () => onTap(4)),
+            _buildNavItem(
+              context,
+              4,
+              Icons.work,
+              'Jobs',
+              onTap: () => onTap(4),
+            ),
           ],
         ),
       ),
@@ -126,7 +160,8 @@ class BottomNavBar extends ConsumerWidget {
                           shape: BoxShape.circle,
                         ),
                         child: Text(
-                          unseenNotificationsCount.toString(), // Replace with dynamic value if needed
+                          unseenNotificationsCount
+                              .toString(), // Replace with dynamic value if needed
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16.sp,

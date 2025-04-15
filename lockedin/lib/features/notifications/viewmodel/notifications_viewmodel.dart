@@ -180,55 +180,57 @@ class NotificationsViewModel
   /// Deletes a notification by its [id].
   void deleteNotification(String id) async {
     print("entered delete");
-    
+
     final notifications = state.value ?? [];
-    
+
     // Check if the notification exists
     deletedNotification = notifications.firstWhere(
       (notification) => notification.id == id,
-      orElse: () => NotificationModel(
-        id: "",
-        from: "",
-        to: "",
-        subject: "",
-        content: "",
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        resourceId: "",
-        relatedPostId: "",
-        relatedCommentId: "",
-        isRead: false,
-        isSeen: false,
-        isPlaceholder: false,
-        sendingUser: SendingUser(
-          email: "",
-          firstName: "",
-          lastName: "",
-          profilePicture: "",
-        ),
-      ),
+      orElse:
+          () => NotificationModel(
+            id: "",
+            from: "",
+            to: "",
+            subject: "",
+            content: "",
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            resourceId: "",
+            relatedPostId: "",
+            relatedCommentId: "",
+            isRead: false,
+            isSeen: false,
+            isPlaceholder: false,
+            sendingUser: SendingUser(
+              email: "",
+              firstName: "",
+              lastName: "",
+              profilePicture: "",
+            ),
+          ),
     );
 
     // If the notification is found, delete it from the list
     if (deletedNotification?.id != "") {
       deletedNotificationIndex = notifications.indexOf(deletedNotification!);
-      
+
       try {
         final response = await RequestService.delete(
           Constants.deleteNotificationEndpoint.replaceAll("%s", id),
         );
-        
         if (response.statusCode == 200) {
           // Create a new list without the deleted notification
           print("✅ Notification $id deleted.");
           final updatedNotifications = List<NotificationModel>.from(
             notifications,
           )..removeAt(deletedNotificationIndex!);
-          
+
           // Update the state with the new list
           state = AsyncValue.data(updatedNotifications);
         } else {
-          print("❌ Failed to delete notification. Status: ${response.statusCode}");
+          print(
+            "❌ Failed to delete notification. Status: ${response.statusCode}",
+          );
         }
       } catch (e) {
         print("❌ Error during delete operation: $e");

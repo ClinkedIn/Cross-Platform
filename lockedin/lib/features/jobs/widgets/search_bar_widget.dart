@@ -1,4 +1,3 @@
-// lib/widgets/search_bar_widget.dart
 import 'package:flutter/material.dart';
 
 class SearchBarWidget extends StatelessWidget {
@@ -13,12 +12,18 @@ class SearchBarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return TextField(
       onChanged: onChanged,
       decoration: InputDecoration(
         hintText: hintText,
-        prefixIcon: Icon(Icons.search),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+        hintStyle: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
+        prefixIcon: Icon(Icons.search, color: theme.iconTheme.color),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: BorderSide(color: theme.dividerColor),
+        ),
         contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 16),
       ),
     );

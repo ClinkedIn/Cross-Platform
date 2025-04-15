@@ -10,7 +10,7 @@ class Constants {
   
   // Server URLs
   static const String _emulatorUrl = "http://10.0.2.2:3000";
-  static const String _physicalDeviceUrl = "http://192.168.1.23:3000"; // Replace with your actual IP
+  static const String _physicalDeviceUrl = "http://192.168.1.23:3000"; // Your actual IP address
   
   // We'll use this as the baseUrl getter until we know for sure
   static String baseUrl = _physicalDeviceUrl; // Default to physical device URL
@@ -18,7 +18,7 @@ class Constants {
   // Initialize method to be called at app startup
   static Future<void> initializeBaseUrl() async {
     try {
-      debugPrint('Current baseUrl: $baseUrl');
+      debugPrint('⚠️ Current baseUrl: $baseUrl');
       
       if (Platform.isAndroid) {
         final deviceInfoPlugin = DeviceInfoPlugin();
@@ -27,17 +27,34 @@ class Constants {
         // If it's an emulator, use the emulator URL
         if (!androidInfo.isPhysicalDevice) {
           baseUrl = _emulatorUrl;
-          debugPrint('Using emulator URL: $baseUrl');
+          debugPrint('⚠️ Using emulator URL: $baseUrl');
         } else {
           baseUrl = _physicalDeviceUrl;
-          debugPrint('Using physical device URL: $baseUrl');
+          debugPrint('⚠️ Using physical device URL: $baseUrl');
+        }
+      } else if (Platform.isIOS) {
+        // For iOS simulator vs physical device
+        final deviceInfoPlugin = DeviceInfoPlugin();
+        final iosInfo = await deviceInfoPlugin.iosInfo;
+        
+        // Check if it's a simulator
+        if (iosInfo.isPhysicalDevice == false) {
+          baseUrl = _emulatorUrl;
+          debugPrint('⚠️ Using iOS simulator URL: $baseUrl');
+        } else {
+          baseUrl = _physicalDeviceUrl;
+          debugPrint('⚠️ Using iOS physical device URL: $baseUrl');
         }
       }
-      // For iOS or other platforms, keep using the physical device URL
+      // For other platforms, keep using the physical device URL
+      
+      debugPrint('⚠️ FINAL API BASE URL: $baseUrl');
+      debugPrint('⚠️ To connect to the API server, make sure it\'s running at $baseUrl');
     } catch (e) {
-      debugPrint('Error initializing baseUrl: $e');
+      debugPrint('⚠️ Error initializing baseUrl: $e');
       // Fallback to default
       baseUrl = _physicalDeviceUrl;
+      debugPrint('⚠️ Using fallback URL: $baseUrl');
     }
   }
 
@@ -68,6 +85,9 @@ class Constants {
   static const String savePostEndpoint = '/posts/%s/save'; // %s will be replaced with the postId
   static const String togglelikePostEndpoint = '/posts/%s/like'; // %s will be replaced with the postId
   static const String createPostEndpoint = '/posts';
+  static const String postDetailEndpoint = '/posts/%s'; // %s will be replaced with the postId
+  static const String commentsEndpoint = '/comments/%s/post'; // %s will be replaced with the postId
+  static const String addCommentEndpoint = '/comments'; // %s will be replaced with the postId
   //static const String unlikePostEndpoint = '/posts/%s/unlike'; // %s will be replaced with the postId
   static const String getNotificationsEndpoint = '/notifications';
   static const String markNotificationAsReadEndpoint = '/notifications/mark-read/%s'; // %s will be replaced with the notificationId
