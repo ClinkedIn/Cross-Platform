@@ -30,6 +30,10 @@ class ChatItem extends ConsumerWidget {
           ),
         );
       },
+      onLongPress: () {
+        // Show the popup menu when long-pressed
+        _showChatOptionsMenu(context, ref);
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
@@ -162,6 +166,49 @@ class ChatItem extends ConsumerWidget {
         ),
       ),
     );
+  }
+  
+  // Show the popup menu with chat options
+  void _showChatOptionsMenu(BuildContext context, WidgetRef ref) {
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RelativeRect position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    showMenu(
+      context: context,
+      position: position,
+      items: [
+        PopupMenuItem(
+          value: 'mark_unread',
+          child: Row(
+            children: [
+              Icon(Icons.mark_email_unread, color: Colors.blue),
+              SizedBox(width: 8),
+              Text('Mark as unread'),
+            ],
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value == 'mark_unread') {
+        // Call the viewModel method to mark as unread
+        ref.read(chatProvider.notifier).markChatAsUnread(chat);
+        
+        // Show a confirmation snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${chat.name} marked as unread'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    });
   }
   
   // Format timestamp to a user-friendly string

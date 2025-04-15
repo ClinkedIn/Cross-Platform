@@ -130,6 +130,16 @@ class CommentsApi {
           comments: postJson['commentCount'] ?? 0,
           reposts: postJson['repostCount'] ?? 0,
           isLiked: isLikedValue,
+          isMine: postJson['isMine'] ?? false,
+          isRepost: postJson['isRepost'] ?? false,
+          repostId: postJson['repostId'] ,
+          repostDescription: postJson['repostDescription'] ,
+          reposterId: postJson['reposterId'] ,
+          reposterName: postJson['reposterFirstName'] != null
+              ? '${postJson['reposterFirstName']} ${postJson['reposterLastName'] ?? ''}'
+              : null,
+          reposterProfilePicture: postJson['reposterProfilePicture'],
+
         );
       } else {
         throw Exception(

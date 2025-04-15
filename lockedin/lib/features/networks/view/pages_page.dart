@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class PagesPage extends StatelessWidget {
   const PagesPage({super.key});
@@ -10,7 +11,7 @@ class PagesPage extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
-            Navigator.pop(context);
+            context.pop();
           },
           icon: Icon(Icons.arrow_back),
         ),

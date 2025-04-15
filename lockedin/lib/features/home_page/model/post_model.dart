@@ -9,10 +9,18 @@ class PostModel {
   final String time;
   final bool isEdited;
   final String? imageUrl;
+  final String? mediaType; // Add this field to explicitly set media type
   final int likes;
   final int comments;
   final int reposts;
   final bool isLiked;
+  final bool isMine;
+  final bool isRepost;
+  final String? repostId;
+  final String? repostDescription;
+  final String? reposterId;
+  final String? reposterName;
+  final String? reposterProfilePicture;
   
 
   PostModel({
@@ -24,10 +32,18 @@ class PostModel {
     required this.time,
     required this.isEdited,
     this.imageUrl,
+    this.mediaType,
     required this.likes,
     required this.comments,
     required this.reposts,
     this.isLiked = false, // Default to not liked
+    required this.isMine,
+    this.isRepost = false,
+    this.repostId,
+    this.repostDescription,
+    this.reposterId,
+    this.reposterName,
+    this.reposterProfilePicture,
   });
 
   // Add copyWith method for easy modification of post properties
@@ -40,10 +56,18 @@ class PostModel {
     String? time,
     bool? isEdited,
     String? imageUrl,
+    String? mediaType,
     int? likes,
     int? comments,
     int? reposts,
     bool? isLiked,
+    bool? isMine,
+    bool? isRepost,
+    String? repostId,
+    String? repostDescription,
+    String? reposterId,
+    String? reposterName,
+    String? reposterProfilePicture,
   }) {
     return PostModel(
       id: id ?? this.id,
@@ -58,6 +82,13 @@ class PostModel {
       comments: comments ?? this.comments,
       reposts: reposts ?? this.reposts,
       isLiked: isLiked ?? false,
+      isMine: isMine ?? this.isMine,
+      isRepost: isRepost ?? this.isRepost,
+      repostId: repostId ?? this.repostId,
+      repostDescription: repostDescription ?? this.repostDescription,
+      reposterId: reposterId ?? this.reposterId,
+      reposterName: reposterName ?? this.reposterName,
+      reposterProfilePicture: reposterProfilePicture ?? this.reposterProfilePicture,
     );
   }
 
@@ -71,10 +102,18 @@ class PostModel {
       'time': time, 
       'isEdited': isEdited,
       'imageUrl': imageUrl,
+      'mediaType': mediaType,
       'likes': likes,
       'comments': comments,
       'reposts': reposts,
       'isLiked': isLiked,
+      'isMine': isMine,
+      'isRepost': isRepost,
+      'repostId': repostId,
+      'repostDescription': repostDescription,
+      'reposterId': reposterId,
+      'reposterName': reposterName,
+      'reposterProfilePicture': reposterProfilePicture,
       'createdAt': FieldValue.serverTimestamp(), // Add server timestamp
     };
   }
@@ -92,10 +131,18 @@ class PostModel {
       time: data['time'] ?? '',
       isEdited: data['isEdited'] ?? false,
       imageUrl: data['imageUrl'],
+      mediaType: data['mediaType'],
       likes: data['likes'] ?? 0,
       comments: data['comments'] ?? 0,
       reposts: data['reposts'] ?? 0,
       isLiked: data['isLiked'] ?? false,
+      isMine: data['isMine'] ?? false,
+      isRepost: data['isRepost'] ?? false,
+      repostId: data['repostId'],
+      repostDescription: data['repostDescription'],
+      reposterId: data['reposterId'],
+      reposterName: data['reposterName'],
+      reposterProfilePicture: data['reposterProfilePicture'],
     );
   }
 
@@ -110,10 +157,18 @@ class PostModel {
       time: json['time'] ?? '',
       isEdited: json['isEdited'] ?? false,
       imageUrl: json['imageUrl'],
+      mediaType: json['mediaType'],
       likes: json['likes'] ?? 0,
       comments: json['comments'] ?? 0,
       reposts: json['reposts'] ?? 0,
       isLiked: json['isLiked'] ?? false,
+      isMine: json['isMine'] ?? false,
+      isRepost: json['isRepost'] ?? false,
+      repostId: json['repostId'],
+      repostDescription: json['repostDescription'],
+      reposterId: json['reposterId'],
+      reposterName: json['reposterName'],
+      reposterProfilePicture: json['reposterProfilePicture'],
     );
   }
 }

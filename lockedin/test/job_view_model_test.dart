@@ -17,6 +17,7 @@ void main() {
       experienceLevel: 'Mid',
       salaryRange: '\$100k',
       isRemote: true,
+
       workplaceType: 'Remote',
       logoUrl: 'https://example.com/logo.png',
       industry: 'Technology',
@@ -26,6 +27,9 @@ void main() {
       applicants: ['user1'],
       accepted: [],
       rejected: [],
+
+
+
     ),
     JobModel(
       id: '2',
@@ -36,6 +40,7 @@ void main() {
       experienceLevel: 'Junior',
       salaryRange: '\$80k',
       isRemote: false,
+
       workplaceType: 'On-site',
       logoUrl: null,
       industry: 'Design',
@@ -43,6 +48,9 @@ void main() {
       applicants: [],
       accepted: [],
       rejected: [],
+
+
+
     ),
   ];
 

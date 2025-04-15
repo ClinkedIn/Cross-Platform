@@ -11,7 +11,11 @@ import 'package:http_parser/http_parser.dart';
 
 class RequestService {
   static final String _baseUrl = Constants.baseUrl;
-  static final http.Client _client = http.Client();
+  static http.Client _client = http.Client();
+
+  static void setClient(http.Client client) {
+    _client = client;
+  }
 
   /// Prepares request headers, including stored cookies if available.
   static Future<Map<String, String>> _getHeaders({
@@ -30,7 +34,7 @@ class RequestService {
   static Future<http.Response> postMultipart(
     String endpoint, {
     File? file,
-    String fileFieldName = 'file', // <-- Add this parameter
+    String fileFieldName = 'file',
     Map<String, dynamic>? additionalFields,
     Map<String, String>? headers,
   }) async {
@@ -41,11 +45,65 @@ class RequestService {
 
     // Add file if present
     if (file != null) {
+      // Determine file extension and content type
+      final String path = file.path;
+      final String extension = path.split('.').last.toLowerCase();
+
+      // Set appropriate content type based on file extension
+      MediaType contentType;
+      switch (extension) {
+        case 'pdf':
+          contentType = MediaType('application', 'pdf');
+          break;
+        case 'doc':
+          contentType = MediaType('application', 'msword');
+          break;
+        case 'docx':
+          contentType = MediaType(
+            'application',
+            'vnd.openxmlformats-officedocument.wordprocessingml.document',
+          );
+          break;
+        case 'xls':
+          contentType = MediaType('application', 'vnd.ms-excel');
+          break;
+        case 'xlsx':
+          contentType = MediaType(
+            'application',
+            'vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          );
+          break;
+        case 'ppt':
+          contentType = MediaType('application', 'vnd.ms-powerpoint');
+          break;
+        case 'pptx':
+          contentType = MediaType(
+            'application',
+            'vnd.openxmlformats-officedocument.presentationml.presentation',
+          );
+          break;
+        case 'txt':
+          contentType = MediaType('text', 'plain');
+          break;
+        case 'jpg':
+        case 'jpeg':
+          contentType = MediaType('image', 'jpeg');
+          break;
+        case 'png':
+          contentType = MediaType('image', 'png');
+          break;
+        case 'gif':
+          contentType = MediaType('image', 'gif');
+          break;
+        default:
+          contentType = MediaType('application', 'octet-stream');
+      }
+
       request.files.add(
         await http.MultipartFile.fromPath(
-          fileFieldName, // <-- Use the passed field name
+          fileFieldName,
           file.path,
-          contentType: MediaType('image', 'jpeg'),
+          contentType: contentType,
         ),
       );
     }
@@ -74,6 +132,7 @@ class RequestService {
     try {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
+      _storeCookiesFromResponse(response);
       return response;
     } catch (e) {
       throw Exception('Multipart POST failed: $e');

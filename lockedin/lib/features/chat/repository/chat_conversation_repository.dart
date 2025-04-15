@@ -1,6 +1,5 @@
 // chat_service.dart
 import 'dart:convert';
-import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/core/utils/constants.dart';
@@ -15,33 +14,6 @@ class ChatConversationRepository {
 
   Future<Map<String, dynamic>> fetchConversation(String chatId) async {
     try {
-      // Validate chatId first
-      if (chatId.isEmpty) {
-        return {
-          'success': false,
-          'error': 'Invalid chat ID',
-          'chat': {
-            'rawMessages': [],
-            'conversationHistory': []
-          },
-        };
-      }
-      
-      // Check authentication first
-      if (_authService.currentUser == null) {
-        // Try to fetch user data
-        final user = await _authService.fetchCurrentUser();
-        if (user == null) {
-          return {
-            'success': false,
-            'error': 'Authentication required',
-            'chat': {
-              'rawMessages': [],
-              'conversationHistory': []
-            },
-          };
-        }
-      }
 
       // Use the chat conversation endpoint from constants
       final endpoint = Constants.chatConversationEndpoint.replaceAll('{chatId}', chatId);
@@ -112,21 +84,10 @@ class ChatConversationRepository {
     }
   }
   
-  /// Sends a new message to a specific chat
-  /// 
-  /// Format follows API documentation:
-  /// {
-  ///   "receiverId": "string",   // Optional: ID of the user receiving the message
-  ///   "chatId": "string",       // Required: ID of the chat conversation
-  ///   "type": "direct",         // Optional: Type of chat (direct, group, etc.)
-  ///   "messageText": "string",  // Optional: Text content of the message
-  ///   "messageAttachment": null, // Optional: File attachments
-  ///   "replyTo": null           // Optional: Message being replied to
-  /// }
-  Future<bool> sendMessage({
+  Future<Map<String, dynamic>> sendMessage({
     required String chatId,
-    String messageText = '',
-    String chatType = 'direct',
+    required String messageText,
+    required String chatType,
     String? receiverId,
   }) async {
     try {
@@ -134,39 +95,24 @@ class ChatConversationRepository {
       await _authService.fetchCurrentUser();
       
       // Get the current user ID after ensuring it's loaded
-      final currentUser = _authService.currentUser;
-      if (currentUser == null) {
-        debugPrint('No authenticated user found');
-        throw Exception('You must be logged in to send messages');
-      }
+      // final currentUser = _authService.currentUser;
+      // if (currentUser == null) {
+      //   debugPrint('No authenticated user found');
+      //   throw Exception('You must be logged in to send messages');
+      // }
       
-      // Create the request body with only the required fields
+      // Create the request body with the required fields according to the API spec
       final Map<String, dynamic> body = {
+        'type': chatType,
+        'messageText': messageText,
         'chatId': chatId,
       };
-      
-      // Add optional fields if provided
-      if (messageText.isNotEmpty) {
-        body['messageText'] = messageText;
-      }
-      
-      if (receiverId != null) {
-        body['receiverId'] = receiverId;
-      } else {
-        // Use current user ID as fallback
-        body['receiverId'] = currentUser.id;
-      }
-      
-      if (chatType.isNotEmpty) {
-        body['type'] = chatType;
-      }
       
       // Log the request body for debugging
       debugPrint('Sending message with body: ${jsonEncode(body)}');
       
       // Use the endpoint constant for messages
       final endpoint = Constants.chatMessagesEndpoint.replaceAll('{chatId}', chatId);
-      debugPrint('Using messages endpoint: $endpoint');
       
       // Send the message
       final response = await RequestService.post(
@@ -177,31 +123,78 @@ class ChatConversationRepository {
       // Check status code for success
       if (response.statusCode != 200 && response.statusCode != 201) {
         debugPrint('Error: Server returned status code ${response.statusCode}');
-        throw Exception('Server error: ${response.statusCode}');
+        return {
+          'success': false,
+          'error': 'Server returned status code ${response.statusCode}',
+        };
+      }
+
+      // Parse the response
+      final responseBody = response.body;
+      if (responseBody.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Empty response from server',
+        };
       }
       
-      // Check if we got HTML instead of JSON and throw an exception
-      if (response.body.contains('<!DOCTYPE html>') || 
-          response.body.contains('<html>') ||
-          (response.body.isNotEmpty && !response.body.startsWith('{'))) {
-        
-        debugPrint('ERROR: Received HTML instead of JSON response');
-        throw Exception('Server returned HTML instead of JSON');
+      final responseData = jsonDecode(responseBody);
+      
+      // Check if the response has the expected format
+      if (responseData['message'] == 'Message created successfully' && responseData['data'] != null) {
+        return {
+          'success': true,
+          'data': responseData['data'],
+        };
       }
       
-      // Parse the response if it's JSON
+      return {
+        'success': false,
+        'error': responseData['message'] ?? 'Unknown API error',
+      };
+    } catch (e) {
+      debugPrint('Error sending message: $e');
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+  
+  /// Mark a chat as read for the current user
+  /// Returns true if successful, false otherwise
+  Future<bool> markChatAsRead(String chatId) async {
+    try {
+      // Use the mark as read endpoint
+      final endpoint = Constants.chatMarkAsReadEndpoint.replaceAll('{chatId}', chatId);
+      
+      // Send the PATCH request to mark as read
+      final response = await RequestService.patch(endpoint, body: {});
+      
+      // Check the response status
+      if (response.statusCode != 200) {
+        debugPrint('Error: Server returned status code ${response.statusCode}');
+        throw Exception('Failed to mark chat as read: ${response.statusCode}');
+      }
+      
+      // Check if the response contains a success flag
       if (response.body.isNotEmpty && response.body.startsWith('{')) {
-        final jsonResponse = jsonDecode(response.body);
-        
-        if (jsonResponse['success'] == false) {
-          throw Exception(jsonResponse['message'] ?? 'Unknown error');
+        try {
+          final jsonResponse = jsonDecode(response.body);
+          if (jsonResponse['success'] == false) {
+            throw Exception(jsonResponse['message'] ?? 'Unknown error');
+          }
+        } catch (e) {
+          // If we can't parse the JSON, but the status code is 200, consider it a success
+          debugPrint('Warning: Could not parse JSON response: $e');
         }
       }
       
+      debugPrint('Chat marked as read successfully');
       return true;
     } catch (e) {
-      debugPrint('Error sending message: $e');
-      rethrow;
+      debugPrint('Error marking chat as read: $e');
+      return false;
     }
   }
 }
@@ -213,4 +206,4 @@ final authServiceProvider = Provider<AuthService>((ref) {
 final chatConversationRepositoryProvider = Provider<ChatConversationRepository>((ref) {
   final authService = ref.read(authServiceProvider);
   return ChatConversationRepository(authService);
-}); 
+});

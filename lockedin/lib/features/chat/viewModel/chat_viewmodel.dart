@@ -78,6 +78,26 @@ class ChatViewModel extends StateNotifier<ChatState> {
     }
   }
 
+  // Mark a chat as unread and update the state
+  Future<void> markChatAsUnread(Chat chat) async {
+    try {
+      await _repository.markChatAsUnread(chat.id);
+      
+      // Update local state to reflect the change
+      final updatedChats = state.chats.map((c) {
+        if (c.id == chat.id) {
+          return c.copyWith(unreadCount: 1); // Set unread count to 1
+        }
+        return c;
+      }).toList();
+      
+      state = state.copyWith(chats: updatedChats);
+    } catch (e) {
+      // Handle error but don't change the UI state
+      print("Error marking chat as unread: $e");
+    }
+  }
+
   // Refresh chats (useful for pull-to-refresh functionality)
   Future<void> refreshChats() async {
     return fetchChats();

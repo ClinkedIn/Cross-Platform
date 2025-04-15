@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sizer/sizer.dart';
 import '../viewModel/home_viewmodel.dart';
-import '../../profile/widgets/post_list.dart';
+import '../../post/widgets/post_list.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -15,12 +15,14 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ref.read(homeViewModelProvider.notifier).refreshFeed();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeViewModelProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       body:
