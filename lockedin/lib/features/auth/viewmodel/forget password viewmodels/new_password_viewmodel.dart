@@ -10,27 +10,7 @@ class NewPasswordViewModel extends StateNotifier<AsyncValue<void>> {
   final NewPasswordRepository _newPasswordRepository;
   final String resetToken;
   
-  NewPasswordViewModel(this._newPasswordRepository, this.resetToken) : super(const AsyncValue.data(null)) {
-    // Verify token when ViewModel is initialized
-    //verifyToken();
-  }
-  
-  // Verify if token is valid
-  // Future<bool> verifyToken() async {
-  //   state = const AsyncValue.loading();
-  //   try {
-  //     final isValid = await _newPasswordRepository.verifyResetToken(resetToken);
-  //     if (!isValid) {
-  //       state = AsyncValue.error('Invalid or expired reset token', StackTrace.current);
-  //       return false;
-  //     }
-  //     state = const AsyncValue.data(null);
-  //     return true;
-  //   } catch (e) {
-  //     state = AsyncValue.error(e, StackTrace.current);
-  //     return false;
-  //   }
-  // }
+  NewPasswordViewModel(this._newPasswordRepository, this.resetToken) : super(const AsyncValue.data(null));
   
   // Password validation logic
   String? validatePassword(String? value) {

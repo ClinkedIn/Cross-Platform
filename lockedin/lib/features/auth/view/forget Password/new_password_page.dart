@@ -22,37 +22,12 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
   bool _passwordVisible = false;
   bool _confirmPasswordVisible = false;
   bool _requireSignIn = true;
-  bool _isTokenVerified = false;
+
 
   @override
   void initState() {
     super.initState();
-    // Check if token is valid after the widget is built
-    // WidgetsBinding.instance.addPostFrameCallback((_) async {
-    //   _verifyToken();
-    // });
   }
-
-  // Future<void> _verifyToken() async {
-  //   final isValid = await ref.read(newPasswordProvider(widget.resetToken).notifier).verifyToken();
-  //   setState(() {
-  //     _isTokenVerified = isValid;
-  //   });
-    
-  //   if (!isValid) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text('Invalid or expired reset token. Please request a new password reset.'),
-  //         backgroundColor: Colors.red,
-  //         duration: Duration(seconds: 5),
-  //       ),
-  //     );
-  //     // Navigate back to forgot password page after a delay
-  //     Future.delayed(Duration(seconds: 3), () {
-  //       Navigator.of(context).popUntil((route) => route.isFirst);
-  //     });
-  //   }
-  // }
 
   @override
   void dispose() {

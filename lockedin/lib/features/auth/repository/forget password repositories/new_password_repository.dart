@@ -3,22 +3,6 @@ import 'package:lockedin/core/utils/constants.dart';
 
 /// Repository for handling password reset operations
 class NewPasswordRepository {
-  /// Verifies if the reset token is valid
-  /// 
-  /// Returns true if token is valid, false otherwise
-  Future<bool> verifyResetToken(String token) async {
-    try {
-      final response = await RequestService.get(
-        '${Constants.resetPasswordEndpoint}',
-        additionalHeaders: {"authorization": "Bearer $token"}
-      );
-      
-      return response.statusCode == 200;
-    } catch (e) {
-      print('Error verifying token: $e');
-      return false;
-    }
-  }
 
   /// Resets the user's password using the provided token
   /// 
