@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
@@ -32,7 +33,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       // Mark messages as read
       ref.read(chatConversationProvider(widget.chat.id).notifier).markChatAsRead();
       // Check connection to help debug server issues
-      _checkServerConnection();
+      //_checkServerConnection();
     });
   }
 
@@ -118,24 +119,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     });
   }
   
-  /// Check server connection and show diagnostic info if needed
-  Future<void> _checkServerConnection() async {
-    try {
-      final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
-      final hasError = chatViewModel.state.error != null;
-      
-      if (hasError) {
-        // Show connection diagnostic dialog after a short delay
-        await Future.delayed(Duration(seconds: 1));
-        if (mounted) {
-          _showConnectionDiagnosticDialog();
-        }
-      }
-    } catch (e) {
-      debugPrint('Error checking server connection: $e');
-    }
-  }
-  
   /// Show a dialog with connection diagnostic information
   void _showConnectionDiagnosticDialog() {
     showDialog(
@@ -159,12 +142,12 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: Text('CLOSE'),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
+              context.pop();
               ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
             },
             child: Text('RETRY'),
@@ -252,9 +235,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
               ),
             ),
           Expanded(
-            child: chatState.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : chatState.messages.isEmpty && chatState.messagesByDate.isEmpty
+            child: chatState.messages.isEmpty && chatState.messagesByDate.isEmpty
                     ? RefreshIndicator(
                         onRefresh: () async {
                           await ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
@@ -363,6 +344,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   }
   
   Widget _buildDateDivider(String date) {
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: Row(

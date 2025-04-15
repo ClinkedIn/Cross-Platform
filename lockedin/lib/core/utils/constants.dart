@@ -76,7 +76,8 @@ class Constants {
   // Chat endpoints
   /// Endpoint to fetch all chats for the current user
   static const String allChatsEndpoint = '/chats/all-chats';
-  static const String chatMarkAsReadEndpoint = '/chats/mark-as-read/{chatId}';
+  static const String chatMarkAsReadEndpoint = '/chats/mark-as-read';
+  static const String chatMarkAsUnreadEndpoint = '/chats/mark-as-unread';
   
   /// Endpoint to fetch a specific chat conversation
   /// Use: '/chats/direct-chat/{actualChatId}'
