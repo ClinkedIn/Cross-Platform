@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lockedin/features/networks/viewmodel/request_view_model.dart';
 import 'package:lockedin/features/networks/widgets/invitation_card.dart';
+import 'package:go_router/go_router.dart';
 
 class InvitationSection extends StatefulWidget {
   const InvitationSection({Key? key}) : super(key: key);
@@ -39,10 +40,11 @@ class _InvitationSectionState extends State<InvitationSection> {
                   Text(
                     "Invitations (${viewModel.requestCount})",
                     style: theme.textTheme.bodyLarge,
+                    textAlign: TextAlign.start,
                   ),
                   InkWell(
                     onTap: () {
-                      // Handle view all invitations
+                      context.push('/invitations');
                     },
                     child: Icon(
                       Icons.arrow_forward,
