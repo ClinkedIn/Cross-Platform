@@ -8,9 +8,9 @@ class ForgotPasswordRepository {
   /// Sends a forgot password request to the server for the given email address.
   /// 
   /// Throws an exception if the request fails.
-  Future<void> forgotPassword(String emailOrPhone) async {
+  Future<void> forgotPassword(String email) async {
     try {
-      final Map<String, String> body = {"email": emailOrPhone};
+      final Map<String, String> body = {"email": email};
       
       final response = await RequestService.post(
         Constants.forgotPasswordEndpoint, // API endpoint

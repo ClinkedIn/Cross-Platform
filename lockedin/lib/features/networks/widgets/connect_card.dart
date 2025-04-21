@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sizer/sizer.dart';
 
 class ConnectCard extends StatelessWidget {
   final String backgroundImage;
@@ -101,7 +102,7 @@ class ConnectCard extends StatelessWidget {
                   // Connect Button
                   SizedBox(
                     width: double.infinity,
-                    height: 35, // Fixed smaller height
+                    height: 3.h, // Fixed smaller height
                     child: OutlinedButton(
                       onPressed: () {},
                       style: OutlinedButton.styleFrom(

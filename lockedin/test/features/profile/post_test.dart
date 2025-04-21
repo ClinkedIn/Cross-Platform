@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lockedin/features/post/repository/mock_create_post_api.dart';
 import 'package:lockedin/features/post/viewmodel/post_viewmodel.dart';
@@ -34,33 +33,4 @@ void main() {
     viewModel.removeImage();
     expect(viewModel.state.attachments, null);
   });
-
-  // test('submits post successfully', () async {
-  //   final file = File('dummy/path/image.jpg');
-  //   viewModel.state = viewModel.state.copyWith(attachments: [file]);
-
-  //   // Mock successful response
-  //   final result = await viewModel.submitPost(
-  //     content: 'Hello world',
-  //     attachments: [file],
-  //   );
-
-  //   expect(result, isTrue);
-  //   expect(viewModel.state.isSubmitting, isFalse);
-  //   expect(viewModel.state.error, isNull);
-  // });
-
-  // test('submitPost handles failure', () async {
-  //   final file = File('dummy/path/image.jpg');
-
-  //   // Force an exception inside submitPost
-  //   final result = await viewModel.submitPost(
-  //     content: 'Bad request',
-  //     attachments: [file],
-  //   );
-
-  //   expect(result, false);
-  //   expect(viewModel.state.isSubmitting, false);
-  //   expect(viewModel.state.error, isNotNull);
-  // });
 }

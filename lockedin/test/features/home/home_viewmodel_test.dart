@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lockedin/features/home_page/model/post_model.dart';
-import 'package:lockedin/features/home_page/repository/posts/mock_post_repository.dart';
+import 'package:lockedin/features/home_page/repository/posts/post_test.dart';
 import 'package:lockedin/features/home_page/viewModel/home_viewmodel.dart';
 import 'package:lockedin/features/home_page/state/home_state.dart';
 
@@ -67,6 +67,7 @@ void main() {
             comments: 0,
             reposts: 0,
             isLiked: false,
+            isMine: false,
           ),
         ],
         isLoading: false,
@@ -95,6 +96,7 @@ void main() {
             comments: 0,
             reposts: 0,
             isLiked: true,
+            isMine: false,
           ),
         ],
         isLoading: false,

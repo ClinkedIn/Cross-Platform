@@ -24,14 +24,13 @@ class JobCardWidget extends StatelessWidget {
 
         return Card(
           elevation: 4,
-          margin: EdgeInsets.symmetric(vertical: 1.5.h, horizontal: 5.w),
           child: ListTile(
             leading: ConstrainedBox(
               constraints: BoxConstraints(
-                minWidth: 12.w,
-                minHeight: 12.w,
-                maxWidth: 12.w,
-                maxHeight: 12.w,
+                minWidth: 14.w,
+                minHeight: 12.h,
+                maxWidth: 14.w,
+                maxHeight: 12.h,
               ),
               child:
                   job.logoUrl != null && job.logoUrl!.startsWith('http')
