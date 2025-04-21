@@ -67,21 +67,47 @@ class NotificationModel {
       sendingUser: SendingUser.fromJson(json['sendingUser']),
     );
   }
+
+  ///creates a [NotificationModel] instance with empty values.
+  static NotificationModel empty() => NotificationModel(
+    id: "",
+    from: "",
+    to: "",
+    subject: "",
+    content: "",
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+    resourceId: "",
+    relatedPostId: "",
+    relatedCommentId: "",
+    isRead: false,
+    isSeen: false,
+    isPlaceholder: false,
+    sendingUser: SendingUser(
+      email: "",
+      firstName: "",
+      lastName: "",
+      profilePicture: "",
+    ),
+  );
 }
 
+/// A model representing the user who sent the notification. It is a class inside the notification class.
 class SendingUser {
   final String email;
   final String firstName;
   final String lastName;
   final String? profilePicture;
 
+  /// Creates a [SendingUser] instance with the given data.
   SendingUser({
     required this.email,
     required this.firstName,
     required this.lastName,
     this.profilePicture,
   });
-
+  
+  /// Factory constructor to create a [SendingUser] from a JSON map.
   factory SendingUser.fromJson(Map<String, dynamic> json) {
     return SendingUser(
       email: json['email'],
@@ -90,4 +116,12 @@ class SendingUser {
       profilePicture: json['profilePicture'],
     );
   }
+
+  /// Creates a [SendingUser] instance with empty values.
+  static SendingUser empty() => SendingUser(
+    email: "",
+    firstName: "",
+    lastName: "",
+    profilePicture: null,
+  );
 }

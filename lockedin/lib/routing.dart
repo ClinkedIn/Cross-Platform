@@ -14,6 +14,7 @@ import 'package:lockedin/features/jobs/view/jobs_page.dart';
 import 'package:lockedin/features/networks/view/connections_page.dart';
 import 'package:lockedin/features/networks/view/events_page.dart';
 import 'package:lockedin/features/networks/view/groups_page.dart';
+import 'package:lockedin/features/networks/view/invitations_page.dart';
 import 'package:lockedin/features/networks/view/manage_page.dart';
 import 'package:lockedin/features/networks/view/network_page.dart';
 import 'package:lockedin/features/networks/view/newsletters_page.dart';
@@ -46,13 +47,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) async {
-      ref.read(profileViewModelProvider).fetchAllProfileData();
       final publicRoutes = ['/login', '/forgot-password', '/sign-up'];
 
       var isAuthenticated = await TokenService.hasCookie();
-      var cokkie = await TokenService.getCookie();
-      print("Cookie: $cokkie");
-      print("Is authenticated: $isAuthenticated");
 
       // Don't redirect when navigating to the root page, let MainPage handle it
       if (state.fullPath == '/') {
@@ -68,7 +65,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       if (!isAuthenticated && !publicRoutes.contains(state.fullPath)) {
         return '/login';
       }
-
+      if (isAuthenticated) {
+        ref.read(profileViewModelProvider).fetchAllProfileData();
+      }
       // Otherwise, allow the navigation
       return null;
     },
@@ -171,6 +170,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: "/newsletter",
         name: "newsletter-page",
         builder: (context, state) => NewsletterPage(),
+      ),
+      GoRoute(
+        path: "/invitations",
+        name: "invitation-page",
+        builder: (context, state) => InvitationPage(),
       ),
       GoRoute(
         path: '/edit-profile-photo',
