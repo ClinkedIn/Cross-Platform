@@ -63,7 +63,7 @@ class JobRepository {
     }
   }
 
-  Future<void> applyForJob({
+  Future<Map<String, dynamic>> applyForJob({
     required String jobId,
     required String contactEmail,
     required String contactPhone,
@@ -87,6 +87,8 @@ class JobRepository {
     }
 
     debugPrint('Application response: ${jsonEncode(data)}');
+
+    return data; // Return the response data here
   }
 
   Future<JobModel> getJobById(String jobId) async {

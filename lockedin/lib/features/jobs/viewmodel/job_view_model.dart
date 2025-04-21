@@ -116,6 +116,7 @@ class JobViewModel extends ChangeNotifier {
   }
 
   /// Applies to a job with provided contact details and answers.
+  /// Applies to a job with provided contact details and answers.
   Future<void> applyToJob({
     required String jobId,
     required String contactEmail,
@@ -123,15 +124,32 @@ class JobViewModel extends ChangeNotifier {
     required List<Map<String, String>> answers,
   }) async {
     try {
-      await _repository.applyForJob(
+      final response = await _repository.applyForJob(
         jobId: jobId,
         contactEmail: contactEmail,
         contactPhone: contactPhone,
         answers: answers,
       );
+
+      debugPrint('API Response: $response');
+
+      // Check for "alreadyApplied" status in the response
+      if (response['alreadyApplied'] == true) {
+        // If already applied, update the job's application status to "Pending"
+        _selectedJob?.applicationStatus = 'Pending';
+      } else {
+        // Otherwise, assume successful application
+        _selectedJob?.applicationStatus =
+            'Pending'; // Or other status as needed
+      }
+
       debugPrint('Application submitted successfully');
+
+      // Fetch updated job details after applying
+      await fetchJobById(jobId); // Ensure we have the latest job status
     } catch (e) {
       debugPrint('Error applying to job: $e');
+      rethrow;
     }
   }
 
@@ -163,5 +181,16 @@ class JobViewModel extends ChangeNotifier {
     } else {
       return 'Not Applied';
     }
+  }
+
+  String getApplicationStatusForCurrentUser(String userId) {
+    if (_selectedJob == null) return 'Not Applied';
+
+    return getApplicationStatus(
+      userId: userId,
+      applicants: _selectedJob!.applicants,
+      accepted: _selectedJob!.accepted,
+      rejected: _selectedJob!.rejected,
+    );
   }
 }

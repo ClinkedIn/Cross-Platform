@@ -17,6 +17,10 @@ class JobModel {
   final List<String> accepted;
   final List<String> rejected;
 
+  // ✅ Add application status to the model
+  String
+  applicationStatus; // This field will hold the status for a user's application
+
   JobModel({
     required this.title,
     required this.id,
@@ -33,6 +37,7 @@ class JobModel {
     required this.applicants,
     required this.accepted,
     required this.rejected,
+    required this.applicationStatus, // Pass status in the constructor
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
@@ -76,6 +81,9 @@ class JobModel {
       applicants: _parseStringList(json['applicants']),
       accepted: _parseStringList(json['accepted']),
       rejected: _parseStringList(json['rejected']),
+
+      // Default status if not available
+      applicationStatus: 'Not Applied', // Default status
     );
   }
 }
