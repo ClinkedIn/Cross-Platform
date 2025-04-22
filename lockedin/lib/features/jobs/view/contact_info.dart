@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 class ContactInfoPage extends StatefulWidget {
   final List<Map<String, dynamic>> screeningQuestions;
-  const ContactInfoPage({Key? key, required this.screeningQuestions})
-    : super(key: key);
+  final String userId;
+
+  const ContactInfoPage({
+    Key? key,
+    required this.screeningQuestions,
+    required this.userId,
+  }) : super(key: key);
 
   @override
   State<ContactInfoPage> createState() => _ContactInfoPageState();
@@ -33,7 +38,7 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
             ),
             SizedBox(height: 24),
 
-            // Dynamically build screening question fields
+            // Dynamically generate screening questions
             ...widget.screeningQuestions.map((question) {
               final questionText = question['question'] ?? 'Unnamed Question';
               return Column(
@@ -60,6 +65,7 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context, {
+                  'userId': widget.userId, // ✅ Include userId in result
                   'email': _emailController.text,
                   'phone': _phoneController.text,
                   'answers':

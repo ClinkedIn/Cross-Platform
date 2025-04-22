@@ -42,12 +42,7 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
       error: (err, stack) => Scaffold(body: Center(child: Text('Error: $err'))),
       data: (credentials) {
         final userId = credentials['email'] ?? '';
-        final status = jobViewModel.getApplicationStatus(
-          userId: userId,
-          applicants: job.applicants,
-          accepted: job.accepted,
-          rejected: job.rejected,
-        );
+        final status = jobViewModel.getApplicationStatusForCurrentUser(userId);
 
         return Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
@@ -113,7 +108,6 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                 ),
                 SizedBox(height: 1.h),
 
-                // ✅ Application Status
                 Row(
                   children: [
                     const Icon(Icons.info_outline, size: 18),
@@ -159,6 +153,7 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                                         (_) => ContactInfoPage(
                                           screeningQuestions:
                                               job.screeningQuestions,
+                                          userId: userId,
                                         ),
                                   ),
                                 );
@@ -177,6 +172,8 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                                       answers: answers,
                                     );
 
+                                    await jobViewModel.fetchJobById(job.id);
+
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
@@ -184,9 +181,7 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                                         ),
                                       ),
                                     );
-                                    setState(
-                                      () {},
-                                    ); // Refresh UI to show updated status
+                                    setState(() {});
                                   } catch (e) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(

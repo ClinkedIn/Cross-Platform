@@ -21,6 +21,7 @@ void main() {
       workplaceType: 'Remote',
       logoUrl: 'https://example.com/logo.png',
       industry: 'Technology',
+      applicationStatus: 'Applied',
       screeningQuestions: [
         {'question': 'Why do you want this job?', 'idealAnswer': 'To learn'},
       ],
@@ -44,6 +45,7 @@ void main() {
       workplaceType: 'On-site',
       logoUrl: null,
       industry: 'Design',
+      applicationStatus: 'Not Applied',
       screeningQuestions: [],
       applicants: [],
       accepted: [],
