@@ -161,4 +161,37 @@ class HomeViewModel extends StateNotifier<HomeState> {
       rethrow;
     }
   }
+
+    /// Delete a post
+      Future<bool> deletePost(String postId) async {
+        try {
+          // Find the post index
+          final postIndex = state.posts.indexWhere((post) => post.id == postId);
+          if (postIndex == -1) return false;
+          
+          // Set loading state (optional)
+          state = state.copyWith(isLoading: true, error: null);
+          
+          // Call repository method
+          final success = await repository.deletePost(postId);
+          
+          if (success) {
+            // Remove the post from the list
+            final updatedPosts = List<PostModel>.from(state.posts);
+            updatedPosts.removeAt(postIndex);
+            
+            // Update state
+            state = state.copyWith(posts: updatedPosts, isLoading: false);
+            return true;
+          }
+          
+          // Reset loading state if unsuccessful
+          state = state.copyWith(isLoading: false);
+          return false;
+        } catch (e) {
+          debugPrint('Error in deletePost: $e');
+          state = state.copyWith(isLoading: false, error: e.toString());
+          rethrow;
+        }
+      }
 }

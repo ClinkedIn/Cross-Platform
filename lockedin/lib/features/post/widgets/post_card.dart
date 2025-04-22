@@ -122,6 +122,9 @@ class PostCard extends StatelessWidget {
   final VoidCallback? onSaveForLater;
   final VoidCallback? onNotInterested;
   final VoidCallback? onReport;
+  // In the PostCard class definition, add these new callback properties
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const PostCard({
     required this.post,
@@ -133,6 +136,8 @@ class PostCard extends StatelessWidget {
     this.onSaveForLater,
     this.onNotInterested,
     this.onReport,
+    this.onEdit, // New callback
+    this.onDelete, // New callback
     Key? key,
   }) : super(key: key);
 
@@ -233,10 +238,59 @@ class PostCard extends StatelessWidget {
                         case 'report':
                           onReport?.call();
                           break;
+                        case 'edit':
+                          onEdit?.call();
+                          break;
+                        case 'delete':
+                          onDelete?.call();
+                          break;    
                       }
                     },
                     itemBuilder:
-                        (context) => [
+                        (context) => post.isMine ?[
+                      PopupMenuItem(
+                          value: 'edit',
+                          height: 5.h,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit_outlined,
+                                size: 2.h,
+                                color: theme.iconTheme.color,
+                              ),
+                              SizedBox(width: 2.w),
+                              Text(
+                                'Edit post',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontSize: 15.sp,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      PopupMenuItem(
+                          value: 'delete',
+                          height: 5.h,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.delete_outline,
+                                size: 2.h,
+                                color: theme.iconTheme.color,
+                              ),
+                              SizedBox(width: 2.w),
+                              Text(
+                                'Delete post',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontSize: 15.sp,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ]
+                       // Menu options for other people's posts
+                        : [
                           PopupMenuItem(
                             value: 'save',
                             height: 5.h,
@@ -253,19 +307,6 @@ class PostCard extends StatelessWidget {
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     fontSize: 15.sp,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: 'report',
-                            height: 5.h,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.flag_outlined,
-                                  size: 2.h,
-                                  color: theme.iconTheme.color,
                                 ),
                               ],
                             ),

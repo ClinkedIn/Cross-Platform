@@ -121,4 +121,6 @@ class Constants {
       '/notifications/restore-notification/%s'; // %s will be replaced with the notificationId
   static const String deleteNotificationEndpoint =
       '/notifications/%s'; // %s will be replaced with the notificationId
+  static const String deletePostEndpoint = 
+      '/posts/%s'; // %s will be replaced with the postId
 }

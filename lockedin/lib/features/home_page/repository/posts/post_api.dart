@@ -299,6 +299,30 @@ class PostApi implements PostRepository {
         rethrow;
       }
     }
+
+      @override
+    Future<bool> deletePost(String postId) async {
+      try {
+        final String formattedEndpoint = Constants.deletePostEndpoint.replaceFirst('%s', postId);
+        
+        final response = await RequestService.delete(
+          formattedEndpoint,
+        );
+        
+        debugPrint('📥 Response status: ${response.statusCode}');
+        debugPrint('📥 Response body: ${response.body}');
+        
+        if (response.statusCode == 200 || response.statusCode == 204) {
+          debugPrint('✅ Post deleted successfully: $postId');
+          return true;
+        } else {
+          throw Exception('Failed to delete post: ${response.statusCode} - ${response.body}');
+        }
+      } catch (e) {
+        debugPrint('❌ Error deleting post: $e');
+        rethrow;
+      }
+    }
 }
 
 // Helper function for substring operations
