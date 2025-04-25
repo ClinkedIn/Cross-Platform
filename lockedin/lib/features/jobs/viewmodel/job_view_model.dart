@@ -17,6 +17,7 @@ class JobViewModel extends ChangeNotifier {
   final JobRepository _repository;
 
   JobViewModel(this._repository) {
+    _loadSavedJobs();
     fetchJobs();
   }
 
@@ -78,8 +79,8 @@ class JobViewModel extends ChangeNotifier {
   void saveJob(String jobId) async {
     try {
       _savedJobIds.add(jobId);
-      debugPrint('Saved Job IDs: $_savedJobIds');
       await _repository.saveJob(jobId);
+      await saveJobId(jobId); // <-- secure storage
       notifyListeners();
     } catch (e) {
       debugPrint('Error saving job: $e');
@@ -88,13 +89,19 @@ class JobViewModel extends ChangeNotifier {
 
   void unsaveJob(String jobId) async {
     try {
-      await _repository.unsaveJob(jobId);
       _savedJobIds.remove(jobId);
-      debugPrint('Unsave successful: $jobId');
+      await _repository.unsaveJob(jobId);
+      await unsaveJobId(jobId); // <-- secure storage
       notifyListeners();
     } catch (e) {
       debugPrint('Error unsaving job: $e');
     }
+  }
+
+  Future<void> _loadSavedJobs() async {
+    final ids = await getSavedJobIds();
+    _savedJobIds.addAll(ids);
+    notifyListeners();
   }
 
   bool isJobSaved(String jobId) {
