@@ -1,10 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lockedin/features/auth/services/user_credentials_provider.dart';
+import 'package:lockedin/features/company/model/repository/company_repository.dart';
+import 'package:lockedin/features/jobs/model/job_model.dart';
 import 'package:lockedin/features/jobs/view/contact_info.dart';
 import 'package:lockedin/features/jobs/viewmodel/job_view_model.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:sizer/sizer.dart';
+
+final _secureStorage = FlutterSecureStorage();
+
+Future<void> storeApplicationStatus(String jobId, bool hasApplied) async {
+  await _secureStorage.write(key: jobId, value: hasApplied ? 'true' : 'false');
+}
+
+Future<bool> getApplicationStatus(String jobId) async {
+  final status = await _secureStorage.read(key: jobId);
+  return status == 'true';
+}
 
 class JobDetailsPage extends ConsumerStatefulWidget {
   final String jobId;
@@ -16,11 +30,39 @@ class JobDetailsPage extends ConsumerStatefulWidget {
 }
 
 class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
+  String? companyName;
+  String status = 'Not Applied'; // Default status
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(JobViewModel.provider).fetchJobById(widget.jobId);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final viewModel = ref.read(JobViewModel.provider);
+      await viewModel.fetchJobById(widget.jobId);
+      final job = viewModel.selectedJob;
+
+      if (job != null) {
+        if ((job.company?.isEmpty ?? true) &&
+            job.companyId?.isNotEmpty == true) {
+          final companyRepo = CompanyRepository();
+          final company = await companyRepo.getCompanyById(job.companyId);
+          if (company != null) {
+            setState(() {
+              companyName = company.name;
+            });
+          }
+        } else {
+          setState(() {
+            companyName = job.company ?? 'Unknown Company';
+          });
+        }
+
+        // Check if the user has already applied
+        final hasApplied = await getApplicationStatus(widget.jobId);
+        setState(() {
+          status = hasApplied ? 'Pending' : 'Not Applied';
+        });
+      }
     });
   }
 
@@ -42,7 +84,28 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
       error: (err, stack) => Scaffold(body: Center(child: Text('Error: $err'))),
       data: (credentials) {
         final userId = credentials['email'] ?? '';
-        final status = jobViewModel.getApplicationStatusForCurrentUser(userId);
+
+        final job = jobViewModel.jobs.firstWhere(
+          (job) => job.id == widget.jobId,
+          orElse:
+              () => JobModel(
+                id: widget.jobId,
+                title: 'Unknown Job',
+                company: 'Unknown Company',
+                companyId: '',
+                location: 'Unknown Location',
+                description: '',
+                experienceLevel: 'Unknown',
+                salaryRange: 'N/A',
+                isRemote: false,
+                workplaceType: 'Unknown',
+                screeningQuestions: [],
+                applicants: [],
+                accepted: [],
+                rejected: [],
+                applicationStatus: 'Not Applied',
+              ),
+        );
 
         return Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
@@ -57,7 +120,6 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Job Title
                 Text(
                   job.title,
                   style: theme.textTheme.headlineMedium?.copyWith(
@@ -65,8 +127,6 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                   ),
                 ),
                 SizedBox(height: 1.h),
-
-                // Company & Location
                 Text(
                   '${job.company} • ${job.location}',
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -74,15 +134,11 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                   ),
                 ),
                 SizedBox(height: 1.h),
-
-                // Industry
                 if (job.industry != null)
                   Text(
                     'Industry: ${job.industry}',
                     style: theme.textTheme.bodyLarge,
                   ),
-
-                // Workplace Type
                 Text(
                   'Workplace Type: ${job.workplaceType}',
                   style: theme.textTheme.bodyLarge,
@@ -98,8 +154,6 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                       ),
                     ),
                   ),
-
-                // Experience Level
                 Text(
                   'Experience Level: ${job.experienceLevel}',
                   style: theme.textTheme.bodyLarge?.copyWith(
@@ -107,7 +161,6 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                   ),
                 ),
                 SizedBox(height: 1.h),
-
                 Row(
                   children: [
                     const Icon(Icons.info_outline, size: 18),
@@ -128,10 +181,7 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                     ),
                   ],
                 ),
-
                 SizedBox(height: 2.h),
-
-                // Easy Apply Button
                 Row(
                   children: [
                     Expanded(
@@ -154,6 +204,7 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                                           screeningQuestions:
                                               job.screeningQuestions,
                                           userId: userId,
+                                          jobId: job.id,
                                         ),
                                   ),
                                 );
@@ -172,6 +223,12 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                                       answers: answers,
                                     );
 
+                                    await storeApplicationStatus(
+                                      job.id,
+                                      true,
+                                    ); // Store the application status
+
+                                    // After applying, we need to fetch job again and update status
                                     await jobViewModel.fetchJobById(job.id);
 
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -181,7 +238,11 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                                         ),
                                       ),
                                     );
-                                    setState(() {});
+
+                                    setState(() {
+                                      status =
+                                          'Pending'; // Update the status immediately after applying
+                                    });
                                   } catch (e) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -200,10 +261,7 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                     ),
                   ],
                 ),
-
                 SizedBox(height: 1.h),
-
-                // Description
                 Expanded(
                   child: SingleChildScrollView(
                     child: Text(
