@@ -93,14 +93,7 @@ class ChatConversationRepository {
     try {
       // Make sure user data is loaded before trying to send a message
       await _authService.fetchCurrentUser();
-      
-      // Get the current user ID after ensuring it's loaded
-      // final currentUser = _authService.currentUser;
-      // if (currentUser == null) {
-      //   debugPrint('No authenticated user found');
-      //   throw Exception('You must be logged in to send messages');
-      // }
-      
+           
       // Create the request body with the required fields according to the API spec
       final Map<String, dynamic> body = {
         'type': chatType,
