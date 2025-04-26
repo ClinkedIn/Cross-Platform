@@ -81,9 +81,7 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       
       // Then load the conversation
       await _loadConversation();
-      
-      // Mark as read when opening the conversation
-      await markChatAsRead();
+
     } catch (e) {
       debugPrint('Error in initialization: $e');
       state = state.copyWith(error: e.toString(), isLoading: false);
@@ -302,36 +300,7 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     );
   }
   
-  /// Mark chat as read
-  /// This sets the unread count to zero for the current user
-  Future<bool> markChatAsRead() async {
-    try {
-      
-      // Call the repository method to mark as read
-      final success = await _repository.markChatAsRead(chatId);
-      
-      // Update the state to reflect the read status
-      if (success) {
-        state = state.copyWith(isMarkedAsRead: true);
-        
-        // Also update the unread count in the parent chat list if possible
-        try {
-          // This would be implemented in a real app to update the chat list
-          // For now just log it
-          debugPrint('Chat marked as read successfully');
-        } catch (e) {
-          debugPrint('Error updating chat list unread count: $e');
-        }
-      } else {
-        debugPrint('Failed to mark chat as read');
-      }
-      
-      return success;
-    } catch (e) {
-      debugPrint('Error in markChatAsRead: $e');
-      return false;
-    }
-  }
+  
 }
 
 // Define the provider correctly

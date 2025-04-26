@@ -33,21 +33,26 @@ class ChatRepository {
   
   /// Marks a chat as read in the backend
   Future<void> markChatAsRead(String chatId) async {
+    print('Marking chat as read: $chatId');
     try {
-      // Use proper endpoint for marking chat as read - the URL was returning HTML docs
-      // We'll create a proper URL that matches your API's expected format
+      // Use proper endpoint for marking chat as read
       final endpoint = '${Constants.chatMarkAsReadEndpoint}/$chatId';
       
       final response = await RequestService.patch(
         endpoint,
-        body: {'read': true}
+        body:{}
       );
       
       if (response.statusCode != 200) {
-        throw Exception("Failed to mark chat as read: ${response.statusCode}");
+        print("Error: ${response.statusCode}");
+        throw Exception("Failed to mark chat as read: ${response.body}");
       }
+
+      if (response.statusCode == 200) {
+        print("${response.statusCode}: Chat marked as read successfully.");
+      }
+
     } catch (e) {
-      print("Error marking chat as read: $e");
       throw Exception("Failed to update chat status. Please try again.");
     }
   }
@@ -66,9 +71,39 @@ class ChatRepository {
       if (response.statusCode != 200) {
         throw Exception("Failed to mark chat as unread: ${response.statusCode}");
       }
+
+      if (response.statusCode == 200) {
+        print("${response.statusCode}: Chat marked as unread successfully.");
+      }
+
     } catch (e) {
       print("Error marking chat as unread: $e");
       throw Exception("Failed to update chat status. Please try again.");
+    }
+  }
+  
+  /// Gets the total count of unread messages across all chats
+  Future<int> getTotalUnreadCount() async {
+    try {
+      // Use the endpoint from your API documentation
+      final response = await RequestService.get(Constants.allChatsEndpoint);
+      
+      if (response.statusCode != 200) {
+        throw Exception("Failed to fetch unread count: ${response.statusCode}");
+      }
+
+      if (response.statusCode == 200) {
+        print("${response.statusCode}: Unread count fetched successfully.");
+      }
+      
+      // Parse the response body string to JSON
+      final Map<String, dynamic> jsonData = jsonDecode(response.body);
+      
+      // Extract the total unread count
+      return jsonData['totalUnread'] as int;
+    } catch (e) {
+      print("Error fetching total unread count: $e");
+      throw Exception("Failed to load unread message count. Please try again.");
     }
   }
 }

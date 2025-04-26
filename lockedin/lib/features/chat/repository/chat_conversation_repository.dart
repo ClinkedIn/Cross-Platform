@@ -161,42 +161,6 @@ class ChatConversationRepository {
     }
   }
   
-  /// Mark a chat as read for the current user
-  /// Returns true if successful, false otherwise
-  Future<bool> markChatAsRead(String chatId) async {
-    try {
-      // Use the mark as read endpoint
-      final endpoint = Constants.chatMarkAsReadEndpoint.replaceAll('{chatId}', chatId);
-      
-      // Send the PATCH request to mark as read
-      final response = await RequestService.patch(endpoint, body: {});
-      
-      // Check the response status
-      if (response.statusCode != 200) {
-        debugPrint('Error: Server returned status code ${response.statusCode}');
-        throw Exception('Failed to mark chat as read: ${response.statusCode}');
-      }
-      
-      // Check if the response contains a success flag
-      if (response.body.isNotEmpty && response.body.startsWith('{')) {
-        try {
-          final jsonResponse = jsonDecode(response.body);
-          if (jsonResponse['success'] == false) {
-            throw Exception(jsonResponse['message'] ?? 'Unknown error');
-          }
-        } catch (e) {
-          // If we can't parse the JSON, but the status code is 200, consider it a success
-          debugPrint('Warning: Could not parse JSON response: $e');
-        }
-      }
-      
-      debugPrint('Chat marked as read successfully');
-      return true;
-    } catch (e) {
-      debugPrint('Error marking chat as read: $e');
-      return false;
-    }
-  }
 }
 
 final authServiceProvider = Provider<AuthService>((ref) {

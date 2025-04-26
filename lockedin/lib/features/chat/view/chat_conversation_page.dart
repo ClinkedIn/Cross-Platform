@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
@@ -31,9 +30,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       // Make sure user profile is loaded
       _ensureUserDataLoaded();
       // Mark messages as read
-      ref.read(chatConversationProvider(widget.chat.id).notifier).markChatAsRead();
-      // Check connection to help debug server issues
-      //_checkServerConnection();
     });
   }
 
@@ -118,44 +114,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       );
     });
   }
-  
-  /// Show a dialog with connection diagnostic information
-  // void _showConnectionDiagnosticDialog() {
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: Text('Server Connection Issue'),
-  //       content: Column(
-  //         mainAxisSize: MainAxisSize.min,
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           Text('Unable to load messages from the server.'),
-  //           SizedBox(height: 16),
-  //           Text('Potential issues:', style: TextStyle(fontWeight: FontWeight.bold)),
-  //           SizedBox(height: 8),
-  //           Text('• The server may be offline or unreachable'),
-  //           Text('• You may need to check your network connection'),
-  //           Text('• The chat ID may be invalid'),
-  //           SizedBox(height: 16),
-  //           Text('Try refreshing the conversation or checking the server status.'),
-  //         ],
-  //       ),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () => context.pop(),
-  //           child: Text('CLOSE'),
-  //         ),
-  //         ElevatedButton(
-  //           onPressed: () {
-  //             context.pop();
-  //             ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
-  //           },
-  //           child: Text('RETRY'),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
   
   // Ensure the user data is loaded
   Future<void> _ensureUserDataLoaded() async {

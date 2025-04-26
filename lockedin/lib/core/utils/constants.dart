@@ -11,9 +11,10 @@ class Constants {
       'assets/images/default_cover_photo.jpeg';
 
   // Server URLs
-  static const String _emulatorUrl = "http://10.0.2.2:3000";
-  static const String _physicalDeviceUrl =
-      "http://192.168.1.23:3000"; // Your actual IP address
+  static const String _emulatorUrl = "https://www.lockedin-cufe.me/api";
+  //"http://10.0.2.2:3000";
+  static const String _physicalDeviceUrl = "https://www.lockedin-cufe.me/api";
+      //"http://192.168.1.15:3000"; // Your actual IP address
 
   // We'll use this as the baseUrl getter until we know for sure
   static String baseUrl = _physicalDeviceUrl; // Default to physical device URL
@@ -83,11 +84,16 @@ class Constants {
   static const String allChatsEndpoint = '/chats/all-chats';
   static const String chatMarkAsReadEndpoint = '/chats/mark-as-read';
   static const String chatMarkAsUnreadEndpoint = '/chats/mark-as-unread';
+  static const String chatGetUnreadCount = '/messages/unread-count';
 
   /// Endpoint to fetch a specific chat conversation
   /// Use: '/chats/direct-chat/{actualChatId}'
   static const String chatConversationEndpoint = '/chats/direct-chat/{chatId}';
-
+  
+  /// Block and Unblock endpoints 
+  static const String blockUserEndpoint = '/messages/block/{userId}';
+  static const String unblockUserEndpoint = '/messages/unblock/{userId}';
+  
   /// Endpoint to send a message to a specific chat
   /// Format: '/chats/direct-chat/{chatId}/messages'
   static const String chatMessagesEndpoint = '/messages';
