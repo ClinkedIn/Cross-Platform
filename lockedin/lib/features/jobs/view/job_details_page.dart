@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lockedin/features/auth/services/user_credentials_provider.dart';
-import 'package:lockedin/features/company/model/repository/company_repository.dart';
+import 'package:lockedin/features/company/repository/company_repository.dart';
 import 'package:lockedin/features/jobs/model/job_model.dart';
 import 'package:lockedin/features/jobs/view/contact_info.dart';
 import 'package:lockedin/features/jobs/viewmodel/job_view_model.dart';

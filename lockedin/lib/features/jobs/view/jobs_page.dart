@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/company/view/create_company_view.dart';
+import 'package:lockedin/features/company/view/dashboard_page.dart';
 import 'package:lockedin/features/jobs/view/saved_jobs_page.dart';
 import 'package:lockedin/features/jobs/viewmodel/job_view_model.dart';
 import 'package:lockedin/features/jobs/widgets/job_filter.widget.dart';
@@ -33,19 +35,32 @@ class JobsPage extends ConsumerWidget {
                     fontSize: 18.sp,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.bookmark),
-                  tooltip: 'Saved Jobs',
+                ElevatedButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const SavedJobsPage()),
+                      MaterialPageRoute(
+                        builder: (context) => const DashboardPage(),
+                      ),
                     );
                   },
+                  child: const Text('Create Company'),
                 ),
               ],
             ),
-
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: const Icon(Icons.bookmark),
+                tooltip: 'Saved Jobs',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SavedJobsPage()),
+                  );
+                },
+              ),
+            ),
             SizedBox(height: 1.h),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 3.h),

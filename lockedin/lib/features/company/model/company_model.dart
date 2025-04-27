@@ -1,5 +1,4 @@
-class CompanyModel {
-  final String id;
+class Company {
   final String userId;
   final String name;
   final String address;
@@ -9,13 +8,13 @@ class CompanyModel {
   final String organizationType;
   final String logo;
   final String tagLine;
-  final List<String> followers;
-  final List<String> visitors;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final String? id;
+  final List<String>? followers;
+  final List<String>? visitors;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
-  const CompanyModel({
-    required this.id,
+  Company({
     required this.userId,
     required this.name,
     required this.address,
@@ -25,47 +24,45 @@ class CompanyModel {
     required this.organizationType,
     required this.logo,
     required this.tagLine,
-    required this.followers,
-    required this.visitors,
-    required this.createdAt,
-    required this.updatedAt,
+    this.id,
+    this.followers,
+    this.visitors,
+    this.createdAt,
+    this.updatedAt,
   });
 
-  factory CompanyModel.fromJson(Map<String, dynamic> json) {
-    return CompanyModel(
-      id: json['_id'] ?? '',
-      userId: json['userId'] ?? '',
-      name: json['name'] ?? '',
-      address: json['address'] ?? '',
-      website: json['website'] ?? '',
-      industry: json['industry'] ?? '',
-      organizationSize: json['organizationSize'] ?? '',
-      organizationType: json['organizationType'] ?? '',
-      logo: json['logo'] ?? '',
-      tagLine: json['tagLine'] ?? '',
+  factory Company.fromJson(Map<String, dynamic> json) {
+    return Company(
+      userId: json['userId'],
+      name: json['name'],
+      address: json['address'],
+      website: json['website'],
+      industry: json['industry'],
+      organizationSize: json['organizationSize'],
+      organizationType: json['organizationType'],
+      logo: json['logo'],
+      tagLine: json['tagLine'],
+      id: json['_id'],
       followers: List<String>.from(json['followers'] ?? []),
       visitors: List<String>.from(json['visitors'] ?? []),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      '_id': id,
-      'userId': userId,
-      'name': name,
-      'address': address,
-      'website': website,
-      'industry': industry,
-      'organizationSize': organizationSize,
-      'organizationType': organizationType,
-      'logo': logo,
-      'tagLine': tagLine,
-      'followers': followers,
-      'visitors': visitors,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      "userId": userId,
+      "name": name,
+      "address": address,
+      "website": website,
+      "industry": industry,
+      "organizationSize": organizationSize,
+      "organizationType": organizationType,
+      "logo": logo,
+      "tagLine": tagLine,
     };
   }
 }
