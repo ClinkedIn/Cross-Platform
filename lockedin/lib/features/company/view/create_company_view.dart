@@ -3,24 +3,26 @@ import 'package:lockedin/features/company/model/company_model.dart';
 import 'package:lockedin/features/company/viewmodel/company_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+final companyViewModelProvider = ChangeNotifierProvider<CompanyViewModel>((
+  ref,
+) {
+  return CompanyViewModel();
+});
+
 class CompanyView extends ConsumerWidget {
   const CompanyView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the company view model provider
     final companyViewModel = ref.watch(companyViewModelProvider);
 
     final _formKey = GlobalKey<FormState>();
     final _nameController = TextEditingController();
     final _addressController = TextEditingController();
-    final _websiteController = TextEditingController();
     final _industryController = TextEditingController();
     final _organizationSizeController = TextEditingController();
     final _organizationTypeController = TextEditingController();
-    final _logoController = TextEditingController();
     final _tagLineController = TextEditingController();
-    final _userIdController = TextEditingController();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Create Company')),
@@ -34,12 +36,6 @@ class CompanyView extends ConsumerWidget {
                   child: ListView(
                     children: [
                       TextFormField(
-                        controller: _userIdController,
-                        decoration: const InputDecoration(labelText: 'User ID'),
-                        validator:
-                            (value) => value!.isEmpty ? 'Required' : null,
-                      ),
-                      TextFormField(
                         controller: _nameController,
                         decoration: const InputDecoration(labelText: 'Name'),
                         validator:
@@ -48,12 +44,6 @@ class CompanyView extends ConsumerWidget {
                       TextFormField(
                         controller: _addressController,
                         decoration: const InputDecoration(labelText: 'Address'),
-                        validator:
-                            (value) => value!.isEmpty ? 'Required' : null,
-                      ),
-                      TextFormField(
-                        controller: _websiteController,
-                        decoration: const InputDecoration(labelText: 'Website'),
                         validator:
                             (value) => value!.isEmpty ? 'Required' : null,
                       ),
@@ -82,14 +72,6 @@ class CompanyView extends ConsumerWidget {
                             (value) => value!.isEmpty ? 'Required' : null,
                       ),
                       TextFormField(
-                        controller: _logoController,
-                        decoration: const InputDecoration(
-                          labelText: 'Logo URL',
-                        ),
-                        validator:
-                            (value) => value!.isEmpty ? 'Required' : null,
-                      ),
-                      TextFormField(
                         controller: _tagLineController,
                         decoration: const InputDecoration(labelText: 'Tagline'),
                         validator:
@@ -100,16 +82,13 @@ class CompanyView extends ConsumerWidget {
                         onPressed: () async {
                           if (_formKey.currentState!.validate()) {
                             final newCompany = Company(
-                              userId: _userIdController.text.trim(),
                               name: _nameController.text.trim(),
                               address: _addressController.text.trim(),
-                              website: _websiteController.text.trim(),
                               industry: _industryController.text.trim(),
                               organizationSize:
                                   _organizationSizeController.text.trim(),
                               organizationType:
                                   _organizationTypeController.text.trim(),
-                              logo: _logoController.text.trim(),
                               tagLine: _tagLineController.text.trim(),
                             );
 

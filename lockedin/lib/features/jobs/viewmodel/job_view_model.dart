@@ -17,7 +17,6 @@ class JobViewModel extends ChangeNotifier {
   final JobRepository _repository;
 
   JobViewModel(this._repository) {
-    _loadSavedJobs();
     fetchJobs();
   }
 
@@ -96,12 +95,6 @@ class JobViewModel extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error unsaving job: $e');
     }
-  }
-
-  Future<void> _loadSavedJobs() async {
-    final ids = await getSavedJobIds();
-    _savedJobIds.addAll(ids);
-    notifyListeners();
   }
 
   bool isJobSaved(String jobId) {

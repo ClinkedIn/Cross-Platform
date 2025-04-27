@@ -4,7 +4,7 @@ import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/features/jobs/model/job_model.dart';
 
 class JobRepository {
-  static const String _searchJobsEndpoint = '/search/jobs';
+  static const String _searchJobsEndpoint = '/api/search/jobs';
 
   Future<List<JobModel>> fetchJobs({
     String q = '',
@@ -40,7 +40,7 @@ class JobRepository {
   }
 
   Future<void> saveJob(String jobId) async {
-    final uri = Uri(path: '/jobs/$jobId/save');
+    final uri = Uri(path: '/api/jobs/$jobId/save');
 
     final response = await RequestService.post(
       uri.toString(),
@@ -54,7 +54,7 @@ class JobRepository {
   }
 
   Future<void> unsaveJob(String jobId) async {
-    final response = await RequestService.delete('/jobs/$jobId/save');
+    final response = await RequestService.delete('/api/jobs/$jobId/save');
 
     if (response.statusCode != 200) {
       final data = json.decode(response.body);
@@ -68,7 +68,7 @@ class JobRepository {
     required String contactPhone,
     required List<Map<String, String>> answers,
   }) async {
-    final uri = Uri(path: '/jobs/$jobId/apply');
+    final uri = Uri(path: '/api/jobs/$jobId/apply');
 
     final response = await RequestService.post(
       uri.toString(),
@@ -91,22 +91,22 @@ class JobRepository {
   }
 
   Future<JobModel> getJobById(String jobId) async {
-    final uri = Uri(path: '/jobs/$jobId');
+    final uri = Uri(path: '/api/jobs/$jobId');
 
     final response = await RequestService.get(uri.toString());
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      print('Fetched job by ID: ${jsonEncode(data)}');
+      debugPrint('Fetched job by ID: ${jsonEncode(data)}');
 
-      return JobModel.fromJson(data); // <- use `data` directly
+      return JobModel.fromJson(data); // THIS IS CORRECT NOW
     } else {
       throw Exception('Failed to fetch job by ID: ${response.statusCode}');
     }
   }
 
   Future<Map<String, dynamic>> getCompanyById(String companyId) async {
-    final uri = Uri(path: '/companies/$companyId');
+    final uri = Uri(path: '/api/companies/$companyId');
 
     final response = await RequestService.get(uri.toString());
 

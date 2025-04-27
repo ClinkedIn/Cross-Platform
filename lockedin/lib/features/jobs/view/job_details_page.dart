@@ -42,10 +42,11 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
       final job = viewModel.selectedJob;
 
       if (job != null) {
+        // Check if company is empty and companyId is not empty
         if ((job.company?.isEmpty ?? true) &&
-            job.companyId?.isNotEmpty == true) {
+            (job.companyId?.isNotEmpty ?? false)) {
           final companyRepo = CompanyRepository();
-          final company = await companyRepo.getCompanyById(job.companyId);
+          final company = await companyRepo.getCompanyById(job.companyId!);
           if (company != null) {
             setState(() {
               companyName = company.name;

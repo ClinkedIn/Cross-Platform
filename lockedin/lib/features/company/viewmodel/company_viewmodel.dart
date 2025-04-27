@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/company/model/company_model.dart';
 import 'package:lockedin/features/company/repository/company_repository.dart';
 
@@ -17,11 +16,15 @@ class CompanyViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   Company? get createdCompany => _createdCompany;
 
-  Future<void> createCompany(Company company) async {
+  Future<void> createCompany(Company company, {String? logoPath}) async {
     _setLoading(true);
     _clearError();
 
-    final result = await _companyRepository.createCompany(company);
+    // If logoPath is provided, we should handle it properly in the repository
+    final result = await _companyRepository.createCompany(
+      company,
+      logoPath: logoPath,
+    );
 
     if (result != null) {
       _createdCompany = result;
@@ -47,9 +50,3 @@ class CompanyViewModel extends ChangeNotifier {
     notifyListeners();
   }
 }
-
-final companyViewModelProvider = ChangeNotifierProvider<CompanyViewModel>((
-  ref,
-) {
-  return CompanyViewModel();
-});
