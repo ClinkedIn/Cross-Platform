@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lockedin/features/jobs/view/application_status.dart';
 
 class ContactInfoPage extends StatefulWidget {
   final List<Map<String, dynamic>> screeningQuestions;
   final String userId;
+  final String jobId; // Add jobId as a parameter
 
   const ContactInfoPage({
     Key? key,
     required this.screeningQuestions,
     required this.userId,
+    required this.jobId, // Receive jobId from the previous page
   }) : super(key: key);
 
   @override
@@ -60,12 +64,11 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
                 ],
               );
             }),
-
             SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context, {
-                  'userId': widget.userId, // ✅ Include userId in result
+                  'userId': widget.userId,
                   'email': _emailController.text,
                   'phone': _phoneController.text,
                   'answers':

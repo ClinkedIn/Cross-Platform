@@ -134,21 +134,20 @@ class JobFiltersWidget extends StatelessWidget {
             SizedBox(width: 3.w),
 
             // Experience Dropdown
-            _buildDropdown(
-              context: context,
-              hint: 'Experience',
-              value: _mapIntToExperience(selectedExperienceLevel),
-              items: experienceLevels,
-              onChanged: (newVal) {
-                onFiltersChanged(
-                  selectedLocation,
-                  selectedIndustry,
-                  selectedCompany,
-                  _mapExperienceToInt(newVal),
-                );
-              },
-            ),
-
+            // _buildDropdown(
+            //   context: context,
+            //   hint: 'Experience',
+            //   value: _mapIntToExperience(selectedExperienceLevel),
+            //   items: experienceLevels,
+            //   onChanged: (newVal) {
+            //     onFiltersChanged(
+            //       selectedLocation,
+            //       selectedIndustry,
+            //       selectedCompany,
+            //       _mapExperienceToInt(newVal),
+            //     );
+            //   },
+            // ),
             SizedBox(width: 3.w),
 
             // Location Dropdown

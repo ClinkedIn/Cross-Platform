@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/jobs/model/job_model.dart';
 import 'package:lockedin/features/jobs/repository/job_repository.dart';
+import 'package:lockedin/features/jobs/services/job_secure_storage.dart';
 
-/// Provides an instance of [JobRepository] to be used with Riverpod.
 final jobRepositoryProvider = Provider<JobRepository>((ref) {
   return JobRepository();
 });
 
-/// ViewModel that manages job listings, filters, search, and job actions.
 class JobViewModel extends ChangeNotifier {
-  /// Riverpod provider for [JobViewModel].
   static final provider = ChangeNotifierProvider<JobViewModel>((ref) {
     final repository = ref.watch(jobRepositoryProvider);
     return JobViewModel(repository);
@@ -18,14 +16,12 @@ class JobViewModel extends ChangeNotifier {
 
   final JobRepository _repository;
 
-  /// Creates an instance of [JobViewModel] and fetches initial jobs.
   JobViewModel(this._repository) {
+    _loadSavedJobs();
     fetchJobs();
   }
 
   List<JobModel> _jobs = [];
-
-  /// List of jobs fetched from the repository.
   List<JobModel> get jobs => _jobs;
 
   String _searchQuery = '';
@@ -35,22 +31,18 @@ class JobViewModel extends ChangeNotifier {
   int _minExperience = 0;
   final Set<String> _savedJobIds = {};
 
-  /// The selected location filter.
   String? get selectedLocation => _selectedLocation;
-
-  /// The selected industry filter.
   String? get selectedIndustry => _selectedIndustry;
-
-  /// The selected company ID filter.
   String? get selectedCompanyId => _selectedCompanyId;
-
-  /// The selected minimum experience level filter.
   int get minExperience => _minExperience;
-
-  /// List of saved job IDs.
   List<String> get savedJobs => _savedJobIds.toList();
 
-  /// Fetches jobs from the repository based on current filters and query.
+  JobModel? _selectedJob;
+  JobModel? get selectedJob => _selectedJob;
+
+  String? _companyName;
+  String? get companyName => _companyName;
+
   Future<void> fetchJobs() async {
     try {
       _jobs = await _repository.fetchJobs(
@@ -66,13 +58,11 @@ class JobViewModel extends ChangeNotifier {
     }
   }
 
-  /// Updates the search query and refetches jobs.
   void updateSearchQuery(String query) {
     _searchQuery = query;
     fetchJobs();
   }
 
-  /// Updates filter values and refetches jobs.
   void updateFilters({
     String? location,
     String? industry,
@@ -86,37 +76,55 @@ class JobViewModel extends ChangeNotifier {
     fetchJobs();
   }
 
-  /// Saves a job by ID and updates the saved list.
   void saveJob(String jobId) async {
     try {
       _savedJobIds.add(jobId);
-      debugPrint('Saved Job IDs: $_savedJobIds');
       await _repository.saveJob(jobId);
+      await saveJobId(jobId); // <-- secure storage
       notifyListeners();
     } catch (e) {
       debugPrint('Error saving job: $e');
     }
   }
 
-  /// Unsaves a job by ID and updates the saved list.
   void unsaveJob(String jobId) async {
     try {
-      await _repository.unsaveJob(jobId);
       _savedJobIds.remove(jobId);
-      debugPrint('Unsave successful: $jobId');
+      await _repository.unsaveJob(jobId);
+      await unsaveJobId(jobId); // <-- secure storage
       notifyListeners();
     } catch (e) {
       debugPrint('Error unsaving job: $e');
     }
   }
 
-  /// Checks if a job is saved.
+  Future<void> _loadSavedJobs() async {
+    final ids = await getSavedJobIds();
+    _savedJobIds.addAll(ids);
+    notifyListeners();
+  }
+
   bool isJobSaved(String jobId) {
     return _savedJobIds.contains(jobId);
   }
 
-  /// Applies to a job with provided contact details and answers.
-  /// Applies to a job with provided contact details and answers.
+  bool isAlreadyApplied(String userId) {
+    if (_selectedJob == null)
+      return false; // If no job is selected, return false
+
+    final job = _selectedJob!;
+    final isApplied =
+        job.applicants.contains(userId) ||
+        job.accepted.contains(userId) ||
+        job.rejected.contains(userId);
+
+    if (isApplied) {
+      debugPrint("User $userId has already applied or been accepted/rejected.");
+    }
+
+    return isApplied;
+  }
+
   Future<void> applyToJob({
     required String jobId,
     required String contactEmail,
@@ -133,64 +141,53 @@ class JobViewModel extends ChangeNotifier {
 
       debugPrint('API Response: $response');
 
-      // Check for "alreadyApplied" status in the response
+      // Update application status based on the response
       if (response['alreadyApplied'] == true) {
-        // If already applied, update the job's application status to "Pending"
-        _selectedJob?.applicationStatus = 'Pending';
-      } else {
-        // Otherwise, assume successful application
         _selectedJob?.applicationStatus =
-            'Pending'; // Or other status as needed
+            response['applicationStatus'] ?? 'Pending';
+      } else {
+        _selectedJob?.applicationStatus = 'Pending';
       }
 
-      debugPrint('Application submitted successfully');
+      // Store the application status in Secure Storage
+      await storeApplicationStatus(
+        jobId,
+        true,
+      ); // Storing the status as "applied"
 
-      // Fetch updated job details after applying
-      await fetchJobById(jobId); // Ensure we have the latest job status
+      // Refresh job details
+      await fetchJobById(jobId);
+
+      // Notify listeners to update the UI
+      notifyListeners();
+
+      debugPrint('Application submitted successfully');
     } catch (e) {
       debugPrint('Error applying to job: $e');
       rethrow;
     }
   }
 
-  JobModel? _selectedJob;
-
-  JobModel? get selectedJob => _selectedJob;
-
   Future<void> fetchJobById(String jobId) async {
     try {
       _selectedJob = await _repository.getJobById(jobId);
+      if (_selectedJob != null) {
+        // Fetch company name after fetching the job
+        await _fetchCompanyNameById(_selectedJob!.companyId);
+      }
       notifyListeners();
     } catch (e) {
       debugPrint('Error fetching job by ID: $e');
     }
   }
 
-  String getApplicationStatus({
-    required String userId,
-    required List<dynamic> applicants,
-    required List<dynamic> accepted,
-    required List<dynamic> rejected,
-  }) {
-    if (accepted.contains(userId)) {
-      return 'Accepted';
-    } else if (rejected.contains(userId)) {
-      return 'Rejected';
-    } else if (applicants.contains(userId)) {
-      return 'Pending';
-    } else {
-      return 'Not Applied';
+  Future<void> _fetchCompanyNameById(String companyId) async {
+    try {
+      final companyData = await _repository.getCompanyById(companyId);
+      _companyName = companyData['name'];
+      debugPrint('Fetched company name: $_companyName');
+    } catch (e) {
+      debugPrint('Error fetching company name: $e');
     }
-  }
-
-  String getApplicationStatusForCurrentUser(String userId) {
-    if (_selectedJob == null) return 'Not Applied';
-
-    return getApplicationStatus(
-      userId: userId,
-      applicants: _selectedJob!.applicants,
-      accepted: _selectedJob!.accepted,
-      rejected: _selectedJob!.rejected,
-    );
   }
 }

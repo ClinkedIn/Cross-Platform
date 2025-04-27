@@ -104,4 +104,18 @@ class JobRepository {
       throw Exception('Failed to fetch job by ID: ${response.statusCode}');
     }
   }
+
+  Future<Map<String, dynamic>> getCompanyById(String companyId) async {
+    final uri = Uri(path: '/companies/$companyId');
+
+    final response = await RequestService.get(uri.toString());
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print('Fetched company data: ${jsonEncode(data)}');
+      return data;
+    } else {
+      throw Exception('Failed to fetch company: ${response.statusCode}');
+    }
+  }
 }
