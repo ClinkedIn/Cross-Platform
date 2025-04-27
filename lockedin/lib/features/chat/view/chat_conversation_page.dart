@@ -57,8 +57,11 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
 
   // Updated to use the viewModel's sendMessage implementation
   void sendMessage() {
+
+    // Ensure the message is not empty before sending
     if (_messageController.text.trim().isEmpty) return;
     
+    // Get the trimmed message text and clear the input field
     final messageText = _messageController.text.trim();
     _messageController.clear();
     
@@ -160,10 +163,8 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
               ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
             },
           ),
-          IconButton(
-            icon: Icon(Icons.more_vert),
-            onPressed: () {},
-          ),
+          // Block/unblock button
+          _buildBlockButton(),
         ],
       ),
       body: Column(
@@ -222,29 +223,62 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                       )
                     : _buildChatMessagesList(chatState),
           ),
-          ChatInputField(
-            messageController: _messageController,
-            onAttachmentPressed: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (context) => AttachmentWidget(
-                  onDocumentPressed: () {
-                    _pickDocument(); 
-                    Navigator.pop(context);
-                  },
-                  onCameraPressed: () {
-                    _pickImageFromCamera();
-                    Navigator.pop(context);
-                  },
-                  onMediaPressed: () {
-                    _pickImageFromGallery();
-                    Navigator.pop(context);
-                  },
-                ),
+          // Conditionally show chat input based on block status
+          FutureBuilder<bool>(
+            future: ref.read(chatConversationProvider(widget.chat.id).notifier).isUserBlocked(),
+            builder: (context, snapshot) {
+              final isBlocked = snapshot.data ?? false;
+              
+              if (isBlocked) {
+                // Show a message instead of input field when blocked
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    border: Border(
+                      top: BorderSide(color: Colors.grey[300]!),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.block, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text(
+                        'You cannot message this user',
+                        style: TextStyle(color: Colors.red[700]),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              
+              // Show regular chat input field when not blocked
+              return ChatInputField(
+                messageController: _messageController,
+                onAttachmentPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (context) => AttachmentWidget(
+                      onDocumentPressed: () {
+                        _pickDocument(); 
+                        Navigator.pop(context);
+                      },
+                      onCameraPressed: () {
+                        _pickImageFromCamera();
+                        Navigator.pop(context);
+                      },
+                      onMediaPressed: () {
+                        _pickImageFromGallery();
+                        Navigator.pop(context);
+                      },
+                    ),
+                  );
+                },
+                onSendPressed: sendMessage,
+                isDarkMode: isDarkMode,
               );
             },
-            onSendPressed: sendMessage,
-            isDarkMode: isDarkMode,
           ),
         ],
       ),
@@ -566,6 +600,93 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Add this function to check the block status
+  Widget _buildBlockButton() {
+    return FutureBuilder<bool>(
+      future: ref.read(chatConversationProvider(widget.chat.id).notifier).isUserBlocked(),
+      builder: (context, snapshot) {
+        final isBlocked = snapshot.data ?? false;
+        
+        return IconButton(
+          icon: Icon(
+            isBlocked ? Icons.block : Icons.block_outlined,
+            color: isBlocked ? Colors.red : null,
+          ),
+          onPressed: () {
+            _showBlockUserDialog(context, isBlocked);
+          },
+        );
+      },
+    );
+  }
+
+  void _showBlockUserDialog(BuildContext context, bool isBlocked) {
+    // Store a reference to the scaffold messenger before showing dialog
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(isBlocked ? 'Unblock User' : 'Block User'),
+        content: Text(
+          isBlocked
+              ? 'Would you like to unblock this user? They will be able to send you messages again.'
+              : 'Would you like to block this user? You won\'t receive any more messages from them.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Close the dialog first
+              Navigator.pop(dialogContext);
+              
+              // Get the view model
+              final viewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+              
+              
+              
+              // Call the toggle block method
+              viewModel.toggleBlockUser().then((result) {
+                if (result['success'] == true) {
+                  // Use the stored scaffold messenger reference
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        isBlocked
+                            ? 'User has been unblocked'
+                            : 'User has been blocked',
+                      ),
+                      backgroundColor: isBlocked ? Colors.green : Colors.red,
+                    ),
+                  );
+                  // Force a rebuild to update the block button
+                  setState(() {});
+                } else {
+                  // Use the stored scaffold messenger reference
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text('Error: ${result['error']}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              });
+            },
+            child: Text(
+              isBlocked ? 'Unblock' : 'Block',
+              style: TextStyle(
+                color: isBlocked ? Colors.green : Colors.red,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

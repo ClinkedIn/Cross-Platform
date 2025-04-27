@@ -387,6 +387,68 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
   void clearSelectedAttachment() {
     state = state.copyWith(selectedAttachment: null);
   }
+
+  String? getReceiverUserId() {
+    // First try getting from the repository (which extracts it from the API response)
+    final receiverId = _repository.receiverId;
+    if (receiverId != null) {
+      return receiverId;
+    }
+
+    return null;
+  }
+  
+  Future<bool> isUserBlocked() async {
+    final receiverId = getReceiverUserId();
+    if (receiverId == null) {
+      debugPrint('Cannot check block status: No receiver ID found');
+      return false;
+    }
+    
+    try {
+      return await _repository.isUserBlocked(receiverId);
+    } catch (e) {
+      debugPrint('Error checking block status: $e');
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> toggleBlockUser() async {
+    final receiverId = getReceiverUserId();
+    if (receiverId == null) {
+      return {
+        'success': false,
+        'error': 'Cannot find the user to block/unblock',
+      };
+    }
+
+    try {
+      // Check if the user is already blocked
+      final isBlocked = await isUserBlocked();
+      
+      Map<String, dynamic> result;
+      if (isBlocked) {
+        // If blocked, unblock them
+        result = await _repository.unblockUser(receiverId);
+      } else {
+        // If not blocked, block them
+        result = await _repository.blockUser(receiverId);
+      }
+      
+      // If successful, refresh the conversation
+      if (result['success'] == true) {
+        await refreshConversation();
+      }
+      
+      return result;
+    } catch (e) {
+      debugPrint('Error toggling block status: $e');
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
 }
 
 // Define the provider correctly

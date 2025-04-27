@@ -1,3 +1,26 @@
+class ChatParticipant {
+  final String id;
+  final String firstName;
+  final String lastName;
+  final String? profilePicture;
+
+  ChatParticipant({
+    required this.id,
+    required this.firstName,
+    required this.lastName,
+    this.profilePicture,
+  });
+
+  factory ChatParticipant.fromJson(Map<String, dynamic> json) {
+    return ChatParticipant(
+      id: json['_id'] ?? '',
+      firstName: json['firstName'] ?? '',
+      lastName: json['lastName'] ?? '',
+      profilePicture: json['profilePicture'],
+    );
+  }
+}
+
 class Chat {
   final String id;
   final String name;
@@ -8,6 +31,7 @@ class Chat {
   final bool isSentByUser;
   final DateTime timestamp;
   final String senderName;
+  final List<ChatParticipant> participants;
 
   Chat({
     required this.id,
@@ -19,34 +43,10 @@ class Chat {
     required this.isSentByUser,
     required this.timestamp,
     required this.senderName,
+    this.participants = const [],
   });
 
-  // Create a copy of this Chat with modified fields
-  Chat copyWith({
-    String? id,
-    String? name,
-    String? chatType,
-    int? unreadCount,
-    String? imageUrl,
-    String? lastMessage,
-    bool? isSentByUser,
-    DateTime? timestamp,
-    String? senderName,
-  }) {
-    return Chat(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      chatType: chatType ?? this.chatType,
-      unreadCount: unreadCount ?? this.unreadCount,
-      imageUrl: imageUrl ?? this.imageUrl,
-      lastMessage: lastMessage ?? this.lastMessage,
-      isSentByUser: isSentByUser ?? this.isSentByUser,
-      timestamp: timestamp ?? this.timestamp,
-      senderName: senderName ?? this.senderName,
-    );
-  }
-
-  // Create a Chat object from the API JSON response
+  // Update the fromJson factory method to parse participants
   factory Chat.fromJson(Map<String, dynamic> json) {
     // Extract profile picture URL based on chat type
     String profilePic = '';
@@ -76,6 +76,19 @@ class Chat {
       }
     }
 
+    // Extract participants
+    List<ChatParticipant> participants = [];
+    if (json['participants'] != null) {
+      // Handle different structures of participants
+      if (json['participants'] is Map && json['participants']['otherUser'] != null) {
+        participants.add(ChatParticipant.fromJson(json['participants']['otherUser']));
+      } else if (json['participants'] is List) {
+        participants = (json['participants'] as List)
+            .map((p) => ChatParticipant.fromJson(p))
+            .toList();
+      }
+    }
+
     return Chat(
       id: json['_id'] ?? '',
       name: json['name'] ?? '',
@@ -86,21 +99,34 @@ class Chat {
       isSentByUser: isMine,
       timestamp: messageTime,
       senderName: sender,
+      participants: participants,
     );
   }
 
-  // Convert this Chat object to a JSON map
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'chatType': chatType,
-      'unreadCount': unreadCount,
-      'imageUrl': imageUrl,
-      'lastMessage': lastMessage,
-      'isSentByUser': isSentByUser,
-      'timestamp': timestamp.toIso8601String(),
-      'senderName': senderName,
-    };
+  // Make sure to include participants in the copyWith method
+  Chat copyWith({
+    String? id,
+    String? name,
+    String? chatType,
+    int? unreadCount,
+    String? imageUrl,
+    String? lastMessage,
+    bool? isSentByUser,
+    DateTime? timestamp,
+    String? senderName,
+    List<ChatParticipant>? participants,
+  }) {
+    return Chat(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      chatType: chatType ?? this.chatType,
+      unreadCount: unreadCount ?? this.unreadCount,
+      imageUrl: imageUrl ?? this.imageUrl,
+      lastMessage: lastMessage ?? this.lastMessage,
+      isSentByUser: isSentByUser ?? this.isSentByUser,
+      timestamp: timestamp ?? this.timestamp,
+      senderName: senderName ?? this.senderName,
+      participants: participants ?? this.participants,
+    );
   }
 }

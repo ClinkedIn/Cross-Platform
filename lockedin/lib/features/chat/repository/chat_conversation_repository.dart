@@ -9,12 +9,15 @@ import 'package:lockedin/core/services/auth_service.dart';
 
 class ChatConversationRepository {
   final AuthService _authService;
+  String? _receiverId; // Add this to store the receiver ID
   
   ChatConversationRepository(this._authService);
 
+  // Getter for receiverId
+  String? get receiverId => _receiverId;
+
   Future<Map<String, dynamic>> fetchConversation(String chatId) async {
     try {
-
       // Use the chat conversation endpoint from constants
       final endpoint = Constants.chatConversationEndpoint.replaceAll('{chatId}', chatId);
       
@@ -39,7 +42,63 @@ class ChatConversationRepository {
           final Map<String, dynamic> jsonData = jsonDecode(responseBody);
           
           // Check if response has the expected structure
-          if (jsonData['success'] == true && jsonData['chat'] != null) {
+          if (jsonData['success'] == true) {
+            // Extract the receiver ID from the otherUser field at the root level
+            if (jsonData['otherUser'] != null) {
+              _receiverId = jsonData['otherUser']['_id'];
+              debugPrint('Extracted receiver ID from otherUser: $_receiverId');
+            } 
+            // Also try checking within chat.participants if that exists
+            else if (jsonData['chat'] != null && jsonData['chat']['participants'] != null) {
+              final participants = jsonData['chat']['participants'];
+              
+              // Check if otherUser exists in participants
+              if (participants['otherUser'] != null) {
+                _receiverId = participants['otherUser']['_id'];
+                debugPrint('Extracted receiver ID: $_receiverId');
+              } else if (participants is List) {
+                // If participants is a list, find the other user
+                final currentUserId = _authService.currentUser?.id;
+                for (var participant in participants) {
+                  if (participant['_id'] != currentUserId) {
+                    _receiverId = participant['_id'];
+                    debugPrint('Extracted receiver ID from list: $_receiverId');
+                    break;
+                  }
+                }
+              }
+            }
+            // Check members array in the chat object if otherUser wasn't found
+            else if (jsonData['chat'] != null && jsonData['chat']['members'] != null) {
+              final List<dynamic> members = jsonData['chat']['members'];
+              final currentUserId = _authService.currentUser?.id;
+              
+              for (var memberId in members) {
+                if (memberId != currentUserId) {
+                  _receiverId = memberId;
+                  debugPrint('Extracted receiver ID from members array: $_receiverId');
+                  break;
+                }
+              }
+            }
+            
+            // If no receiver ID was found but messages exist, try to extract from first message
+            if (_receiverId == null && 
+                jsonData['chat'] != null && 
+                jsonData['chat']['rawMessages'] != null && 
+                jsonData['chat']['rawMessages'].isNotEmpty) {
+              
+              final firstMessage = jsonData['chat']['rawMessages'][0];
+              final currentUserId = _authService.currentUser?.id;
+              
+              if (firstMessage['sender'] != null && 
+                  firstMessage['sender']['_id'] != null && 
+                  firstMessage['sender']['_id'] != currentUserId) {
+                _receiverId = firstMessage['sender']['_id'];
+                debugPrint('Extracted receiver ID from first message: $_receiverId');
+              }
+            }
+            
             return jsonData;
           }
           
@@ -153,7 +212,141 @@ class ChatConversationRepository {
       };
     }
   }
-  
+
+  Future<Map<String, dynamic>> blockUser(String? userId) async {
+    if (userId == null) {
+      return {
+        'success': false,
+        'error': 'Cannot block user: No user ID provided',
+      };
+    }
+    
+    try {
+      // Use the block user endpoint from constants
+      final endpoint = Constants.blockUserEndpoint.replaceAll('{userId}', userId);
+      
+      final response = await RequestService.patch(endpoint, body: {});
+      
+      if (response.statusCode != 200) {
+        return {
+          'success': false,
+          'error': 'Server returned status code ${response.statusCode}',
+        };
+      }
+      
+      final responseBody = response.body;
+      if (responseBody.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Empty response from server',
+        };
+      }
+      
+      final responseData = jsonDecode(responseBody);
+      
+      if (responseData['message'] == 'User blocked successfully') {
+        return {
+          'success': true,
+          'blockedUserId': responseData['blockedUserId'],
+          'message': responseData['message'],
+        };
+      }
+      
+      return {
+        'success': false,
+        'error': responseData['message'] ?? 'Unknown API error',
+      };
+    } catch (e) {
+      debugPrint('Error blocking user: $e');
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> unblockUser(String? userId) async {
+    if (userId == null) {
+      return {
+        'success': false,
+        'error': 'Cannot unblock user: No user ID provided',
+      };
+    }
+    
+    try {
+      // Use the unblock user endpoint from constants
+      final endpoint = Constants.unblockUserEndpoint.replaceAll('{userId}', userId);
+      
+      final response = await RequestService.patch(endpoint, body: {});
+      
+      if (response.statusCode != 200) {
+        return {
+          'success': false,
+          'error': 'Server returned status code ${response.statusCode}',
+        };
+      }
+      
+      final responseBody = response.body;
+      if (responseBody.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Empty response from server',
+        };
+      }
+      
+      final responseData = jsonDecode(responseBody);
+      
+      if (responseData['message'] == 'User unblocked successfully') {
+        return {
+          'success': true,
+          'message': responseData['message'],
+        };
+      }
+      
+      return {
+        'success': false,
+        'error': responseData['message'] ?? 'Unknown API error',
+      };
+    } catch (e) {
+      debugPrint('Error unblocking user: $e');
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  Future<bool> isUserBlocked(String? userId) async {
+    if (userId == null) {
+      debugPrint('Cannot check if user is blocked: No user ID provided');
+      return false;
+    }
+    
+    try {
+      // Use the isUserBlocked endpoint from constants
+      final endpoint = Constants.isUserBlocked.replaceAll('{userId}', userId);
+      
+      final response = await RequestService.get(endpoint);
+
+      print(response.body);
+      
+      if (response.statusCode != 200) {
+        return false;
+      }
+      
+      final responseBody = response.body;
+      if (responseBody.isEmpty) {
+        return false;
+      }
+      
+      final responseData = jsonDecode(responseBody);
+      
+      return responseData['isBlocked'] ?? false;
+    } catch (e) {
+      debugPrint('Error checking if user is blocked: $e');
+      return false;
+    }
+  }
 }
 
 final authServiceProvider = Provider<AuthService>((ref) {

@@ -9,6 +9,8 @@ class ChatRepository {
   Future<List<Chat>> fetchChats() async {
     try {
       final response = await RequestService.get(Constants.allChatsEndpoint);
+
+      print("Response: ${response.body}");
       
       if (response.statusCode != 200) {
         throw Exception("Failed to fetch chats: ${response.statusCode}");
