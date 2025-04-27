@@ -20,10 +20,12 @@ class PostList extends ConsumerWidget {
           // Add other existing properties...
             onEdit: posts[index].isMine ? () {
               // Implement edit functionality
+              // Navigate to edit page, passing the post as extra data
+              context.push('/edit-post', extra: posts[index]);
               print("Editing post: ${posts[index].id}");
               // Navigate to edit page or show edit dialog
             } : null,
-            onDelete: posts[index].isMine ? () async {
+            onDelete: (posts[index].isMine && posts[index].userId.isNotEmpty) ?() async {
               // Implement delete functionality
                 final delete = await showDialog<bool>(
                   context: context,

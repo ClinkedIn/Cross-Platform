@@ -172,7 +172,7 @@ class PostCard extends StatelessWidget {
                             ? Icon(Icons.person, size: 3.h)
                             : null,
                   ),
-                  SizedBox(width: 2.w),
+                  SizedBox(width: 1.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,6 +192,7 @@ class PostCard extends StatelessWidget {
                               ),
                             ),
                             SizedBox(width: 1.w),
+                            if (!post.isMine)
                             TextButton(
                               onPressed: onFollow,
                               style: TextButton.styleFrom(
@@ -208,6 +209,31 @@ class PostCard extends StatelessWidget {
                             ),
                           ],
                         ),
+                        if (post.userId.isEmpty && post.companyId != null) ...[
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.business,
+                                size: 1.8.h,
+                                color: AppColors.gray,
+                              ),
+                              SizedBox(width: 0.2.h),
+                              Expanded(
+                                child: Text(
+                                  [
+                                    post.companyId?['industry'],
+                                    post.companyId?['organizationSize'],
+                                    post.companyId?['organizationType'],
+                                  ].where((e) => e != null && e.toString().isNotEmpty).join(' • '),
+                                  style: TextStyle(
+                                    color: AppColors.gray,
+                                    fontSize: 15.sp,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         // Time info with null safety
                         Text(
                           "${post.time.isNotEmpty ? post.time : 'Just now'} ${post.isEdited ? '· Edited' : ''}",
@@ -216,6 +242,15 @@ class PostCard extends StatelessWidget {
                             fontSize: 15.sp,
                           ),
                         ),
+                      ] else ...[// Regular user post time info
+                          Text(
+                            "${post.time.isNotEmpty ? post.time : 'Just now'} ${post.isEdited ? '· Edited' : ''}",
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.gray,
+                              fontSize: 15.sp,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

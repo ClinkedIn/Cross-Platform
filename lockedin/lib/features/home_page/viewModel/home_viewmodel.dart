@@ -164,21 +164,55 @@ class HomeViewModel extends StateNotifier<HomeState> {
 
     /// Delete a post
       Future<bool> deletePost(String postId) async {
+          try {
+            // Find the post first to double-check ownership
+            final postIndex = state.posts.indexWhere((post) => post.id == postId);
+            if (postIndex == -1) throw Exception('Post not found');
+            
+            final post = state.posts[postIndex];
+            if (!post.isMine) throw Exception('You can only delete your own posts');
+            
+            state = state.copyWith(isLoading: true, error: null);
+            final success = await repository.deletePost(postId);
+            
+            if (success) {
+              // Remove the post from the list
+              final updatedPosts = List<PostModel>.from(state.posts)..removeAt(postIndex);
+              state = state.copyWith(posts: updatedPosts, isLoading: false);
+              return true;
+            } else {
+              state = state.copyWith(isLoading: false);
+              return false;
+            }
+          } catch (e) {
+            debugPrint('Error in deletePost: $e');
+            state = state.copyWith(isLoading: false, error: e.toString());
+            rethrow;
+          }
+        }
+      /// Edit a post
+      Future<bool> editPost(String postId, String content) async {
         try {
           // Find the post index
           final postIndex = state.posts.indexWhere((post) => post.id == postId);
           if (postIndex == -1) return false;
           
-          // Set loading state (optional)
+          // Set loading state
           state = state.copyWith(isLoading: true, error: null);
           
           // Call repository method
-          final success = await repository.deletePost(postId);
+          final success = await repository.editPost(postId, content: content);
           
           if (success) {
-            // Remove the post from the list
+            // Update the post in the list
             final updatedPosts = List<PostModel>.from(state.posts);
-            updatedPosts.removeAt(postIndex);
+            final updatedPost = updatedPosts[postIndex].copyWith(
+              content: content,
+              isEdited: true,
+            );
+            
+            // Replace the old post with the updated one
+            updatedPosts[postIndex] = updatedPost;
             
             // Update state
             state = state.copyWith(posts: updatedPosts, isLoading: false);
@@ -189,9 +223,10 @@ class HomeViewModel extends StateNotifier<HomeState> {
           state = state.copyWith(isLoading: false);
           return false;
         } catch (e) {
-          debugPrint('Error in deletePost: $e');
+          debugPrint('Error in editPost: $e');
           state = state.copyWith(isLoading: false, error: e.toString());
           rethrow;
         }
       }
+
 }

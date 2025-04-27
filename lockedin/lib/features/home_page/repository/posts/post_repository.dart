@@ -11,4 +11,5 @@ abstract class PostRepository {
   Future<bool> deleteRepost(String repostId);
   // Add this method to your PostRepository interface
   Future<bool> deletePost(String postId);
+   Future<bool> editPost(String postId, {required String content, List<Map<String, dynamic>>? taggedUsers});
 }

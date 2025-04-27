@@ -37,6 +37,8 @@ import 'package:lockedin/shared/widgets/side_bar.dart';
 import 'package:lockedin/shared/widgets/upper_navbar.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
 import 'package:lockedin/features/home_page/view/detailed_post.dart';
+import './features/home_page/view/editpost_view.dart';
+import './features/home_page/model/post_model.dart';
 
 // Use this to control drawer state
 final scaffoldKeyProvider = Provider((ref) => GlobalKey<ScaffoldState>());
@@ -190,6 +192,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/edit-profile',
         name: 'edit-profile',
         builder: (context, state) => UpdatePage(),
+      ),
+      // Add the new route
+      GoRoute(
+        path: '/edit-post',
+        builder: (context, state) {
+          final post = state.extra as PostModel;
+          return EditPostPage(post: post);
+        },
       ),
 
       StatefulShellRoute.indexedStack(

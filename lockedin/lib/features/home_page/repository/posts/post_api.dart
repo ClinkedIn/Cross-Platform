@@ -6,10 +6,12 @@ import 'package:lockedin/features/home_page/model/post_model.dart';
 import 'post_repository.dart';
 
 class PostApi implements PostRepository {
-  @override
+   @override
   Future<List<PostModel>> fetchHomeFeed() async {
     try {
-      final response = await RequestService.get(Constants.feedEndpoint);
+        debugPrint('🔍 Starting to fetch home feed...');
+        final response = await RequestService.get(Constants.feedEndpoint);
+        debugPrint('📊 API response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         // Debug the raw response
@@ -55,6 +57,7 @@ class PostApi implements PostRepository {
 
         return postsJson.map((postJson) {
           // Simplified isLiked handling based on your API structure
+           debugPrint('🔄 Processing post ID: ${postJson['postId']}, userId: ${postJson['userId']}');
           bool isLikedValue = false;
           if (postJson.containsKey('isLiked') && postJson['isLiked'] != null) {
             var isLikedField = postJson['isLiked'];
@@ -67,36 +70,106 @@ class PostApi implements PostRepository {
               isLikedValue = true;
             }
           }
+          // *** COMPANY vs USER POST HANDLING ***
+          Map<String, dynamic>? companyData;
+          String username;
+          String profilePic;
 
-          // Map the API response to our PostModel
-          return PostModel(
-            id: postJson['postId'] ?? '',
-            userId: postJson['userId'] ?? '',
-            username:
-                '${postJson['firstName'] ?? ''} ${postJson['lastName'] ?? ''}',
-            profileImageUrl: postJson['profilePicture'] ?? '',
-            content: postJson['postDescription'] ?? '',
-            time: _formatTimeAgo(postJson['createdAt']),
-            isEdited: false, // This info might not be available in the API
-            imageUrl:
-                (postJson['attachments'] != null &&
-                        (postJson['attachments'] as List).isNotEmpty)
-                    ? postJson['attachments'][0]
-                    : null,
-            likes: postJson['impressionCounts']?['total'] ?? 0,
-            comments: _extractCommentCount(postJson), // Updated to use helper method
-            reposts: postJson['repostCount'] ?? 0,
-            isLiked: isLikedValue, // Use our safely extracted boolean value
-            isMine: postJson['isMine'] == true,
-            isRepost: postJson['isRepost'] == true,
-            repostId: postJson['repostId'],
-            repostDescription: postJson['repostDescription'],
-            reposterId: postJson['reposterId'],
-            reposterName: postJson['reposterFirstName'] != null
-                ? '${postJson['reposterFirstName']} ${postJson['reposterLastName'] ?? ''}'
-                : null,
-            reposterProfilePicture: postJson['reposterProfilePicture'],
-          );
+         // Replace the company post handling code with this better parser
+          if (postJson['userId'] == null) {
+            debugPrint('🏢 Company post detected');
+            
+            // Check the actual type of companyId
+            if (postJson['companyId'] is Map) {
+              // It's already a Map, use it directly
+              debugPrint('💼 Company data is a map');
+              companyData = Map<String, dynamic>.from(postJson['companyId']);
+            } else if (postJson['companyId'] is String && postJson['companyId'].toString().startsWith('{')) {
+              // It's a string that looks like JSON, try to parse it
+              debugPrint('💼 Company data is a string that looks like JSON');
+              try {
+                // Try to parse the string as JSON
+                final String jsonStr = postJson['companyId'].toString()
+                    .replaceAll("'", '"');  // Replace single quotes with double quotes
+                companyData = json.decode(jsonStr);
+              } catch (e) {
+                debugPrint('❌ Error parsing company JSON: $e');
+                // If parsing fails, extract data using regex
+                final String companyIdStr = postJson['companyId'].toString();
+                
+                final RegExp idRegex = RegExp(r'_id: ([^,}]+)');
+                final RegExp nameRegex = RegExp(r'name: ([^,}]+)');
+                final RegExp addressRegex = RegExp(r'address: ([^,}]+)');
+                final RegExp industryRegex = RegExp(r'industry: ([^,}]+)');
+                final RegExp sizeRegex = RegExp(r'organizationSize: ([^,}]+)');
+                final RegExp typeRegex = RegExp(r'organizationType: ([^,}]+)');
+                
+                companyData = {
+                  "_id": _extractRegexMatch(idRegex, companyIdStr),
+                  "name": _extractRegexMatch(nameRegex, companyIdStr) ?? "Company",
+                  "address": _extractRegexMatch(addressRegex, companyIdStr),
+                  "industry": _extractRegexMatch(industryRegex, companyIdStr),
+                  "organizationSize": _extractRegexMatch(sizeRegex, companyIdStr),
+                  "organizationType": _extractRegexMatch(typeRegex, companyIdStr),
+                  "logo": postJson['companyLogo'],
+                  "tagLine": null,
+                };
+              }
+            } else {
+              // It's a simple string ID or null
+              debugPrint('💼 Company ID is simple string: ${postJson['companyId']}');
+              companyData = {
+                "_id": postJson['companyId'],
+                "name": postJson['companyName'] ?? "Company",
+                "address": postJson['companyAddress'] ?? "",
+                "industry": postJson['companyIndustry'] ?? "",
+                "organizationSize": postJson['companySize'] ?? "",
+                "organizationType": postJson['companyType'] ?? "",
+                "logo": postJson['companyLogo'],
+                "tagLine": postJson['companyTagLine'] ?? "",
+              };
+            }
+            
+            // Use company name and logo for username and profile picture
+            username = companyData?['name'] ?? 'Company';
+            profilePic = companyData?['logo'] ?? '';
+            
+            // Add debug output for the parsed company data
+            debugPrint('📊 Parsed company data: name=${companyData?["name"]}, industry=${companyData?["industry"]}, size=${companyData?["organizationSize"]}');
+          }else {
+          // This is a user post, set user data
+          debugPrint('👤 User post detected');
+          companyData = null; // Company data is null for user posts
+          username = '${postJson['firstName'] ?? ''} ${postJson['lastName'] ?? ''}'.trim();
+          profilePic = postJson['profilePicture'] ?? '';
+          debugPrint('👤 User data: name=$username, profilePic=$profilePic');
+          debugPrint('Post ID: ${postJson['postId']}, isMine: ${postJson['isMine']}');
+        }
+         return PostModel(
+          id: postJson['postId'] ?? '',
+          userId: postJson['userId'] ?? '',
+          companyId: companyData, // Set to the extracted company data or null
+          username: username,
+          profileImageUrl: profilePic,
+          content: postJson['postDescription'] ?? '',
+          time: _formatTimeAgo(postJson['createdAt']),
+          isEdited: false,
+          imageUrl: _extractFirstAttachment(postJson),
+          mediaType: _extractFirstMediaType(postJson),
+          likes: postJson['impressionCounts']?['total'] ?? 0,
+          comments: _extractCommentCount(postJson),
+          reposts: postJson['repostCount'] ?? 0,
+          isLiked: isLikedValue,
+          isMine: postJson['isMine'] == true,
+          isRepost: postJson['isRepost'] == true,
+          repostId: postJson['repostId'],
+          repostDescription: postJson['repostDescription'],
+          reposterId: postJson['reposterId'],
+          reposterName: postJson['reposterFirstName'] != null
+              ? '${postJson['reposterFirstName']} ${postJson['reposterLastName'] ?? ''}'.trim()
+              : null,
+          reposterProfilePicture: postJson['reposterProfilePicture'],
+        );
         }).toList();
       } else {
         throw Exception(
@@ -109,6 +182,7 @@ class PostApi implements PostRepository {
       return [];
     }
   }
+
 
   /// Helper method to safely extract comment count from various API formats
   int _extractCommentCount(Map<String, dynamic> postJson) {
@@ -323,6 +397,84 @@ class PostApi implements PostRepository {
         rethrow;
       }
     }
+    @override
+      Future<bool> editPost(String postId, {required String content, List<Map<String, dynamic>>? taggedUsers}) async {
+        try {
+          final String formattedEndpoint = Constants.editPostEndpoint.replaceFirst('%s', postId);
+          
+          // Create request body
+          final Map<String, dynamic> body = {
+            "description": content,
+          };
+          
+          // Add tagged users if provided
+          if (taggedUsers != null && taggedUsers.isNotEmpty) {
+            body["taggedUsers"] = taggedUsers;
+          }
+          
+          final response = await RequestService.put(
+            formattedEndpoint,
+            body: body,
+          );
+          
+          debugPrint('📥 Edit post response status: ${response.statusCode}');
+          debugPrint('📥 Edit post response body: ${response.body}');
+          
+          if (response.statusCode == 200) {
+            debugPrint('✅ Post edited successfully: $postId');
+            return true;
+          } else {
+            throw Exception('Failed to edit post: ${response.statusCode} - ${response.body}');
+          }
+        } catch (e) {
+          debugPrint('❌ Error editing post: $e');
+          rethrow;
+        }
+      }
+      // Update your _extractFirstAttachment method
+      String? _extractFirstAttachment(Map<String, dynamic> postJson) {
+        if (postJson['attachments'] != null && postJson['attachments'] is List) {
+          final attachments = postJson['attachments'] as List;
+          if (attachments.isNotEmpty) {
+            final firstAttachment = attachments[0];
+            // Check if the attachment is a map with a URL or just a string URL
+            if (firstAttachment is Map) {
+              return firstAttachment['url'];
+            } else if (firstAttachment is String) {
+              return firstAttachment;
+            }
+          }
+        }
+        return null;
+      }
+
+      // Also update your media type extraction method
+      String? _extractFirstMediaType(Map<String, dynamic> postJson) {
+        if (postJson['attachments'] != null && postJson['attachments'] is List) {
+          final attachments = postJson['attachments'] as List;
+          if (attachments.isNotEmpty) {
+            final firstAttachment = attachments[0];
+            if (firstAttachment is Map && firstAttachment.containsKey('mediaType')) {
+              return firstAttachment['mediaType'];
+            }
+          }
+        }
+        return null;
+      }
+      // Add this helper method at the end of the PostApi class
+      String? _extractRegexMatch(RegExp regex, String input) {
+        final match = regex.firstMatch(input);
+        if (match != null && match.groupCount >= 1) {
+          String? result = match.group(1)?.trim();
+          // Remove leading/trailing quotes if present
+          if (result != null && result.startsWith('"') && result.endsWith('"')) {
+            result = result.substring(1, result.length - 1);
+          }
+          return result == 'null' ? null : result;
+        }
+        return null;
+      }
+
 }
 
 // Helper function for substring operations
