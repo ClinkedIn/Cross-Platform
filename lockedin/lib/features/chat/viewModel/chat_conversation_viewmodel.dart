@@ -1,8 +1,13 @@
 // chat_conversation_viewmodel.dart
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:lockedin/core/services/auth_service.dart';
+import 'package:lockedin/features/chat/model/attachment_model.dart';
 import 'package:lockedin/features/chat/model/chat_message_model.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
 import 'package:lockedin/features/chat/repository/chat_conversation_repository.dart';
@@ -26,6 +31,7 @@ class ChatConversationState {
   final Map<String, List<ChatMessage>> messagesByDate;
   final bool isMarkedAsRead;
   final bool isSending;
+  final ChatAttachment? selectedAttachment;
 
   ChatConversationState({
     this.messages = const [],
@@ -34,6 +40,7 @@ class ChatConversationState {
     this.messagesByDate = const {},
     this.isMarkedAsRead = false,
     this.isSending = false,
+    this.selectedAttachment,
   });
 
   ChatConversationState copyWith({
@@ -43,6 +50,7 @@ class ChatConversationState {
     Map<String, List<ChatMessage>>? messagesByDate,
     bool? isMarkedAsRead,
     bool? isSending,
+    ChatAttachment? selectedAttachment,
   }) {
     return ChatConversationState(
       messages: messages ?? this.messages,
@@ -51,6 +59,7 @@ class ChatConversationState {
       messagesByDate: messagesByDate ?? this.messagesByDate,
       isMarkedAsRead: isMarkedAsRead ?? this.isMarkedAsRead,
       isSending: isSending ?? this.isSending,
+      selectedAttachment: selectedAttachment,
     );
   }
 }
@@ -194,11 +203,6 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       // Update state to indicate sending in progress
       state = state.copyWith(isSending: true, error: null);
       
-      // // Check if user is authenticated
-      // if (_authService.currentUser == null) {
-      //   throw Exception('You must be logged in to send messages');
-      // }
-      
       // Create a temporary message to display immediately
       final temporaryMessage = ChatMessage(
         id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
@@ -300,7 +304,89 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     );
   }
   
-  
+  Future<ChatAttachment?> selectImageFromCamera() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 70,
+      );
+      
+      if (image != null) {
+        final file = File(image.path);
+        final attachment = ChatAttachment(
+          file: file,
+          type: AttachmentType.image,
+          localId: 'local_${DateTime.now().millisecondsSinceEpoch}',
+        );
+        
+        state = state.copyWith(selectedAttachment: attachment);
+        return attachment;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error selecting image from camera: $e');
+      throw Exception('Could not access camera: ${e.toString()}');
+    }
+  }
+
+  Future<ChatAttachment?> selectImageFromGallery() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+      
+      if (image != null) {
+        final file = File(image.path);
+        final attachment = ChatAttachment(
+          file: file,
+          type: AttachmentType.image,
+          localId: 'local_${DateTime.now().millisecondsSinceEpoch}',
+        );
+        
+        state = state.copyWith(selectedAttachment: attachment);
+        return attachment;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error selecting image from gallery: $e');
+      throw Exception('Could not access gallery: ${e.toString()}');
+    }
+  }
+
+  Future<ChatAttachment?> selectDocument() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt'],
+      );
+      
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        final fileName = result.files.single.name;
+        
+        final attachment = ChatAttachment(
+          file: file,
+          type: AttachmentType.document,
+          localId: 'local_${DateTime.now().millisecondsSinceEpoch}',
+          fileName: fileName,
+        );
+        
+        state = state.copyWith(selectedAttachment: attachment);
+        return attachment;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error selecting document: $e');
+      throw Exception('Could not select document: ${e.toString()}');
+    }
+  }
+
+  void clearSelectedAttachment() {
+    state = state.copyWith(selectedAttachment: null);
+  }
 }
 
 // Define the provider correctly

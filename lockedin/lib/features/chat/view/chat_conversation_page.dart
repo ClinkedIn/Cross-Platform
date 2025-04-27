@@ -1,12 +1,16 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
+import 'package:lockedin/features/chat/model/attachment_model.dart';
+import 'package:lockedin/features/chat/widgets/attachment_widget.dart';
 import 'package:lockedin/features/chat/widgets/chat_bubble_widget.dart';
 import 'package:lockedin/features/chat/widgets/chat_input_field_widget.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
+
 
 
 class ChatConversationScreen extends ConsumerStatefulWidget {
@@ -49,6 +53,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       );
     }
   }
+
 
   // Updated to use the viewModel's sendMessage implementation
   void sendMessage() {
@@ -130,6 +135,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       debugPrint('Error ensuring user data is loaded: $e');
     }
   }
+
   
   @override
   Widget build(BuildContext context) {
@@ -218,7 +224,25 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
           ),
           ChatInputField(
             messageController: _messageController,
-            onAttachmentPressed: () {}, // Placeholder for future implementation
+            onAttachmentPressed: () {
+              showModalBottomSheet(
+                context: context,
+                builder: (context) => AttachmentWidget(
+                  onDocumentPressed: () {
+                    _pickDocument(); 
+                    Navigator.pop(context);
+                  },
+                  onCameraPressed: () {
+                    _pickImageFromCamera();
+                    Navigator.pop(context);
+                  },
+                  onMediaPressed: () {
+                    _pickImageFromGallery();
+                    Navigator.pop(context);
+                  },
+                ),
+              );
+            },
             onSendPressed: sendMessage,
             isDarkMode: isDarkMode,
           ),
@@ -374,5 +398,175 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     
     // Return null if date couldn't be parsed
     return null;
+  }
+
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final viewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+      await viewModel.selectImageFromCamera();
+      _showSelectedImagePreview();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error accessing camera: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final viewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+      await viewModel.selectImageFromGallery();
+      _showSelectedImagePreview();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error accessing gallery: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _pickDocument() async {
+    try {
+      final viewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+      final attachment = await viewModel.selectDocument();
+      
+      if (attachment != null) {
+        _showSelectedDocumentPreview(attachment);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error selecting document: ${e.toString()}')),
+      );
+    }
+  }
+
+  void _showSelectedImagePreview() {
+    final chatState = ref.read(chatConversationProvider(widget.chat.id));
+    final attachment = chatState.selectedAttachment;
+    
+    if (attachment == null) return;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        padding: EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Text('Selected Image', 
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16),
+            Expanded(
+              child: Image.file(
+                attachment.file,
+                fit: BoxFit.contain,
+              ),
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    ref.read(chatConversationProvider(widget.chat.id).notifier)
+                      .clearSelectedAttachment();
+                    Navigator.pop(context);
+                  },
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  label: Text('Cancel', style: TextStyle(color: Colors.red)),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Here we'll implement sending the image later
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Image ready to send (sending not implemented yet)')),
+                    );
+                  },
+                  icon: Icon(Icons.check),
+                  label: Text('Ready to Send'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSelectedDocumentPreview(ChatAttachment attachment) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.4,
+        padding: EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Text('Selected Document', 
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16),
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.description, size: 40, color: Colors.blue),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          attachment.fileName ?? 'Document',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          '${(attachment.file.lengthSync() / 1024).toStringAsFixed(2)} KB',
+                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    ref.read(chatConversationProvider(widget.chat.id).notifier)
+                      .clearSelectedAttachment();
+                    Navigator.pop(context);
+                  },
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  label: Text('Cancel', style: TextStyle(color: Colors.red)),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Here we'll implement sending the document later
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Document ready to send (sending not implemented yet)')),
+                    );
+                  },
+                  icon: Icon(Icons.check),
+                  label: Text('Ready to Send'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
