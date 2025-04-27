@@ -755,13 +755,13 @@ class PostCard extends StatelessWidget {
         
       case MediaType.unknown:
       default:
-      // // In your _buildMediaContent method, add at the beginning:
-      // print('URL: $url');
-      // print('Explicit media type: ${post.mediaType}');
-      // final extension = _getFileExtension(url);
-      // print('Detected extension: $extension');
-      // MediaType detectedType = _getMediaType(url, explicitType: post.mediaType);
-      // print('Detected media type: $detectedType');
+      // In your _buildMediaContent method, add at the beginning:
+      print('URL: $url');
+      print('Explicit media type: ${post.mediaType}');
+      final extension = _getFileExtension(url);
+      print('Detected extension: $extension');
+      MediaType detectedType = _getMediaType(url, explicitType: post.mediaType);
+      print('Detected media type: $detectedType');
         return _buildErrorContainer(context, theme, 'Unsupported media type');
     }
   }

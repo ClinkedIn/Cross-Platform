@@ -228,5 +228,24 @@ class HomeViewModel extends StateNotifier<HomeState> {
           rethrow;
         }
       }
-
+      
+      /// Report a post for policy violations
+      Future<bool> reportPost(String postId, String policyViolation, {String? dontWantToSee}) async {
+        try {
+          // Set loading state (optional)
+          state = state.copyWith(isLoading: true, error: null);
+          
+          // Call repository method
+          final success = await repository.reportPost(postId, policyViolation, dontWantToSee: dontWantToSee);
+          
+          // Update state after operation
+          state = state.copyWith(isLoading: false);
+          
+          return success;
+        } catch (e) {
+          debugPrint('Error reporting post: $e');
+          state = state.copyWith(isLoading: false, error: e.toString());
+          rethrow;
+        }
+      }
 }

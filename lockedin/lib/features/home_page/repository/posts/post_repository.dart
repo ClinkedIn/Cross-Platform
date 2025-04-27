@@ -1,4 +1,5 @@
 import 'package:lockedin/features/home_page/model/post_model.dart';
+import 'package:lockedin/features/home_page/model/taggeduser_model.dart';
 
 abstract class PostRepository {
   Future<List<PostModel>> fetchHomeFeed();
@@ -11,5 +12,8 @@ abstract class PostRepository {
   Future<bool> deleteRepost(String repostId);
   // Add this method to your PostRepository interface
   Future<bool> deletePost(String postId);
-   Future<bool> editPost(String postId, {required String content, List<Map<String, dynamic>>? taggedUsers});
+  Future<bool> editPost(String postId, {required String content, List<Map<String, dynamic>>? taggedUsers});
+   // Add these methods to the interface
+  Future<bool> reportPost(String postId, String policy, {String? dontWantToSee});
+  Future<List<TaggedUser>> searchUsers(String name, {int page = 1, int limit = 10});
 }

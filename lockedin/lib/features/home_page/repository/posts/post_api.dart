@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
 import 'package:lockedin/features/home_page/model/post_model.dart';
+import 'package:lockedin/features/home_page/model/taggeduser_model.dart';
 import 'post_repository.dart';
 
 class PostApi implements PostRepository {
@@ -431,6 +432,42 @@ class PostApi implements PostRepository {
           rethrow;
         }
       }
+      // Implement the methods at the end of your class
+      @override
+      Future<bool> reportPost(String postId, String policy, {String? dontWantToSee}) async {
+        try {
+          final String formattedEndpoint = Constants.reportPostEndpoint.replaceFirst('%s', postId);
+          
+          // Create request body
+          final Map<String, dynamic> body = {
+            "policy": policy,
+          };
+          
+          // Add dontWantToSee if provided
+          if (dontWantToSee != null) {
+            body["dontWantToSee"] = dontWantToSee;
+          }
+          
+          final response = await RequestService.post(
+            formattedEndpoint,
+            body: body,
+          );
+          
+          debugPrint('📥 Report post response status: ${response.statusCode}');
+          debugPrint('📥 Report post response body: ${response.body}');
+          
+          if (response.statusCode == 201) {
+            debugPrint('✅ Post reported successfully: $postId');
+            return true;
+          } else {
+            throw Exception('Failed to report post: ${response.statusCode} - ${response.body}');
+          }
+        } catch (e) {
+          debugPrint('❌ Error reporting post: $e');
+          rethrow;
+        }
+      }
+
       // Update your _extractFirstAttachment method
       String? _extractFirstAttachment(Map<String, dynamic> postJson) {
         if (postJson['attachments'] != null && postJson['attachments'] is List) {
@@ -474,6 +511,59 @@ class PostApi implements PostRepository {
         }
         return null;
       }
+
+      @override
+        Future<List<TaggedUser>> searchUsers(String name, {int page = 1, int limit = 10}) async {
+          try {
+            // Validate search term
+            if (name.length < 2) {
+              debugPrint('❌ Search term must be at least 2 characters');
+              return [];
+            }
+
+            // Build query parameters
+            final queryParams = {
+              'name': name,
+              'page': page.toString(),
+              'limit': limit.toString(),
+            };
+
+            // Create query string
+            final queryString = queryParams.entries
+                .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+                .join('&');
+
+            // Create endpoint with query string
+            final endpoint = '${Constants.searchUsersEndpoint}?$queryString';
+            
+            debugPrint('🔍 Searching users with name: "$name", page: $page, limit: $limit');
+            final response = await RequestService.get(endpoint);
+            
+            debugPrint('📥 Search users response status: ${response.statusCode}');
+            
+            if (response.statusCode == 200) {
+              final data = json.decode(response.body);
+              
+              if (data['users'] == null || !(data['users'] is List)) {
+                debugPrint('❌ No users found or invalid response format');
+                return [];
+              }
+              
+              final List<dynamic> usersJson = data['users'];
+              final pagination = data['pagination'];
+              
+              debugPrint('✅ Found ${usersJson.length} users. Total: ${pagination?['totalUsers'] ?? 'unknown'}');
+              
+              return usersJson.map((user) => TaggedUser.fromJson(user)).toList();
+            } else {
+              debugPrint('❌ Failed to search users: ${response.statusCode} - ${response.body}');
+              return [];
+            }
+          } catch (e) {
+            debugPrint('❌ Error searching users: $e');
+            return [];
+          }
+}
 
 }
 
