@@ -40,15 +40,16 @@ class JobModel {
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
-    final companyData = json['company'] is Map ? json['company'] : null;
-    final screeningQuestions = json['screeningQuestions'] as List?;
+    final screeningQuestions = json['screeningQuestions'] as List? ?? [];
 
-    final workplaceTypeRaw = json['workplaceType']?.toString() ?? 'Unknown';
-    final questions =
-        (screeningQuestions)?.map((q) => q as Map<String, dynamic>).toList() ??
-        [];
+    List<Map<String, dynamic>> _mapList(dynamic list) {
+      if (list is List) {
+        return list.map((e) => (e as Map).cast<String, dynamic>()).toList();
+      }
+      return [];
+    }
 
-    List<String> _parseStringList(dynamic list) {
+    List<String> _stringList(dynamic list) {
       if (list is List) {
         return list.map((e) => e.toString()).toList();
       }
@@ -59,30 +60,26 @@ class JobModel {
       id: (json['_id'] ?? json['id'] ?? json['jobId'])?.toString() ?? '',
       title: json['title'] ?? 'Unknown Position',
       company:
-          companyData != null
-              ? (companyData['name'] ?? 'Unknown Company')
-              : 'Unknown Company',
-      companyId:
-          companyData != null ? (companyData['_id']?.toString() ?? '') : '',
+          json['companyName'] ??
+          'Unknown Company', // You could add companyName if backend adds later
+      companyId: (json['companyId'] ?? '').toString(),
       location: json['jobLocation'] ?? 'Unknown Location',
       description: json['description'] ?? '',
       experienceLevel:
-          screeningQuestions != null && screeningQuestions.isNotEmpty
-              ? screeningQuestions.first['idealAnswer']?.toString() ?? 'Unknown'
+          screeningQuestions.isNotEmpty
+              ? (screeningQuestions.first['idealAnswer']?.toString() ??
+                  'Unknown')
               : 'Unknown',
       salaryRange: json['salaryRange']?.toString() ?? 'N/A',
-      isRemote: workplaceTypeRaw.toLowerCase() == 'remote',
-      workplaceType: workplaceTypeRaw,
-      logoUrl: companyData != null ? companyData['logo'] : null,
+      isRemote:
+          (json['workplaceType']?.toString().toLowerCase() ?? '') == 'remote',
+      workplaceType: json['workplaceType']?.toString() ?? 'Unknown',
+      logoUrl: json['logoUrl'], // or you can get it later via getCompanyById
       industry: json['industry'],
-      screeningQuestions: questions,
-      applicants:
-          (json['applicants'] as List<dynamic>?)
-              ?.map((applicant) => applicant as Map<String, dynamic>)
-              .toList() ??
-          [],
-      accepted: _parseStringList(json['accepted']),
-      rejected: _parseStringList(json['rejected']),
+      screeningQuestions: _mapList(json['screeningQuestions']),
+      applicants: _mapList(json['applicants']),
+      accepted: _stringList(json['accepted']),
+      rejected: _stringList(json['rejected']),
       applicationStatus: 'Not Applied',
     );
   }

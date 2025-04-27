@@ -40,7 +40,7 @@ class JobsPage extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const DashboardPage(),
+                        builder: (context) => const CompanyView(),
                       ),
                     );
                   },
