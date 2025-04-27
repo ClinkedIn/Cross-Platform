@@ -23,15 +23,15 @@ class Company {
 
   factory Company.fromJson(Map<String, dynamic> json) {
     return Company(
-      name: json['name'],
-      address: json['address'],
-      website: json['website'],
-      industry: json['industry'],
-      organizationSize: json['organizationSize'],
-      organizationType: json['organizationType'],
-      tagLine: json['tagLine'],
-      location: json['location'],
-      logo: json['logo'],
+      name: json['name'] ?? '',
+      address: json['address'] ?? '',
+      website: json['website'], // nullable
+      industry: json['industry'] ?? '',
+      organizationSize: json['organizationSize'] ?? '',
+      organizationType: json['organizationType'] ?? '',
+      tagLine: json['tagLine'], // nullable
+      location: json['location'], // nullable
+      logo: json['logo'], // nullable
     );
   }
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:lockedin/core/services/request_services.dart';
+import 'package:lockedin/core/services/token_services.dart';
 import 'package:lockedin/features/company/model/company_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -39,6 +40,8 @@ class CompanyRepository {
     print('Creating company at: $uri');
 
     try {
+      final token = await TokenService.getCookie();
+
       var request =
           http.MultipartRequest('POST', uri)
             ..fields['name'] = company.name
@@ -58,11 +61,11 @@ class CompanyRepository {
         request.fields['location'] = company.location!;
       }
 
-      // Handling the logo as a file upload
+      // Handling logo file
       if (logoPath != null) {
         var logoFile = await http.MultipartFile.fromPath(
           'file',
-          logoPath, // File path
+          logoPath,
           contentType: MediaType.parse(
             lookupMimeType(logoPath) ?? 'application/octet-stream',
           ),
@@ -70,22 +73,19 @@ class CompanyRepository {
         request.files.add(logoFile);
       }
 
-      // Send the request
-      var response = await request.send();
+      // Set the token as cookie
+      request.headers.addAll({'Cookie': 'access_token=$token'});
 
-      // Wait for the response
+      // Send request
+      var response = await request.send();
       var responseBody = await response.stream.bytesToString();
 
       print('Status code: ${response.statusCode}');
       print('Body: $responseBody');
 
-      // Check for success
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(responseBody);
-        print('Created company data: ${jsonEncode(data)}');
-        return Company.fromJson(
-          data['company'], // Access the "company" field from the response
-        );
+        return Company.fromJson(data['company']);
       } else {
         print('Failed to create company: ${response.statusCode}');
         return null;
