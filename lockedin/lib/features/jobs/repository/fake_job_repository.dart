@@ -33,13 +33,17 @@ class FakeJobRepository implements JobRepository {
   }
 
   @override
-  Future<void> applyForJob({
+  Future<Map<String, dynamic>> applyForJob({
     required String jobId,
     required String contactEmail,
     required String contactPhone,
     required List<Map<String, String>> answers,
   }) async {
     if (shouldThrow) throw Exception('Failed to apply');
+    return {
+      'status': 'success',
+      'message': 'Application submitted successfully',
+    };
   }
 
   @override

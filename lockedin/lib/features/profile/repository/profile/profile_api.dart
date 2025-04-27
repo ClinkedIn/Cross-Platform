@@ -55,22 +55,4 @@ class ProfileService {
       throw e;
     }
   }
-
-  // Future<List<License>> fetchLicenses() async {
-  //   try {
-  //     // Using RequestService instead of direct http calls
-  //     final response = await RequestService.get('/user/licenses');
-
-  //     if (response.statusCode == 200) {
-  //       final Map<String, dynamic> responseData = jsonDecode(response.body);
-  //       final List<dynamic> data = responseData['licenses'] ?? [];
-  //       return data.map((item) => License.fromJson(item)).toList();
-  //     } else {
-  //       throw Exception('Failed to load license data: ${response.body}');
-  //     }
-  //   } catch (e) {
-  //     print('Error fetching licenses: $e');
-  //     throw e;
-  //   }
-  // }
 }

@@ -11,7 +11,7 @@ class Constants {
       'assets/images/default_cover_photo.jpeg';
 
   // Server URLs
-  static const String _emulatorUrl = "http://10.0.2.2:3000";
+  static const String _emulatorUrl = "http://10.0.2.2:3000/api";
   static const String _physicalDeviceUrl =
       "http://192.168.1.23:3000"; // Your actual IP address
 
@@ -121,6 +121,6 @@ class Constants {
       '/notifications/restore-notification/%s'; // %s will be replaced with the notificationId
   static const String deleteNotificationEndpoint =
       '/notifications/%s'; // %s will be replaced with the notificationId
-  static const String deletePostEndpoint = 
+  static const String deletePostEndpoint =
       '/posts/%s'; // %s will be replaced with the postId
 }

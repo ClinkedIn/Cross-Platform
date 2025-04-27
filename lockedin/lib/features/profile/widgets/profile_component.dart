@@ -73,19 +73,7 @@ class ProfileItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Image.asset(
-            item.logoUrl,
-            width: 50,
-            height: 50,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Image.asset(
-                "assets/images/experience.jpg",
-                width: 50,
-                height: 50,
-              );
-            },
-          ),
+          Image.network(item.logoUrl, width: 50, height: 50, fit: BoxFit.cover),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,

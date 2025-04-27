@@ -322,6 +322,7 @@ class RequestService {
   }) async {
     final String url = '$_baseUrl${Constants.loginEndpoint}';
     debugPrint('LOGIN Request: $url');
+    debugPrint('LOGIN Request Body: $email, $password');
 
     try {
       final response = await _client.post(
@@ -329,6 +330,8 @@ class RequestService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
+      debugPrint('LOGIN Response: ${response.body}');
+      debugPrint('LOGIN Response Headers: ${response.headers}');
 
       _storeCookiesFromResponse(response);
       return response;
