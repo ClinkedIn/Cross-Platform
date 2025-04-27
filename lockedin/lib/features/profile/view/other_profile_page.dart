@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/profile/model/user_model.dart';
+import 'package:lockedin/features/profile/repository/blocked_repository.dart';
 import 'package:lockedin/features/profile/utils/profile_converters.dart';
 import 'package:lockedin/features/profile/viewmodel/other_profile_view_model.dart';
+
+// Add this provider for the repository
+final blockedRepositoryProvider = Provider<BlockedRepository>((ref) {
+  return BlockedRepository();
+});
 
 class ViewOtherProfilePage extends ConsumerStatefulWidget {
   final String userId;
@@ -31,7 +37,17 @@ class _ViewOtherProfilePageState extends ConsumerState<ViewOtherProfilePage> {
     final profileState = ref.watch(otherProfileViewModelProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(
+        title: const Text('Profile'),
+        actions: [
+          // Add the report/block menu icon
+          profileState.when(
+            data: (user) => _buildMoreActionsButton(context, user),
+            loading: () => Container(),
+            error: (_, __) => Container(),
+          ),
+        ],
+      ),
       body: profileState.when(
         data: (user) => _buildProfile(context, user),
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -40,7 +56,238 @@ class _ViewOtherProfilePageState extends ConsumerState<ViewOtherProfilePage> {
     );
   }
 
-  // Rest of your _buildProfile method remains the same
+  Widget _buildMoreActionsButton(BuildContext context, UserModel user) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert),
+      onSelected: (value) async {
+        if (value == 'report') {
+          _showReportDialog(context, user);
+        } else if (value == 'block') {
+          _showBlockDialog(context, user);
+        }
+      },
+      itemBuilder:
+          (BuildContext context) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(
+              value: 'report',
+              child: Row(
+                children: [
+                  Icon(Icons.flag_outlined, color: Colors.orange),
+                  SizedBox(width: 8),
+                  Text('Report'),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: 'block',
+              child: Row(
+                children: [
+                  Icon(Icons.block, color: Colors.red),
+                  SizedBox(width: 8),
+                  Text('Block'),
+                ],
+              ),
+            ),
+          ],
+    );
+  }
+
+  void _showReportDialog(BuildContext context, UserModel user) {
+    final reasons = [
+      "Harassment",
+      "Fraud or scam",
+      "Spam",
+      "Misinformation",
+      "Hateful speech",
+      "Threats or violence",
+      "Self-harm",
+      "Graphic content",
+      "Dangerous or extremist organizations",
+      "Sexual content",
+      "Fake account",
+      "Child exploitation",
+      "Illegal goods and services",
+      "Infringement",
+      "This person is impersonating someone",
+      "This account has been hacked",
+      "This account is not a real person",
+    ];
+
+    String selectedReason = reasons.first;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Report ${user.firstName} ${user.lastName}'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Please select a reason for your report:',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedReason,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      items:
+                          reasons.map((reason) {
+                            return DropdownMenuItem<String>(
+                              value: reason,
+                              child: Text(
+                                reason,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            );
+                          }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            selectedReason = value;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+
+                    // Show loading indicator
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Submitting report...'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+
+                    try {
+                      await ref
+                          .read(blockedRepositoryProvider)
+                          .reportUser(user.id, selectedReason);
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Report submitted successfully'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to submit report: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Submit Report'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showBlockDialog(BuildContext context, UserModel user) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Block ${user.firstName} ${user.lastName}?'),
+          content: Text(
+            'When you block someone:',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+
+                // Show loading indicator
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Blocking user...'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+
+                try {
+                  // Call the block repository
+                  await ref.read(blockedRepositoryProvider).blockUser(user.id);
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('User blocked successfully'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+
+                    // Navigate back after successful block
+                    Navigator.pop(context);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to block user: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Block'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Rest of your existing code for _buildProfile method...
   Widget _buildProfile(BuildContext context, UserModel user) {
     return SingleChildScrollView(
       child: Column(

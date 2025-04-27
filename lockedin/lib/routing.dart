@@ -63,7 +63,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       if (isAuthenticated && publicRoutes.contains(state.fullPath)) {
         return '/home';
       }
-
       // Going to a protected route while not authenticated
       if (!isAuthenticated && !publicRoutes.contains(state.fullPath)) {
         return '/login';

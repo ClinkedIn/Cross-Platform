@@ -28,6 +28,14 @@ class UpdateProfileRepository {
     _handleResponse(response);
   }
 
+  Future<void> updateConnectionPrivacySettings(String newSettings) async {
+    final response = await RequestService.patch(
+      "/privacy/connection-request",
+      body: {"connectionRequestPrivacySetting": newSettings},
+    );
+    _handleResponse(response);
+  }
+
   void _handleResponse(http.Response response) {
     if (response.statusCode == 200) {
       print('Success: ${response.body}');

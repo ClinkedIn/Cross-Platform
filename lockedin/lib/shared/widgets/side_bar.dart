@@ -23,7 +23,10 @@ class SidebarDrawer extends ConsumerWidget {
                   child: Row(
                     children: [
                       GestureDetector(
-                        onTap: () => context.push("/profile"),
+                        onTap: () {
+                          context.pop();
+                          context.push("/profile");
+                        },
                         child: CircleAvatar(
                           radius: 28,
                           backgroundImage:
@@ -188,7 +191,10 @@ class SidebarDrawer extends ConsumerWidget {
                       fontSize: 16,
                     ),
                   ),
-                  onTap: () {},
+                  onTap: () {
+                    context.pop();
+                    context.push("/settings");
+                  },
                 ),
 
                 SizedBox(height: 16),

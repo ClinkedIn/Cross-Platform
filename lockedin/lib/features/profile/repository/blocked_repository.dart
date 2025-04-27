@@ -37,4 +37,18 @@ class BlockedRepository {
       );
     }
   }
+
+  Future<void> reportUser(userId, policy) async {
+    print("Reporting user: $userId with policy: $policy");
+    // final response = await RequestService.post(
+    //   "/privacy/report-user/$userId",
+    //   body: {"policy": policy},
+    // );
+    // if (response.statusCode == 200) {
+    //   print("User reported successfully.");
+    // } else {
+    //   print("Error reporting user: ${response.body}");
+    //   throw Exception("Failed to report user: ${response.body}");
+    // }
+  }
 }

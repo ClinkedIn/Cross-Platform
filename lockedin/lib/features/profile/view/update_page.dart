@@ -73,7 +73,12 @@ class _UpdateProfileViewState extends ConsumerState<UpdateProfileView> {
                 ElevatedButton(
                   onPressed: () async {
                     await onSubmit();
-                    setState(() {}); // Refresh if needed
+                    setState(() {});
+                    WidgetsBinding.instance.addPostFrameCallback((_) async {
+                      await ref
+                          .read(profileViewModelProvider)
+                          .fetchAllProfileData();
+                    });
                   },
                   child: const Text('Submit'),
                 ),

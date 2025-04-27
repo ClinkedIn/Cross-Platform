@@ -158,9 +158,9 @@ class RequestService {
 
     try {
       final response = await _client.get(uri, headers: headers);
-
-      // Debug response information
-
+      if (response.statusCode == 401) {
+        TokenService.deleteCookie();
+      }
       return response;
     } catch (e) {
       // Retry network errors as well
