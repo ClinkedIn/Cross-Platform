@@ -28,6 +28,7 @@ import 'package:lockedin/features/profile/view/add_position_page.dart';
 import 'package:lockedin/features/profile/view/add_resume_page.dart';
 import 'package:lockedin/features/profile/view/add_section_window.dart';
 import 'package:lockedin/features/profile/view/add_skill_page.dart';
+import 'package:lockedin/features/profile/view/block_list_page.dart';
 import 'package:lockedin/features/profile/view/edit_cover_photo.dart';
 import 'package:lockedin/features/profile/view/edit_profile_photo.dart';
 import 'package:lockedin/features/profile/view/other_profile_page.dart';
@@ -197,6 +198,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: "/add-resume",
         name: "add-resume",
         builder: (context, state) => AddResumePage(),
+      ),
+      GoRoute(
+        path: '/blocklist',
+        name: 'blocklist',
+        builder: (context, state) => BlockedUsersPage(),
       ),
       GoRoute(
         path: '/other-profile/:userId',

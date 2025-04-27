@@ -3,12 +3,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/services/token_services.dart';
+import 'package:lockedin/features/profile/repository/update_profile_repository.dart';
+import 'package:lockedin/features/profile/state/profile_components_state.dart';
+
+final privacySettingProvider = StateProvider<String>((ref) {
+  // Initialize with the user's current setting or default to 'public'
+  final userState = ref.watch(userProvider);
+  return userState.valueOrNull?.profilePrivacySettings ?? 'public';
+});
+
+final updateProfileRepositoryProvider = Provider<UpdateProfileRepository>((
+  ref,
+) {
+  return UpdateProfileRepository();
+});
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the privacy setting value
+    final privacySetting = ref.watch(privacySettingProvider);
+    final repository = ref.read(updateProfileRepositoryProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -33,8 +51,128 @@ class SettingsPage extends ConsumerWidget {
                 label: 'Update Password',
                 onTap: () => context.push('/update-password'),
               ),
+              _SettingsTile(
+                icon: Icons.lock_outline,
+                label: 'Manage Blocklist',
+                onTap: () => context.push('/blocklist'),
+              ),
             ],
           ),
+          const SizedBox(height: 24),
+
+          // Add Privacy Settings Section
+          _SettingsSection(
+            title: 'Privacy',
+            items: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.visibility,
+                            color: Theme.of(context).iconTheme.color,
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            'Profile Privacy',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: privacySetting,
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 12,
+                          ),
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'public',
+                            child: Text('Public'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'private',
+                            child: Text('Private'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'connectionsOnly',
+                            child: Text('Connections Only'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) async {
+                          if (newValue != null && newValue != privacySetting) {
+                            try {
+                              // Show loading indicator
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Updating privacy settings...'),
+                                  duration: Duration(seconds: 1),
+                                ),
+                              );
+
+                              // Update the provider state
+                              ref.read(privacySettingProvider.notifier).state =
+                                  newValue;
+
+                              // Call the repository method
+                              await repository.updatePrivacySettings(newValue);
+
+                              // Show success message
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Privacy settings updated successfully',
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              // Show error message and revert to previous value
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Failed to update privacy settings: $e',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+
+                                // Revert the dropdown value
+                                ref
+                                    .read(privacySettingProvider.notifier)
+                                    .state = privacySetting;
+                              }
+                            }
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _getPrivacyDescription(privacySetting),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
           const SizedBox(height: 24),
           _SettingsSection(
             title: 'Security',
@@ -44,10 +182,7 @@ class SettingsPage extends ConsumerWidget {
                 label: 'Sign Out',
                 onTap: () async {
                   RequestService.post("/user/logout", body: {});
-
                   await TokenService.deleteCookie();
-                  final token = await TokenService.getCookie();
-                  print('Token after deletion: $token');
                   context.go('/');
                 },
               ),
@@ -81,9 +216,7 @@ class SettingsPage extends ConsumerWidget {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  // Call your delete account logic here
                   print('Account deleted');
-                  // Example: ref.read(authProvider.notifier).deleteAccount();
                   context.go('/welcome');
                 },
                 child: const Text(
@@ -143,5 +276,19 @@ class _SettingsTile extends StatelessWidget {
         onTap: onTap,
       ),
     );
+  }
+}
+
+// Helper method to get privacy setting descriptions
+String _getPrivacyDescription(String privacySetting) {
+  switch (privacySetting) {
+    case 'public':
+      return 'Anyone can view your profile';
+    case 'private':
+      return 'Only you can view your profile';
+    case 'connectionsOnly':
+      return 'Only your connections can view your profile';
+    default:
+      return '';
   }
 }
