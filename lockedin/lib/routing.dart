@@ -37,6 +37,7 @@ import 'package:lockedin/shared/widgets/side_bar.dart';
 import 'package:lockedin/shared/widgets/upper_navbar.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
 import 'package:lockedin/features/home_page/view/detailed_post.dart';
+import 'package:lockedin/features/jobs/view/application_status.dart';
 
 // Use this to control drawer state
 final scaffoldKeyProvider = Provider((ref) => GlobalKey<ScaffoldState>());
@@ -47,13 +48,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) async {
-      ref.read(profileViewModelProvider).fetchAllProfileData();
       final publicRoutes = ['/login', '/forgot-password', '/sign-up'];
 
       var isAuthenticated = await TokenService.hasCookie();
-      var cokkie = await TokenService.getCookie();
-      print("Cookie: $cokkie");
-      print("Is authenticated: $isAuthenticated");
 
       // Don't redirect when navigating to the root page, let MainPage handle it
       if (state.fullPath == '/') {
@@ -69,7 +66,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       if (!isAuthenticated && !publicRoutes.contains(state.fullPath)) {
         return '/login';
       }
-
+      if (isAuthenticated) {
+        ref.read(profileViewModelProvider).fetchAllProfileData();
+      }
       // Otherwise, allow the navigation
       return null;
     },
@@ -192,6 +191,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/edit-profile',
         name: 'edit-profile',
         builder: (context, state) => UpdatePage(),
+      ),
+
+      GoRoute(
+        path: '/application-status/:jobId', // Include jobId in the path
+        name:
+            'application-status', // Correct the name (remove the leading slash)
+        builder: (context, state) {
+          final jobId =
+              state
+                  .pathParameters['jobId']!; // Retrieve jobId from the URL parameters
+          return ApplicationStatusPage(jobId: jobId);
+        },
       ),
 
       StatefulShellRoute.indexedStack(

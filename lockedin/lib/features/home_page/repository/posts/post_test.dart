@@ -102,4 +102,10 @@ class MockPostRepository implements PostRepository {
     }
     return false;
   }
+  
+  @override
+  Future<bool> deletePost(String postId) {
+    // TODO: implement deletePost
+    throw UnimplementedError();
+  }
 }

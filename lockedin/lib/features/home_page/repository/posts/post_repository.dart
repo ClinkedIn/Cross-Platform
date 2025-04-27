@@ -9,4 +9,6 @@ abstract class PostRepository {
    // Add these new methods for repost functionality
   Future<bool> createRepost(String postId, {String? description});
   Future<bool> deleteRepost(String repostId);
+  // Add this method to your PostRepository interface
+  Future<bool> deletePost(String postId);
 }

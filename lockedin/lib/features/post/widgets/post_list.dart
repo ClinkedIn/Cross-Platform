@@ -17,6 +17,52 @@ class PostList extends ConsumerWidget {
       itemBuilder: (context, index) {
         return PostCard(
           post: posts[index],
+          // Add other existing properties...
+            onEdit: posts[index].isMine ? () {
+              // Implement edit functionality
+              print("Editing post: ${posts[index].id}");
+              // Navigate to edit page or show edit dialog
+            } : null,
+            onDelete: posts[index].isMine ? () async {
+              // Implement delete functionality
+                final delete = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text('Delete Post'),
+                    content: Text('Are you sure you want to delete this post?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text('Delete', style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+                );
+                 // If user confirmed, delete the post
+                  if (delete == true) {
+                    try {
+                      await ref.read(homeViewModelProvider.notifier).deletePost(posts[index].id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Post deleted successfully')),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to delete post: $e')),
+                        );
+                      }
+                    }
+                  }
+                
+              print("Deleting post: ${posts[index].id}");
+              } : null,
+              // Show confirmation dialog and delete if confirmed
           onLike: () async {
             try {
               await ref
@@ -154,3 +200,4 @@ class PostList extends ConsumerWidget {
     );
   }
 }
+

@@ -7,6 +7,7 @@ import 'package:lockedin/routing.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:lockedin/core/services/token_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +40,7 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   void initState() {
     super.initState();
+    TokenService.deleteCookie();
   }
 
   @override
