@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/core/services/token_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/routing.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:lockedin/core/services/token_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

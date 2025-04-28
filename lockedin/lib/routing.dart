@@ -25,10 +25,13 @@ import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:lockedin/features/profile/utils/picture_loader.dart';
 import 'package:lockedin/features/profile/view/add_education_page.dart';
 import 'package:lockedin/features/profile/view/add_position_page.dart';
+import 'package:lockedin/features/profile/view/add_resume_page.dart';
 import 'package:lockedin/features/profile/view/add_section_window.dart';
 import 'package:lockedin/features/profile/view/add_skill_page.dart';
+import 'package:lockedin/features/profile/view/block_list_page.dart';
 import 'package:lockedin/features/profile/view/edit_cover_photo.dart';
 import 'package:lockedin/features/profile/view/edit_profile_photo.dart';
+import 'package:lockedin/features/profile/view/other_profile_page.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
 import 'package:lockedin/features/profile/view/setting_page.dart';
 import 'package:lockedin/features/profile/view/update_page.dart';
@@ -64,7 +67,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       if (isAuthenticated && publicRoutes.contains(state.fullPath)) {
         return '/home';
       }
-
       // Going to a protected route while not authenticated
       if (!isAuthenticated && !publicRoutes.contains(state.fullPath)) {
         return '/login';
@@ -193,7 +195,25 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/edit-profile',
         name: 'edit-profile',
-        builder: (context, state) => UpdatePage(),
+        builder: (context, state) => UpdateProfileView(),
+      ),
+      GoRoute(
+        path: "/add-resume",
+        name: "add-resume",
+        builder: (context, state) => AddResumePage(),
+      ),
+      GoRoute(
+        path: '/blocklist',
+        name: 'blocklist',
+        builder: (context, state) => BlockedUsersPage(),
+      ),
+      GoRoute(
+        path: '/other-profile/:userId',
+        name: 'other-profile',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return ViewOtherProfilePage(userId: userId);
+        },
       ),
       // Add the new route
       GoRoute(

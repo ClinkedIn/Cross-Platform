@@ -119,7 +119,7 @@ class Constants {
       '$baseApiPath/notifications/restore-notification/%s'; // %s will be replaced with the notificationId
   static const String deleteNotificationEndpoint =
       '/notifications/%s'; // %s will be replaced with the notificationId
-  static const String deletePostEndpoint = 
+  static const String deletePostEndpoint =
       '/posts/%s'; // %s will be replaced with the postId
   static const String editPostEndpoint = '/posts/%s'; 
   // Add these constants after the other endpoint definitions

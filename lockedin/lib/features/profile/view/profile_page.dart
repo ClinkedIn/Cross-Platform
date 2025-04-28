@@ -26,7 +26,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    print("Profile page build called, user state: ${ref.watch(userProvider)}");
     final userState = ref.watch(userProvider);
     final theme = Theme.of(context);
 
@@ -156,11 +155,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           Text("About", style: theme.textTheme.headlineSmall),
                           SizedBox(height: 5),
                           Text(
-                            user.headline ?? "",
+                            user.about!.description!,
                             style: theme.textTheme.bodySmall,
                           ),
                         ],
                       ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.pushNamed(
+                          'other-profile',
+                          pathParameters: {'userId': user.id},
+                        );
+                      },
+                      child: Text('View Profile'),
                     ),
                     Divider(),
                     Padding(
@@ -214,15 +222,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           (item) =>
                               ProfileConverters.educationToProfileItem(item),
                     ),
-                    // ProfileDataComponent(
-                    //   sectionTitle: "Licenses & Certifications",
-                    //   addRoute: '/add-license',
-                    //   editRoute: '/edit-licenses',
-                    //   dataProvider: ref.watch(licensesProvider),
-                    //   itemConverter:
-                    //       (item) =>
-                    //           ProfileConverters.licenseToProfileItem(item),
-                    // ),
                     SizedBox(height: 20),
                   ],
                 ),
