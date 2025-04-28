@@ -21,15 +21,16 @@ void main() {
       workplaceType: 'Remote',
       logoUrl: 'https://example.com/logo.png',
       industry: 'Technology',
+      applicationStatus: 'Applied',
       screeningQuestions: [
         {'question': 'Why do you want this job?', 'idealAnswer': 'To learn'},
       ],
-      applicants: ['user1'],
+      applicants: [
+        {'id': 'user1'},
+      ],
       accepted: [],
       rejected: [],
-
-
-
+      companyId: 'company1',
     ),
     JobModel(
       id: '2',
@@ -44,13 +45,12 @@ void main() {
       workplaceType: 'On-site',
       logoUrl: null,
       industry: 'Design',
+      applicationStatus: 'Not Applied',
       screeningQuestions: [],
       applicants: [],
       accepted: [],
       rejected: [],
-
-
-
+      companyId: '',
     ),
   ];
 

@@ -2,6 +2,7 @@ class JobModel {
   final String title;
   final String id;
   final String company;
+  final String companyId;
   final String location;
   final String description;
   final String experienceLevel;
@@ -12,15 +13,17 @@ class JobModel {
   final String? industry;
   final List<Map<String, dynamic>> screeningQuestions;
 
-  // ✅ New fields from API
-  final List<String> applicants;
+  final List<Map<String, dynamic>> applicants;
   final List<String> accepted;
   final List<String> rejected;
+
+  String applicationStatus;
 
   JobModel({
     required this.title,
     required this.id,
     required this.company,
+    required this.companyId,
     required this.location,
     required this.description,
     required this.experienceLevel,
@@ -33,19 +36,20 @@ class JobModel {
     required this.applicants,
     required this.accepted,
     required this.rejected,
+    required this.applicationStatus,
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
-    final companyData = json['company'] is Map ? json['company'] : null;
-    final screeningQuestions = json['screeningQuestions'] as List?;
+    final screeningQuestions = json['screeningQuestions'] as List? ?? [];
 
-    final workplaceTypeRaw = json['workplaceType']?.toString() ?? 'Unknown';
-    final questions =
-        (screeningQuestions)?.map((q) => q as Map<String, dynamic>).toList() ??
-        [];
+    List<Map<String, dynamic>> _mapList(dynamic list) {
+      if (list is List) {
+        return list.map((e) => (e as Map).cast<String, dynamic>()).toList();
+      }
+      return [];
+    }
 
-    // Parse string lists safely
-    List<String> _parseStringList(dynamic list) {
+    List<String> _stringList(dynamic list) {
       if (list is List) {
         return list.map((e) => e.toString()).toList();
       }
@@ -56,26 +60,34 @@ class JobModel {
       id: (json['_id'] ?? json['id'] ?? json['jobId'])?.toString() ?? '',
       title: json['title'] ?? 'Unknown Position',
       company:
-          companyData != null
-              ? (companyData['name'] ?? 'Unknown Company')
-              : 'Unknown Company',
+          json['companyName'] ??
+          'Unknown Company', // You could add companyName if backend adds later
+      companyId: (json['companyId'] ?? '').toString(),
       location: json['jobLocation'] ?? 'Unknown Location',
       description: json['description'] ?? '',
       experienceLevel:
-          screeningQuestions != null && screeningQuestions.isNotEmpty
-              ? screeningQuestions.first['idealAnswer']?.toString() ?? 'Unknown'
+          screeningQuestions.isNotEmpty
+              ? (screeningQuestions.first['idealAnswer']?.toString() ??
+                  'Unknown')
               : 'Unknown',
       salaryRange: json['salaryRange']?.toString() ?? 'N/A',
-      isRemote: workplaceTypeRaw.toLowerCase() == 'remote',
-      workplaceType: workplaceTypeRaw,
-      logoUrl: companyData != null ? companyData['logo'] : null,
+      isRemote:
+          (json['workplaceType']?.toString().toLowerCase() ?? '') == 'remote',
+      workplaceType: json['workplaceType']?.toString() ?? 'Unknown',
+      logoUrl: json['logoUrl'], // or you can get it later via getCompanyById
       industry: json['industry'],
-      screeningQuestions: questions,
-
-      // ✅ Assign lists from API
-      applicants: _parseStringList(json['applicants']),
-      accepted: _parseStringList(json['accepted']),
-      rejected: _parseStringList(json['rejected']),
+      screeningQuestions: _mapList(json['screeningQuestions']),
+      applicants: _mapList(json['applicants']),
+      accepted: _stringList(json['accepted']),
+      rejected: _stringList(json['rejected']),
+      applicationStatus: 'Not Applied',
     );
   }
+
+  bool hasApplied(String userId) {
+    return applicants.any((applicant) => applicant['userId'] == userId);
+  }
+
+  // Getter to access company name
+  String get companyName => company;
 }

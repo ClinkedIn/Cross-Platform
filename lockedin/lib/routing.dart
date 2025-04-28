@@ -39,6 +39,8 @@ import 'package:lockedin/shared/widgets/bottom_navbar.dart';
 import 'package:lockedin/features/home_page/view/detailed_post.dart';
 import './features/home_page/view/editpost_view.dart';
 import './features/home_page/model/post_model.dart';
+import 'package:lockedin/features/jobs/view/application_status.dart';
+
 
 // Use this to control drawer state
 final scaffoldKeyProvider = Provider((ref) => GlobalKey<ScaffoldState>());
@@ -199,6 +201,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final post = state.extra as PostModel;
           return EditPostPage(post: post);
+        },
+      ),
+
+      GoRoute(
+        path: '/application-status/:jobId', // Include jobId in the path
+        name:
+            'application-status', // Correct the name (remove the leading slash)
+        builder: (context, state) {
+          final jobId =
+              state
+                  .pathParameters['jobId']!; // Retrieve jobId from the URL parameters
+          return ApplicationStatusPage(jobId: jobId);
         },
       ),
 
