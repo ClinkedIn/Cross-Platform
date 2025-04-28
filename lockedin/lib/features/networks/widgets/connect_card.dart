@@ -126,7 +126,6 @@ class _ConnectCardState extends State<ConnectCard> {
                               style: OutlinedButton.styleFrom(
                                 padding: EdgeInsets.symmetric(vertical: 0),
                                 textStyle: TextStyle(fontSize: 12),
-                                backgroundColor: Colors.grey[100],
                                 foregroundColor: Colors.grey[600],
                                 side: BorderSide(color: Colors.grey[300]!),
                               ).merge(theme.outlinedButtonTheme.style),
