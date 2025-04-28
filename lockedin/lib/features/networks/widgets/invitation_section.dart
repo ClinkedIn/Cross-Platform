@@ -129,6 +129,7 @@ class _InvitationSectionState extends State<InvitationSection> {
                 isOpenToWork: false, // You may need to add this to your model
                 onAccept: () => _handleAccept(request.id, viewModel),
                 onDecline: () => _handleDecline(request.id, viewModel),
+                onNameTap: () => _handleNameTap(request.id),
               );
             },
           ),
@@ -184,5 +185,12 @@ class _InvitationSectionState extends State<InvitationSection> {
         ),
       );
     }
+  }
+
+  void _handleNameTap(String userID) {
+    context.pushNamed(
+      'other-profile',
+      pathParameters: {'userId': userID},
+    );
   }
 }

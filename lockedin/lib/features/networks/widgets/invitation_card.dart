@@ -9,6 +9,7 @@ class InvitationCard extends StatelessWidget {
   final bool isOpenToWork;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
+  final VoidCallback onNameTap;
 
   const InvitationCard({
     Key? key,
@@ -20,6 +21,7 @@ class InvitationCard extends StatelessWidget {
     this.isOpenToWork = false,
     required this.onAccept,
     required this.onDecline,
+    required this.onNameTap
   }) : super(key: key);
 
   @override
@@ -35,9 +37,10 @@ class InvitationCard extends StatelessWidget {
         children: [
           // Profile Picture
           CircleAvatar(
-            backgroundImage: profileImage.startsWith('http')
-                ? NetworkImage(profileImage) as ImageProvider
-                : AssetImage(profileImage),
+            backgroundImage:
+                profileImage.startsWith('http')
+                    ? NetworkImage(profileImage) as ImageProvider
+                    : AssetImage(profileImage),
             radius: 24,
             onBackgroundImageError: (exception, stackTrace) {
               // Fallback for failed image loads
@@ -49,7 +52,10 @@ class InvitationCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: theme.textTheme.bodyLarge),
+                GestureDetector(
+                  child: Text(name, style: theme.textTheme.bodyLarge),
+                  onTap: onNameTap,
+                ),
                 Text(
                   role,
                   style: theme.textTheme.bodyMedium,

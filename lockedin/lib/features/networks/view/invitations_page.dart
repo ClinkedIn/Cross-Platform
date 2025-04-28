@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/networks/model/request_list_model.dart';
 import 'package:lockedin/features/networks/viewmodel/request_view_model.dart';
 import 'package:lockedin/features/networks/widgets/invitation_card.dart';
@@ -93,6 +94,7 @@ class _InvitationPageState extends ConsumerState<InvitationPage> {
       isOpenToWork: false, // Assuming false
       onAccept: () => _handleAccept(request.id),
       onDecline: () => _handleDecline(request.id),
+      onNameTap: () => _handleNameTap(request.id),
     );
   }
 
@@ -139,6 +141,10 @@ class _InvitationPageState extends ConsumerState<InvitationPage> {
     } catch (e) {
       _showSnackBar('Failed to decline invitation');
     }
+  }
+
+  void _handleNameTap(String userID) {
+    context.pushNamed('other-profile', pathParameters: {'userId': userID});
   }
 
   void _showSnackBar(String message) {

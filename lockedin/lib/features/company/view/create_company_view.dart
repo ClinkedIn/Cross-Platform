@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lockedin/features/company/model/company_model.dart';
 import 'package:lockedin/features/company/viewmodel/company_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sizer/sizer.dart';
 
 final companyViewModelProvider = ChangeNotifierProvider<CompanyViewModel>((
   ref,
@@ -41,12 +42,14 @@ class CompanyView extends ConsumerWidget {
                         validator:
                             (value) => value!.isEmpty ? 'Required' : null,
                       ),
+                      SizedBox(height: 1.25.h),
                       TextFormField(
                         controller: _addressController,
                         decoration: const InputDecoration(labelText: 'Address'),
                         validator:
                             (value) => value!.isEmpty ? 'Required' : null,
                       ),
+                      SizedBox(height: 1.25.h),
                       TextFormField(
                         controller: _industryController,
                         decoration: const InputDecoration(
@@ -55,6 +58,7 @@ class CompanyView extends ConsumerWidget {
                         validator:
                             (value) => value!.isEmpty ? 'Required' : null,
                       ),
+                      SizedBox(height: 1.25.h),
                       TextFormField(
                         controller: _organizationSizeController,
                         decoration: const InputDecoration(
@@ -63,6 +67,7 @@ class CompanyView extends ConsumerWidget {
                         validator:
                             (value) => value!.isEmpty ? 'Required' : null,
                       ),
+                      SizedBox(height: 1.25.h),
                       TextFormField(
                         controller: _organizationTypeController,
                         decoration: const InputDecoration(
@@ -71,6 +76,7 @@ class CompanyView extends ConsumerWidget {
                         validator:
                             (value) => value!.isEmpty ? 'Required' : null,
                       ),
+                      SizedBox(height: 1.25.h),
                       TextFormField(
                         controller: _tagLineController,
                         decoration: const InputDecoration(labelText: 'Tagline'),
