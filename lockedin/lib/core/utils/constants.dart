@@ -62,76 +62,64 @@ class Constants {
   }
 
   // Authentication endpoints
-  static const String loginEndpoint = '$baseApiPath/user/login';
-  static const String getUserDataEndpoint = '$baseApiPath/user/me';
-  static const String registerEndpoint = '$baseApiPath/user/';
-  static const String createUserProfileEndpoint = '$baseApiPath/user/profile';
-  static const String logoutEndpoint = '$baseApiPath/user/logout';
+  static const String loginEndpoint = '/user/login';
+  static const String getUserDataEndpoint = '/user/me';
+  static const String registerEndpoint = '/user/';
+  static const String createUserProfileEndpoint = '/user/profile';
+  static const String logoutEndpoint = '/user/logout';
 
-  static const String forgotPasswordEndpoint =
-      '$baseApiPath/user/forgot-password';
+  static const String forgotPasswordEndpoint = '/user/forgot-password';
   static const String verifyResetPasswordOtpEndpoint =
-      '$baseApiPath/user/verify-reset-password-otp';
-  static const String resetPasswordEndpoint =
-      '$baseApiPath/user/reset-password';
+      '/user/verify-reset-password-otp';
+  static const String resetPasswordEndpoint = '/user/reset-password';
 
   // Post/feed endpoints
-  static const String feedEndpoint = '$baseApiPath/posts';
+  static const String feedEndpoint = '/posts';
 
   // Chat endpoints
-  static const String allChatsEndpoint = '$baseApiPath/chats/all-chats';
-  static const String chatMarkAsReadEndpoint =
-      '$baseApiPath/chats/mark-as-read';
-  static const String chatMarkAsUnreadEndpoint =
-      '$baseApiPath/chats/mark-as-unread';
-  static const String chatConversationEndpoint =
-      '$baseApiPath/chats/direct-chat/{chatId}';
-  static const String chatMessagesEndpoint = '$baseApiPath/messages';
+  static const String allChatsEndpoint = '/chats/all-chats';
+  static const String chatMarkAsReadEndpoint = '/chats/mark-as-read';
+  static const String chatMarkAsUnreadEndpoint = '/chats/mark-as-unread';
+  static const String chatConversationEndpoint = '/chats/direct-chat/{chatId}';
+  static const String chatMessagesEndpoint = '/messages';
 
   static const String savePostEndpoint =
-      '$baseApiPath/posts/%s/save'; // %s will be replaced with the postId
+      '/posts/%s/save'; // %s will be replaced with the postId
   static const String togglelikePostEndpoint =
-      '$baseApiPath/posts/%s/like'; // %s will be replaced with the postId
-  static const String createPostEndpoint = '$baseApiPath/posts';
+      '/posts/%s/like'; // %s will be replaced with the postId
+  static const String createPostEndpoint = '/posts';
   static const String postDetailEndpoint =
-      '$baseApiPath/posts/%s'; // %s will be replaced with the postId
+      '/posts/%s'; // %s will be replaced with the postId
   static const String commentsEndpoint =
-      '$baseApiPath/comments/%s/post'; // %s will be replaced with the postId
+      '/comments/%s/post'; // %s will be replaced with the postId
   static const String addCommentEndpoint =
-      '$baseApiPath/comments'; // %s will be replaced with the postId
+      '/comments'; // %s will be replaced with the postId
   static const String RepostEndpoint =
-      '$baseApiPath/posts/%s/repost'; // %s will be replaced with the postId
-  //static const String unlikePostEndpoint = '$baseApiPath/posts/%s/unlike'; // %s will be replaced with the postId
+      '/posts/%s/repost'; // %s will be replaced with the postId
+  //static const String unlikePostEndpoint = '/posts/%s/unlike'; // %s will be replaced with the postId
 
   // Notifications endpoints
-  static const String getNotificationsEndpoint = '$baseApiPath/notifications';
+  static const String getNotificationsEndpoint = '/notifications';
   static const String markNotificationAsReadEndpoint =
-      '$baseApiPath/notifications/mark-read/%s'; // %s will be replaced with the notificationId
+      '/notifications/mark-read/%s'; // %s will be replaced with the notificationId
   static const String markNotificationAsUnreadEndpoint =
-      '$baseApiPath/notifications/mark-unread/%s'; // %s will be replaced with the notificationId
+      '/notifications/mark-unread/%s'; // %s will be replaced with the notificationId
   static const String getNotificationsUnreadCountEndpoint =
-      '$baseApiPath/notifications/unread-count';
+      '/notifications/unread-count';
   static const String pauseNotificationsEndpoint =
-      '$baseApiPath/notifications/pause-notifications';
+      '/notifications/pause-notifications';
   static const String resumeNotificationsEndpoint =
-      '$baseApiPath/notifications/resume-notifications';
+      '/notifications/resume-notifications';
   static const String restoreNotificationsEndpoint =
-      '$baseApiPath/notifications/restore-notification/%s'; // %s will be replaced with the notificationId
+      '/notifications/restore-notification/%s'; // %s will be replaced with the notificationId
   static const String deleteNotificationEndpoint =
       '/notifications/%s'; // %s will be replaced with the notificationId
   static const String deletePostEndpoint =
       '/posts/%s'; // %s will be replaced with the postId
-  static const String editPostEndpoint = '/posts/%s'; 
+  static const String editPostEndpoint = '/posts/%s';
   // Add these constants after the other endpoint definitions
-  static const String reportPostEndpoint = 
-    '/posts/%s/report'; // %s will be replaced with the postId
+  static const String reportPostEndpoint =
+      '/posts/%s/report'; // %s will be replaced with the postId
   static const String searchUsersEndpoint = '/search/users';
   static const String googleLoginEndpoint = '/user/auth/google';
-
-
-      '$baseApiPath/notifications/%s'; // %s will be replaced with the notificationId
-
-  static const String deletePostEndpoint =
-      '$baseApiPath/posts/%s'; // %s will be replaced with the postId
-
 }
