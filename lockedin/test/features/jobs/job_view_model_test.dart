@@ -25,12 +25,12 @@ void main() {
       screeningQuestions: [
         {'question': 'Why do you want this job?', 'idealAnswer': 'To learn'},
       ],
-      applicants: ['user1'],
+      applicants: [
+        {'id': 'user1'},
+      ],
       accepted: [],
       rejected: [],
-
-
-
+      companyId: 'company1',
     ),
     JobModel(
       id: '2',
@@ -50,9 +50,7 @@ void main() {
       applicants: [],
       accepted: [],
       rejected: [],
-
-
-
+      companyId: '',
     ),
   ];
 

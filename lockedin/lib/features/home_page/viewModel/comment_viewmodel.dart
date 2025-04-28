@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import '../model/comment_model.dart';
 import '../state/comment_state.dart';
 import '../repository/posts/comment_api.dart';
+import 'dart:async';
+import '../model/taggeduser_model.dart';
 
 // Create a provider for the CommentsApi first
 final commentsApiProvider = Provider<CommentsApi>((ref) {
@@ -82,9 +84,39 @@ class CommentsViewModel extends StateNotifier<CommentsState> {
       );
     }
   }
-  
-    /// Add a new comment
-    Future<void> addComment(String content) async {
+
+    /// Search for users to tag in comments
+    Future<void> searchUsers(String query) async {
+      if (query.length < 2) {
+        state = state.copyWith(
+          userSearchResults: [],
+          isSearchingUsers: false,
+        );
+        return;
+      }
+      
+      try {
+        state = state.copyWith(isSearchingUsers: true);
+        
+        // Call the API to search for users
+        final results = await api.searchUsers(query);
+        
+        state = state.copyWith(
+          userSearchResults: results,
+          isSearchingUsers: false,
+        );
+      } catch (e) {
+        debugPrint('Error searching users: $e');
+        state = state.copyWith(
+          userSearchResults: [],
+          isSearchingUsers: false,
+          error: 'Failed to search users: $e',
+        );
+      }
+    }
+
+    /// Add a comment with tagged users
+    Future<void> addComment(String content, {List<TaggedUser>? taggedUsers}) async {
       if (content.trim().isEmpty || state.post == null) return;
       
       // Generate a temporary ID for optimistic updates
@@ -93,7 +125,6 @@ class CommentsViewModel extends StateNotifier<CommentsState> {
       
       try {
         // Create a temporary comment with the best available user data
-        // This will be replaced with real data from the API
         final tempComment = CommentModel(
           id: tempId,
           userId: 'current_user_id',
@@ -105,7 +136,12 @@ class CommentsViewModel extends StateNotifier<CommentsState> {
           likes: 0,
         );
         
-        debugPrint('📝 Optimistically showing comment: "$content"');
+        // Log tagged users if any
+        if (taggedUsers != null && taggedUsers.isNotEmpty) {
+          debugPrint('👥 Tagging ${taggedUsers.length} users in comment');
+          taggedUsers.forEach((user) => 
+            debugPrint('  - ${user.firstName} ${user.lastName} (${user.userId})'));
+        }
         
         // Update the UI optimistically
         final updatedComments = [...state.comments, tempComment];
@@ -118,12 +154,10 @@ class CommentsViewModel extends StateNotifier<CommentsState> {
           post: updatedPost,
         );
         
-        // Make the API call - this will fetch current user data internally
-        debugPrint('🔄 Sending comment to API...');
-        final newComment = await api.addComment(postId, content);
-        debugPrint('✅ API returned comment from: ${newComment.username}');
+        // Make the API call with tagged users
+        final newComment = await api.addComment(postId, content, taggedUsers: taggedUsers);
         
-        // Update UI with the real comment (with correct user data from API)
+        // Update UI with the real comment
         final finalComments = state.comments.map((c) => 
           c.id == tempId ? newComment : c
         ).toList();
@@ -132,7 +166,7 @@ class CommentsViewModel extends StateNotifier<CommentsState> {
           comments: _sortComments(finalComments),
         );
         
-        debugPrint('✅ Comment added successfully and UI updated');
+        debugPrint('✅ Comment with tagged users added successfully');
       } catch (e) {
         debugPrint('❌ Error adding comment: $e');
         

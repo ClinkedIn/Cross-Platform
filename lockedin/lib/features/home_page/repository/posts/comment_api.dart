@@ -4,61 +4,13 @@ import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
 import 'package:lockedin/features/home_page/model/comment_model.dart';
 import 'package:lockedin/features/home_page/model/post_model.dart';
+import 'package:lockedin/features/home_page/model/taggeduser_model.dart';
 
 class CommentsApi {
   // Cache for current user data
   static Map<String, dynamic>? _currentUserCache;
   static DateTime? _userDataFetchTime;
   
-  /// Fetches current user data or uses cached version if recently fetched
-  Future<Map<String, dynamic>> _getCurrentUserData() async {
-    // Use cache if available and less than 5 minutes old
-    final now = DateTime.now();
-    if (_currentUserCache != null && _userDataFetchTime != null) {
-      final difference = now.difference(_userDataFetchTime!);
-      if (difference.inMinutes < 5) {
-        return _currentUserCache!;
-      }
-    }
-    
-    try {
-      final response = await RequestService.get(Constants.getUserDataEndpoint);
-      
-      if (response.statusCode == 200) {
-        // Debug the raw response
-        debugPrint('User data response status: ${response.statusCode}');
-        
-        final Map<String, dynamic> data = json.decode(response.body);
-        
-        if (data.containsKey('user')) {
-          _currentUserCache = data['user'];
-          _userDataFetchTime = now;
-          return _currentUserCache!;
-        } else {
-          debugPrint('User data missing "user" field: ${data.keys.join(', ')}');
-          throw Exception('User data not found in response');
-        }
-      } else {
-        throw Exception('Failed to load user data: ${response.statusCode}');
-      }
-    } catch (e) {
-      debugPrint('Error fetching user data: $e');
-      
-      // Return empty user data if we can't fetch it
-      return _currentUserCache ?? {
-        '_id': 'current_user_id',
-        'firstName': 'Current',
-        'lastName': 'User',
-        'profilePicture': 'https://randomuser.me/api/portraits/men/1.jpg',
-        'lastJobTitle': ''
-      };
-    }
-  }
-  /// Public accessor for current user data
-    Future<Map<String, dynamic>> getCurrentUserData() async {
-      // Simply call the private method
-      return _getCurrentUserData();
-    }
   /// Fetches detailed post data
   /// GET /posts/{postId}
   Future<PostModel> fetchPostDetail(String postId) async {
@@ -222,63 +174,155 @@ class CommentsApi {
       }
     }
 
- /// Adds a new comment to a post
-Future<CommentModel> addComment(String postId, String content) async {
-  try {
-    // Get current user data
-    final userData = await _getCurrentUserData();
-    
-    // Extract user information
-    final userId = userData['_id'] ?? '';
-    final firstName = userData['firstName'] ?? '';
-    final lastName = userData['lastName'] ?? '';
-    final profileImage = userData['profilePicture'] ?? '';
-    final headline = userData['lastJobTitle'] ?? '';
-    
-    debugPrint('👤 Adding comment with user: $firstName $lastName');
-    debugPrint('📝 Comment content: "$content" for postId: "$postId"');
-    
-    // Get the endpoint and always include both postId and content in the body
-    final String endpointToUse = Constants.addCommentEndpoint.contains('%s') 
-        ? Constants.addCommentEndpoint.replaceFirst('%s', postId)
-        : Constants.addCommentEndpoint;
-    
-    // Use the new postMultipartFlexible method instead of regular post
-    final response = await RequestService.postMultipart(
-      endpointToUse,
-      additionalFields:  {
-        'postId': postId,
-        'commentContent': content,
-      },
-    );
-    
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      debugPrint('✅ Comment successfully added! Response: ${response.statusCode}');
+    // Make getCurrentUserData public
+    Future<Map<String, dynamic>> getCurrentUserData() async {
+      final now = DateTime.now();
+      if (_currentUserCache != null && _userDataFetchTime != null) {
+        final difference = now.difference(_userDataFetchTime!);
+        if (difference.inMinutes < 5) {
+          return _currentUserCache!;
+        }
+      }
       
-      final Map<String, dynamic> data = json.decode(response.body);
-      final commentJson = data['comment'] ?? {};
-      
-      return CommentModel(
-        id: commentJson['commentId'] ?? DateTime.now().toString(),
-        userId: commentJson['userId'] ?? userId,
-        username: commentJson['firstName'] != null && commentJson['lastName'] != null
-            ? '${commentJson['firstName']} ${commentJson['lastName']}'
-            : '$firstName $lastName',
-        profileImageUrl: commentJson['profilePicture'] ?? profileImage,
-        content: commentJson['content'] ?? content,
-        time: 'Just now',
-        isLiked: false,
-        designation: commentJson['headline'] ?? headline,
-      );
-    } else {
-      debugPrint('❌ Failed to add comment: ${response.statusCode}, ${response.body}');
-      throw Exception('Failed to add comment: ${response.statusCode}, ${response.body}');
+      try {
+        final response = await RequestService.get(Constants.getUserDataEndpoint);
+        
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = json.decode(response.body);
+          
+          if (data.containsKey('user')) {
+            _currentUserCache = data['user'];
+            _userDataFetchTime = now;
+            return _currentUserCache!;
+          } else {
+            throw Exception('User data not found in response');
+          }
+        } else {
+          throw Exception('Failed to get user data: ${response.statusCode}');
+        }
+      } catch (e) {
+        debugPrint('❌ Error getting current user data: $e');
+        rethrow;
+      }
     }
-  } catch (e) {
-    debugPrint('❌ Error adding comment: $e');
-    rethrow;  // Rethrow so the UI layer can handle displaying the error
-  }
-}
+
+    /// Search for users by name
+    Future<List<TaggedUser>> searchUsers(String query, {int page = 1, int limit = 10}) async {
+      try {
+        if (query.length < 2) {
+          return [];
+        }
+        
+        // Build query parameters
+        final queryParams = {
+          'name': query,
+          'page': page.toString(),
+          'limit': limit.toString(),
+        };
+        
+        // Create query string
+        final queryString = queryParams.entries
+            .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+            .join('&');
+        
+        // Get the search endpoint
+        final endpoint = '${Constants.searchUsersEndpoint}?$queryString';
+        
+        debugPrint('🔍 Searching users with query: "$query"');
+        final response = await RequestService.get(endpoint);
+        
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          
+          if (data['users'] == null || !(data['users'] is List)) {
+            debugPrint('❌ No users found or invalid response format');
+            return [];
+          }
+          
+          final List<dynamic> usersJson = data['users'];
+          debugPrint('✅ Found ${usersJson.length} users');
+          
+          return usersJson.map((user) => TaggedUser.fromJson(user)).toList();
+        } else {
+          debugPrint('❌ Failed to search users: ${response.statusCode}');
+          return [];
+        }
+      } catch (e) {
+        debugPrint('❌ Error searching users: $e');
+        return [];
+      }
+    }
+
+    /// Adds a new comment to a post with optional tagged users
+    Future<CommentModel> addComment(String postId, String content, {List<TaggedUser>? taggedUsers}) async {
+      try {
+        // Get current user data
+        final userData = await getCurrentUserData();
+        
+        // Extract user information
+        final userId = userData['_id'] ?? '';
+        final firstName = userData['firstName'] ?? '';
+        final lastName = userData['lastName'] ?? '';
+        final profileImage = userData['profilePicture'] ?? '';
+        final headline = userData['lastJobTitle'] ?? '';
+        
+        debugPrint('👤 Adding comment with user: $firstName $lastName');
+        debugPrint('📝 Comment content: "$content" for postId: "$postId"');
+        
+        // Get the endpoint
+        final String endpointToUse = Constants.addCommentEndpoint.contains('%s') 
+            ? Constants.addCommentEndpoint.replaceFirst('%s', postId)
+            : Constants.addCommentEndpoint;
+        
+        // Prepare fields for multipart request
+        Map<String, dynamic> fields = {
+          'postId': postId,
+          'commentContent': content,
+        };
+        
+        // Add tagged users if available
+        if (taggedUsers != null && taggedUsers.isNotEmpty) {
+          // Convert tagged users to JSON string
+          final taggedUsersJson = jsonEncode(
+            taggedUsers.map((user) => user.toJson()).toList()
+          );
+          fields['taggedUsers'] = taggedUsersJson;
+        }
+        
+        debugPrint('📤 Sending comment data: $fields');
+        
+        final response = await RequestService.postMultipart(
+          endpointToUse,
+          additionalFields: fields,
+        );
+        
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          debugPrint('✅ Comment successfully added! Response: ${response.statusCode}');
+          
+          final Map<String, dynamic> data = json.decode(response.body);
+          final commentJson = data['comment'] ?? {};
+          
+          return CommentModel(
+            id: commentJson['commentId'] ?? DateTime.now().toString(),
+            userId: commentJson['userId'] ?? userId,
+            username: commentJson['firstName'] != null && commentJson['lastName'] != null
+                ? '${commentJson['firstName']} ${commentJson['lastName']}'
+                : '$firstName $lastName',
+            profileImageUrl: commentJson['profilePicture'] ?? profileImage,
+            content: commentJson['content'] ?? content,
+            time: 'Just now',
+            isLiked: false,
+            designation: commentJson['headline'] ?? headline,
+          );
+        } else {
+          debugPrint('❌ Failed to add comment: ${response.statusCode}, ${response.body}');
+          throw Exception('Failed to add comment: ${response.statusCode}, ${response.body}');
+        }
+      } catch (e) {
+        debugPrint('❌ Error adding comment: $e');
+        rethrow;
+      }
+    }
 
   /// Toggles like status for a comment
   // Future<bool> toggleLikeComment(String commentId) async {

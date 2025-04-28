@@ -41,6 +41,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     super.initState();
   }
 
+
   @override
   Widget build(BuildContext context) {
     // Wait until auth is initialized before building the app

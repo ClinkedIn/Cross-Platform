@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class PostModel {
   final String id;
   final String userId;
+  final Map<String,dynamic>? companyId;
   final String username;
   final String profileImageUrl;
   final String content;
@@ -26,6 +27,7 @@ class PostModel {
   PostModel({
     required this.id,
     required this.userId,
+    this.companyId,
     required this.username,
     required this.profileImageUrl,
     required this.content,
@@ -50,6 +52,7 @@ class PostModel {
   PostModel copyWith({
     String? id,
     String? userId,
+    Map<String,dynamic>? companyId,
     String? username,
     String? profileImageUrl,
     String? content,
@@ -72,6 +75,7 @@ class PostModel {
     return PostModel(
       id: id ?? this.id,
       userId: userId ?? this.userId,
+      companyId: companyId ?? this.companyId,
       username: username ?? this.username,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       content: content ?? this.content,
@@ -96,6 +100,7 @@ class PostModel {
   Map<String, dynamic> toJson() {
     return {
       'userId': userId,
+      'companyId': companyId,
       'username': username,
       'profileImageUrl': profileImageUrl,
       'content': content,
@@ -125,6 +130,7 @@ class PostModel {
     return PostModel(
       id: doc.id,
       userId: data['userId'] ?? '',
+      companyId: data['companyId'] !=null ? Map<String,dynamic>.from(data['companyId']) : null,
       username: data['username'] ?? '',
       profileImageUrl: data['profileImageUrl'] ?? '',
       content: data['content'] ?? '',
@@ -151,6 +157,7 @@ class PostModel {
     return PostModel(
       id: json['id'] ?? '',
       userId: json['userId'] ?? '',
+      companyId: json['companyId'] !=null ? Map<String,dynamic>.from(json['companyId']) : null,
       username: json['username'] ?? '',
       profileImageUrl: json['profileImageUrl'] ?? '',
       content: json['content'] ?? '',
