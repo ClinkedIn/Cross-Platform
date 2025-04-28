@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/company/viewmodel/dashboard_viewmodel.dart';
+import 'package:lockedin/features/company/viewmodel/company_viewmodel.dart';
 import 'package:lockedin/features/jobs/view/jobs_page.dart';
-import 'package:sizer/sizer.dart'; // <--- make sure you have sizer
+import 'package:sizer/sizer.dart';
 import '../widgets/action_card.dart';
 import '../widgets/post_card.dart';
 
@@ -11,8 +11,10 @@ class DashboardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final viewModel = ref.read(dashboardViewModelProvider);
-    final posts = viewModel.getPosts();
+    final companyViewModel = ref.watch(companyViewModelProvider);
+    final isLoading = companyViewModel.isLoading;
+    final errorMessage = companyViewModel.errorMessage;
+    final company = companyViewModel.createdCompany;
 
     return Scaffold(
       appBar: AppBar(
@@ -27,9 +29,10 @@ class DashboardPage extends ConsumerWidget {
           },
         ),
         title: Text(
-          'TCCD - Career Center',
+          company?.name ?? 'Career Center',
           style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
         ),
+
         actions: [
           TextButton.icon(
             onPressed: () {
@@ -51,31 +54,96 @@ class DashboardPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(3.w),
-            child: Text(
-              "Today's actions",
-              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-            ),
-          ),
-          ActionCard(
-            title: "Add services to your company page",
-            description:
-                "Let potential clients know about services from your company page.",
-            onTap: () {},
-          ),
-          Padding(
-            padding: EdgeInsets.all(3.w),
-            child: Text(
-              "Manage recent posts",
-              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-            ),
-          ),
-          ...posts.map((post) => PostCard(post: post)).toList(),
-        ],
-      ),
+      body:
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : errorMessage != null
+              ? Center(
+                child: Text(
+                  errorMessage,
+                  style: TextStyle(color: Colors.red, fontSize: 14.sp),
+                  textAlign: TextAlign.center,
+                ),
+              )
+              : company == null
+              ? Center(
+                child: Text(
+                  'No company data available.',
+                  style: TextStyle(fontSize: 14.sp),
+                ),
+              )
+              : ListView(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(3.w),
+                    child: Text(
+                      "Company Overview",
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Card(
+                    margin: EdgeInsets.all(3.w),
+                    child: Padding(
+                      padding: EdgeInsets.all(3.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Company Name: ${company.name}',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Address: ${company.address}',
+                            style: TextStyle(fontSize: 12.sp),
+                          ),
+                          Text(
+                            'Location: ${company.location ?? "No location provided"}',
+                            style: TextStyle(fontSize: 12.sp),
+                          ),
+                          Text(
+                            'Industry: ${company.industry ?? "No industry provided"}',
+                            style: TextStyle(fontSize: 12.sp),
+                          ),
+                          if (company.tagLine != null)
+                            Text(
+                              'Tagline: ${company.tagLine}',
+                              style: TextStyle(fontSize: 12.sp),
+                            ),
+                          if (company.website != null)
+                            Text(
+                              'Website: ${company.website}',
+                              style: TextStyle(fontSize: 12.sp),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  ActionCard(
+                    title: "Add services to your company page",
+                    description:
+                        "Let potential clients know about services from your company page.",
+                    onTap: () {},
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(3.w),
+                    child: Text(
+                      "Manage recent posts",
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  // ...posts.map((post) => PostCard(post: post)).toList(),
+                ],
+              ),
     );
   }
 

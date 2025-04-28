@@ -1,4 +1,5 @@
 class Company {
+  final String? id;
   final String name;
   final String address;
   final String? website;
@@ -10,6 +11,7 @@ class Company {
   final String? logo;
 
   Company({
+    this.id,
     required this.name,
     required this.address,
     this.website,
@@ -23,6 +25,7 @@ class Company {
 
   factory Company.fromJson(Map<String, dynamic> json) {
     return Company(
+      id: json['id'],
       name: json['name'] ?? '',
       address: json['address'] ?? '',
       website: json['website'], // nullable
