@@ -11,9 +11,9 @@ class Constants {
       'assets/images/default_cover_photo.jpeg';
 
   // Server URLs
-  static const String _emulatorUrl = "http://10.0.2.2:3000";
+  static const String _emulatorUrl = "http://10.0.2.2:3000/api";
   static const String _physicalDeviceUrl =
-      "http://192.168.1.23:3000"; // Your actual IP address
+      "http://192.168.1.23:3000/api"; // Your actual IP address
 
   // Base API path
   static const String baseApiPath = '/api';
@@ -118,8 +118,20 @@ class Constants {
   static const String restoreNotificationsEndpoint =
       '$baseApiPath/notifications/restore-notification/%s'; // %s will be replaced with the notificationId
   static const String deleteNotificationEndpoint =
+      '/notifications/%s'; // %s will be replaced with the notificationId
+  static const String deletePostEndpoint = 
+      '/posts/%s'; // %s will be replaced with the postId
+  static const String editPostEndpoint = '/posts/%s'; 
+  // Add these constants after the other endpoint definitions
+  static const String reportPostEndpoint = 
+    '/posts/%s/report'; // %s will be replaced with the postId
+  static const String searchUsersEndpoint = '/search/users';
+  static const String googleLoginEndpoint = '/user/auth/google';
+
+
       '$baseApiPath/notifications/%s'; // %s will be replaced with the notificationId
 
   static const String deletePostEndpoint =
       '$baseApiPath/posts/%s'; // %s will be replaced with the postId
+
 }

@@ -1,5 +1,6 @@
 import '../model/comment_model.dart';
 import '../model/post_model.dart';
+import 'package:lockedin/features/home_page/model/taggeduser_model.dart';
 
 /// State class for the Comments view
 class CommentsState {
@@ -17,6 +18,12 @@ class CommentsState {
   
   /// Sort order for comments
   final CommentSortOrder sortOrder;
+  
+  /// User search results for @ mentions
+  final List<TaggedUser> userSearchResults;
+  
+  /// Whether currently searching for users
+  final bool isSearchingUsers;
 
   /// Constructor
   CommentsState({
@@ -25,6 +32,8 @@ class CommentsState {
     required this.isLoading,
     this.error,
     this.sortOrder = CommentSortOrder.mostRelevant,
+    this.userSearchResults = const [],
+    this.isSearchingUsers = false,
   });
   
   /// Create a copy of the current state with specified fields updated
@@ -34,6 +43,8 @@ class CommentsState {
     bool? isLoading,
     String? error,
     CommentSortOrder? sortOrder,
+    List<TaggedUser>? userSearchResults,
+    bool? isSearchingUsers,
   }) {
     return CommentsState(
       post: post ?? this.post,
@@ -41,6 +52,8 @@ class CommentsState {
       isLoading: isLoading ?? this.isLoading,
       error: error,
       sortOrder: sortOrder ?? this.sortOrder,
+      userSearchResults: userSearchResults ?? this.userSearchResults,
+      isSearchingUsers: isSearchingUsers ?? this.isSearchingUsers,
     );
   }
   
