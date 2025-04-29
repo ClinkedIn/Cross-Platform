@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/features/networks/viewmodel/request_view_model.dart';
+import 'package:lockedin/features/networks/viewmodel/suggestion_view_model.dart';
 import 'package:lockedin/features/networks/widgets/connect_section.dart';
 import 'package:lockedin/features/networks/widgets/follow_section.dart';
 import 'package:lockedin/features/networks/widgets/invitation_section.dart';
@@ -16,9 +17,15 @@ class GrowTab extends StatelessWidget {
       children: [
         ManageNetwork(),
         Divider(),
-        ChangeNotifierProvider(create: (_) => RequestViewModel(), child: InvitationSection(),),
+        ChangeNotifierProvider(
+          create: (_) => RequestViewModel(),
+          child: InvitationSection(),
+        ),
         Divider(),
-        ConnectSection(),
+        ChangeNotifierProvider(
+          create: (_) => SuggestionViewModel(),
+          child: ConnectSection(),
+        ),
         Divider(),
         FollowSection(),
       ],

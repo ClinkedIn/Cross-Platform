@@ -1,20 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
-class ConnectCard extends StatelessWidget {
+class ConnectCard extends StatefulWidget {
   final String backgroundImage;
-  final String profileImage;
+  final ImageProvider profileImage;
   final String name;
   final String headline;
+  final VoidCallback onCardTap;
+  final VoidCallback onConnectTap;
+  final VoidCallback? onCancelTap;
+  final bool isPending;
 
   const ConnectCard({
     required this.backgroundImage,
     required this.profileImage,
     required this.name,
     required this.headline,
+    required this.onCardTap,
+    required this.onConnectTap,
+    this.onCancelTap,
+    required this.isPending,
     Key? key,
   }) : super(key: key);
 
+  @override
+  State<ConnectCard> createState() => _ConnectCardState();
+}
+
+class _ConnectCardState extends State<ConnectCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -34,7 +47,7 @@ class ConnectCard extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(12.0)),
                 child: Image.asset(
-                  backgroundImage,
+                  widget.backgroundImage,
                   height: 80, // Reduced height
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -52,7 +65,7 @@ class ConnectCard extends StatelessWidget {
                     backgroundColor: Colors.white,
                     child: CircleAvatar(
                       radius: 28,
-                      backgroundImage: AssetImage(profileImage),
+                      backgroundImage: widget.profileImage,
                     ),
                   ),
                 ),
@@ -75,19 +88,22 @@ class ConnectCard extends StatelessWidget {
                   // Name and headline in condensed format
                   Column(
                     children: [
-                      Text(
-                        name,
-                        style: TextStyle(
-                          fontSize: 14.0,
-                          fontWeight: FontWeight.bold,
+                      GestureDetector(
+                        onTap: widget.onCardTap,
+                        child: Text(
+                          widget.name,
+                          style: TextStyle(
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: 2.0),
                       Text(
-                        headline,
+                        widget.headline,
                         style: TextStyle(
                           fontSize: 12.0,
                           color: Colors.grey[600],
@@ -99,18 +115,47 @@ class ConnectCard extends StatelessWidget {
                     ],
                   ),
 
-                  // Connect Button
+                  // Connect/Pending Button
                   SizedBox(
                     width: double.infinity,
                     height: 3.h, // Fixed smaller height
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 0),
-                        textStyle: TextStyle(fontSize: 12),
-                      ).merge(theme.outlinedButtonTheme.style),
-                      child: Text('+ Connect'),
-                    ),
+                    child:
+                        widget.isPending
+                            ? OutlinedButton(
+                              onPressed: widget.onCancelTap,
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(vertical: 0),
+                                textStyle: TextStyle(fontSize: 12),
+                                foregroundColor: Colors.grey[600],
+                                side: BorderSide(color: Colors.grey[300]!),
+                              ).merge(theme.outlinedButtonTheme.style),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text('Pending'),
+                                ],
+                              ),
+                            )
+                            : OutlinedButton(
+                              onPressed: widget.onConnectTap,
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(vertical: 0),
+                                textStyle: TextStyle(fontSize: 12),
+                              ).merge(theme.outlinedButtonTheme.style),
+                              child: Text('+ Connect'),
+                            ),
                   ),
                 ],
               ),
