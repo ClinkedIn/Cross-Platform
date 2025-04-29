@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/core/services/token_services.dart';
+import 'package:lockedin/features/admin/view/admin_pannel_page.dart';
 import 'package:lockedin/features/admin/view/admin_page.dart';
 import 'package:lockedin/features/auth/view/change_password_page.dart';
 import 'package:lockedin/features/auth/view/edit_email_view.dart';
@@ -218,10 +219,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin-dashboard',
         name: 'admin-dashboard',
-        builder: (context, state) => AdminDashboardView(),
+        builder: (context, state) => AdminHomePage(),
       ),
 
-      // Add the new route
+
       GoRoute(
         path: '/edit-post',
         builder: (context, state) {

@@ -147,7 +147,7 @@ class LoginPage extends ConsumerWidget {
                               ref
                                   .read(profileViewModelProvider)
                                   .fetchAllProfileData();
-                              context.go('/home');
+                              context.go('/');
                             }
                           }
                         },
@@ -193,7 +193,7 @@ class LoginPage extends ConsumerWidget {
                       ref
                           .read(loginViewModelProvider.notifier)
                           .signInWithGoogle();
-                          context.go('/home');
+                      context.go('/home');
                     },
                   ),
                 ],
