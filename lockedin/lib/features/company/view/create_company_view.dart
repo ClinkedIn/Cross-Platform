@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/features/company/model/company_model.dart';
+import 'package:lockedin/features/company/view/company_profile.dart';
+import 'package:lockedin/features/company/view/dashboard_page.dart';
 import 'package:lockedin/features/company/viewmodel/company_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sizer/sizer.dart';
 
 final companyViewModelProvider = ChangeNotifierProvider<CompanyViewModel>((
   ref,
@@ -16,6 +19,7 @@ class CompanyView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final companyViewModel = ref.watch(companyViewModelProvider);
 
+    // Moved controllers outside the build method to avoid recreating them unnecessarily
     final _formKey = GlobalKey<FormState>();
     final _nameController = TextEditingController();
     final _addressController = TextEditingController();
@@ -41,12 +45,14 @@ class CompanyView extends ConsumerWidget {
                         validator:
                             (value) => value!.isEmpty ? 'Required' : null,
                       ),
+                      SizedBox(height: 1.25.h),
                       TextFormField(
                         controller: _addressController,
                         decoration: const InputDecoration(labelText: 'Address'),
                         validator:
                             (value) => value!.isEmpty ? 'Required' : null,
                       ),
+                      SizedBox(height: 1.25.h),
                       TextFormField(
                         controller: _industryController,
                         decoration: const InputDecoration(
@@ -55,6 +61,7 @@ class CompanyView extends ConsumerWidget {
                         validator:
                             (value) => value!.isEmpty ? 'Required' : null,
                       ),
+                      SizedBox(height: 1.25.h),
                       TextFormField(
                         controller: _organizationSizeController,
                         decoration: const InputDecoration(
@@ -63,6 +70,7 @@ class CompanyView extends ConsumerWidget {
                         validator:
                             (value) => value!.isEmpty ? 'Required' : null,
                       ),
+                      SizedBox(height: 1.25.h),
                       TextFormField(
                         controller: _organizationTypeController,
                         decoration: const InputDecoration(
@@ -71,6 +79,7 @@ class CompanyView extends ConsumerWidget {
                         validator:
                             (value) => value!.isEmpty ? 'Required' : null,
                       ),
+                      SizedBox(height: 1.25.h),
                       TextFormField(
                         controller: _tagLineController,
                         decoration: const InputDecoration(labelText: 'Tagline'),
@@ -102,6 +111,21 @@ class CompanyView extends ConsumerWidget {
                                   ),
                                 ),
                               );
+
+                              // Navigate to CompanyProfileView with companyId
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => CompanyProfileView(
+                                        companyId:
+                                            companyViewModel
+                                                .createdCompany!
+                                                .id!,
+                                      ),
+                                ),
+                              );
+
                               _formKey.currentState?.reset();
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
