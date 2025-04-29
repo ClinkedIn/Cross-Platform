@@ -10,12 +10,20 @@ class CompanyRepository {
   static const String _companiesEndpoint = '/api/companies';
 
   Future<Company?> getCompanyById(String companyId) async {
-    final uri = Uri.parse('$_companiesEndpoint/$companyId');
+    final uri = Uri.parse('http://10.0.2.2:3000$_companiesEndpoint/$companyId');
 
     print('Fetching company from: $uri');
 
     try {
-      final response = await RequestService.get(uri.toString());
+      final token = await TokenService.getCookie();
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'accept': 'application/json',
+          'Cookie': 'access_token=$token',
+        },
+      );
 
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
@@ -23,7 +31,9 @@ class CompanyRepository {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print('Fetched company data: ${jsonEncode(data)}');
-        return Company.fromJson(data);
+        return Company.fromJson(
+          data['company'],
+        ); // because your API wraps it inside 'company'
       } else {
         print('Failed to fetch company: ${response.statusCode}');
         return null;
@@ -93,6 +103,62 @@ class CompanyRepository {
     } catch (e) {
       print('Error creating company: $e');
       return null;
+    }
+  }
+
+  Future<bool> editCompany({
+    required String companyId,
+    required String name,
+    required String address,
+    String? website,
+    required String industry,
+    required String organizationSize,
+    required String organizationType,
+    String? tagLine,
+    String? location,
+    String? logoPath,
+  }) async {
+    final uri = Uri.parse('http://10.0.2.2:3000/api/companies/$companyId');
+
+    try {
+      final token = await TokenService.getCookie();
+      var request =
+          http.MultipartRequest('PATCH', uri)
+            ..fields['name'] = name
+            ..fields['address'] = address
+            ..fields['industry'] = industry
+            ..fields['organizationSize'] = organizationSize
+            ..fields['organizationType'] = organizationType;
+
+      if (website != null) request.fields['website'] = website;
+      if (tagLine != null) request.fields['tagLine'] = tagLine;
+      if (location != null) request.fields['location'] = location;
+
+      if (logoPath != null) {
+        var logoFile = await http.MultipartFile.fromPath(
+          'file',
+          logoPath,
+          contentType: MediaType.parse(
+            lookupMimeType(logoPath) ?? 'application/octet-stream',
+          ),
+        );
+        request.files.add(logoFile);
+      }
+
+      request.headers.addAll({
+        'Cookie': 'access_token=$token',
+        'Accept': 'application/json',
+      });
+
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+
+      print('Edit company response: $responseBody');
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error editing company: $e');
+      return false;
     }
   }
 }
