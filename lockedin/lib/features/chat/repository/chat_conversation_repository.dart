@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/core/utils/constants.dart';
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/services/auth_service.dart';
+import 'dart:io';
+import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 
 
 class ChatConversationRepository {
@@ -213,6 +215,85 @@ class ChatConversationRepository {
     }
   }
 
+  Future<Map<String, dynamic>> sendMessageWithAttachment({
+    required String chatId,
+    required String messageText,
+    required String chatType,
+    required File attachment,
+    required AttachmentType attachmentType,
+    String? fileName,
+    String? replyTo,
+  }) async {
+    try {
+      // Make sure user data is loaded before trying to send a message
+      await _authService.fetchCurrentUser();
+      
+      // Use the endpoint constant for messages
+      final endpoint = Constants.chatMessagesEndpoint.replaceAll('{chatId}', chatId);
+
+      // Set up the body according to the form structure shown in the image
+      final body = {
+        'messageText': messageText,
+        'type': chatType,
+        'receiverId': _receiverId ?? '', // Make sure receiverId is available from previous API calls
+        'chatId': chatId, // Adding chatId to ensure proper routing
+      };
+      
+      // Log the request for debugging
+      debugPrint('Sending message with attachment to chat: $chatId');
+      debugPrint('File: ${attachment.path}, Type: ${attachmentType.toString()}');
+      debugPrint('Receiver ID: ${_receiverId ?? "Not available"}');
+      
+      // Send the message with attachment using the multipart request
+      // Use 'files' as the field name without array notation based on the Multer error
+      final response = await RequestService.postMultipart(
+        endpoint,
+        file: attachment,
+        fileFieldName: 'files', // Field name must match exactly what the server expects
+        additionalFields: body,
+      );
+      
+      // Check status code for success
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        debugPrint('Error: Server returned status code ${response.statusCode}');
+        return {
+          'success': false,
+          'error': 'Server returned status code ${response.statusCode}: ${response.body}',
+        };
+      }
+
+      // Parse the response
+      final responseBody = response.body;
+      if (responseBody.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Empty response from server',
+        };
+      }
+      
+      final responseData = jsonDecode(responseBody);
+      
+      // Check if the response has the expected format
+      if (responseData['message'] == 'Message created successfully' && responseData['data'] != null) {
+        return {
+          'success': true,
+          'data': responseData['data'],
+        };
+      }
+      
+      return {
+        'success': false,
+        'error': responseData['message'] ?? 'Unknown API error',
+      };
+    } catch (e) {
+      debugPrint('Error sending message with attachment: $e');
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
   Future<Map<String, dynamic>> blockUser(String? userId) async {
     if (userId == null) {
       return {
@@ -327,8 +408,6 @@ class ChatConversationRepository {
       final endpoint = Constants.isUserBlocked.replaceAll('{userId}', userId);
       
       final response = await RequestService.get(endpoint);
-
-      print(response.body);
       
       if (response.statusCode != 200) {
         return false;

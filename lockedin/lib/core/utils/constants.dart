@@ -13,7 +13,7 @@ class Constants {
   // Server URLs
   static const String _emulatorUrl = "https://www.lockedin-cufe.me/api";
   //"http://10.0.2.2:3000";
-  static const String _physicalDeviceUrl = "http://192.168.1.15:3000/api";
+  static const String _physicalDeviceUrl = "http://192.168.1.17:3000/api";
   //"https://www.lockedin-cufe.me/api";
        // Your actual IP address
 

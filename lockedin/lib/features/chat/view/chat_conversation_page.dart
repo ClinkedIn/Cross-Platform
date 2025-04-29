@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -85,39 +84,10 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
               Text('Error sending message', 
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 4),
-              Text(
-                error.toString(),
-                style: TextStyle(fontSize: 12),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
             ],
           ),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 5),
-          action: SnackBarAction(
-            label: 'DETAILS',
-            textColor: Colors.white,
-            onPressed: () {
-              // Show a dialog with the full error details
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text('API Error Details'),
-                  content: SingleChildScrollView(
-                    child: Text(error.toString()),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('CLOSE'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
         ),
       );
     });
@@ -512,14 +482,11 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                 ),
                 ElevatedButton.icon(
                   onPressed: () {
-                    // Here we'll implement sending the image later
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Image ready to send (sending not implemented yet)')),
-                    );
+                    _sendAttachment();
                   },
                   icon: Icon(Icons.check),
-                  label: Text('Ready to Send'),
+                  label: Text('Send'),
                 ),
               ],
             ),
@@ -587,14 +554,11 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                 ),
                 ElevatedButton.icon(
                   onPressed: () {
-                    // Here we'll implement sending the document later
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Document ready to send (sending not implemented yet)')),
-                    );
+                    _sendAttachment();
                   },
                   icon: Icon(Icons.check),
-                  label: Text('Ready to Send'),
+                  label: Text('Send'),
                 ),
               ],
             ),
@@ -603,7 +567,42 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       ),
     );
   }
+  
+  Future<void> _sendAttachment() async {
+    
+    
+    try {
+      final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+      final result = await chatViewModel.sendMessageWithAttachment();
+      
 
+      
+      if (result['success'] == true) {
+        // Scroll to bottom to show the sent message
+        _scrollToBottom();
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sending attachment: ${result['error']}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Hide the loading indicator
+
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error sending attachment: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+  
   // Add this function to check the block status
   Widget _buildBlockButton() {
     return FutureBuilder<bool>(

@@ -267,6 +267,103 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     }
   }
   
+  /// Sends a message with an attachment to the current chat
+  Future<Map<String, dynamic>> sendMessageWithAttachment({
+    String? messageText,
+  }) async {
+    if (state.selectedAttachment == null) {
+      return {
+        'success': false,
+        'error': 'No attachment selected',
+      };
+    }
+    
+    final attachment = state.selectedAttachment!;
+    
+    try {
+      // Update state to indicate sending in progress
+      state = state.copyWith(isSending: true, error: null);
+      
+      // Create a temporary message to display immediately
+      final temporaryMessage = ChatMessage(
+        id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+        sender: MessageSender(
+          id: currentUserId,
+          firstName: _authService.currentUser?.firstName ?? 'You',
+          lastName: _authService.currentUser?.lastName ?? '',
+          profilePicture: _authService.currentUser?.profilePicture,
+        ),
+        messageText: messageText ?? '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        messageAttachment: [attachment.previewUrl ?? ''], // Use preview URL or empty
+        attachmentType: attachment.type,
+      );
+      
+      // Add the temporary message to the UI for immediate feedback
+      _addTemporaryMessage(temporaryMessage);
+      
+      // Determine chat type from the chat object if available
+      String chatType = chat?.chatType ?? 'direct';
+      
+      try {
+        // Send the message with attachment to the server 
+        final result = await _repository.sendMessageWithAttachment(
+          chatId: chatId,
+          messageText: messageText ?? '',
+          chatType: chatType,
+          attachment: attachment.file,
+          attachmentType: attachment.type,
+          fileName: attachment.fileName,
+        );
+        
+        // Check if the message was sent successfully
+        if (result['success'] != true) {
+          throw Exception(result['error'] ?? 'Failed to send message with attachment');
+        }
+        
+        // Message sent successfully
+        debugPrint('Message with attachment sent successfully');
+        
+        // Clear the selected attachment since it was sent
+        clearSelectedAttachment();
+        
+        // Refresh the conversation to get the actual message from the server
+        // Wait a moment to give the server time to process the message
+        await Future.delayed(const Duration(milliseconds: 500));
+        await refreshConversation();
+        
+        // Update state to indicate sending is complete
+        state = state.copyWith(isSending: false);
+        
+        return {
+          'success': true
+        };
+      } catch (e) {
+        // Set detailed error state with the specific API error
+        debugPrint('Error sending message with attachment: ${e.toString()}');
+        state = state.copyWith(
+          error: 'Failed to send message with attachment: ${e.toString()}',
+          isSending: false,
+        );
+        
+        return {
+          'success': false,
+          'error': e.toString()
+        };
+      }
+    } catch (e) {
+      // Handle errors - but keep the temporary message in UI
+      debugPrint('Error preparing message with attachment: ${e.toString()}');
+      state = state.copyWith(isSending: false);
+      
+      return {
+        'success': false,
+        'error': e.toString()
+      };
+    }
+  }
+  
   /// Helper method to add a temporary message to the UI
   void _addTemporaryMessage(ChatMessage message) {
     // Update the flat list of messages
