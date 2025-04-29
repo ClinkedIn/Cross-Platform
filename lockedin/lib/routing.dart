@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/core/services/token_services.dart';
+import 'package:lockedin/features/admin/view/admin_page.dart';
 import 'package:lockedin/features/auth/view/change_password_page.dart';
 import 'package:lockedin/features/auth/view/edit_email_view.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
@@ -210,6 +211,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final userId = state.pathParameters['userId']!;
           return ViewOtherProfilePage(userId: userId);
         },
+      ),
+      GoRoute(
+        path: '/admin-dashboard',
+        name: 'admin-dashboard',
+        builder: (context, state) => AdminDashboardView(),
       ),
 
       StatefulShellRoute.indexedStack(
