@@ -118,7 +118,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               Spacer(),
                               IconButton(
                                 onPressed: () {
-                                  context.push('/admin-dashboard');
+                                  context.push('/edit-profile');
                                 },
                                 icon: Icon(Icons.edit, color: AppColors.gray),
                               ),
@@ -161,15 +161,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         ],
                       ),
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.pushNamed(
-                          'other-profile',
-                          pathParameters: {'userId': user.id},
-                        );
-                      },
-                      child: Text('View Profile'),
-                    ),
+
                     Divider(),
                     Padding(
                       padding: const EdgeInsets.all(16.0),

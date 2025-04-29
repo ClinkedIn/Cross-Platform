@@ -20,7 +20,9 @@ class AdminRepository {
   }
 
   Future<Map<String, dynamic>> fetchDashboardStats() async {
-    final response = await RequestService.get("/admin/dashboard");
+    final response = await RequestService.get("/admin/analytics/overview");
+    print("Dashboard Stats: ${response.body}");
+    print("Dashboard Stats Code: ${response.statusCode}");
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return Map<String, dynamic>.from(data["data"]);

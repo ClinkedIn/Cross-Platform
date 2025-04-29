@@ -12,6 +12,12 @@ class AdminDashboardViewModel extends ChangeNotifier {
     notifyListeners();
 
     dashboardData = await _repository.fetchDashboardStats();
+    print("Dashboard Data📝: $dashboardData");
+    if (dashboardData == null) {
+      // Handle the case where no data is returned
+      print("No data found");
+      return;
+    }
 
     isLoading = false;
     notifyListeners();
