@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/features/company/model/company_model.dart';
 import 'package:lockedin/features/company/view/company_profile.dart';
-import 'package:lockedin/features/company/view/dashboard_page.dart';
+import 'package:lockedin/features/company/view/create_post_screen.dart';
 import 'package:lockedin/features/company/viewmodel/company_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,7 +18,6 @@ class CompanyView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final companyViewModel = ref.watch(companyViewModelProvider);
 
-    // Moved controllers outside the build method to avoid recreating them unnecessarily
     final _formKey = GlobalKey<FormState>();
     final _nameController = TextEditingController();
     final _addressController = TextEditingController();
@@ -97,7 +96,10 @@ class CompanyView extends ConsumerWidget {
 
                             await companyViewModel.createCompany(newCompany);
 
-                            if (companyViewModel.createdCompany != null) {
+                            if (companyViewModel.createdCompany != null &&
+                                companyViewModel.createdCompany!.id != null) {
+                              final companyId =
+                                  companyViewModel.createdCompany!.id!;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
@@ -106,16 +108,12 @@ class CompanyView extends ConsumerWidget {
                                 ),
                               );
 
-                              // Navigate to CompanyProfileView with companyId
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
                                   builder:
                                       (_) => CompanyProfileView(
-                                        companyId:
-                                            companyViewModel
-                                                .createdCompany!
-                                                .id!,
+                                        companyId: companyId,
                                       ),
                                 ),
                               );
