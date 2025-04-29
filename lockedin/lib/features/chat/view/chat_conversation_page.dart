@@ -30,9 +30,8 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     super.initState();
     // Mark chat as read when opening the conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Make sure user profile is loaded
-      _ensureUserDataLoaded();
       // Mark messages as read
+      _scrollToBottom();
     });
   }
 
@@ -47,7 +46,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 1000),
         curve: Curves.easeOut,
       );
     }
@@ -66,50 +65,15 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     
     // Get the current user ID and log it for debugging
     final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
-    final userId = chatViewModel.currentUserId;
-    debugPrint('Sending message with user ID: ${userId.isNotEmpty ? userId : "EMPTY"}');
     
     // Call the viewModel's sendMessage method
     chatViewModel.sendMessage(messageText).then((_) {
       // Success! Message sent
       _scrollToBottom();
-    }).catchError((error) {
-      // Show a detailed error message if something went wrong
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Error sending message', 
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 5),
-        ),
-      );
     });
   }
   
-  // Ensure the user data is loaded
-  Future<void> _ensureUserDataLoaded() async {
-    try {
-      final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
-      final currentUserId = chatViewModel.currentUserId;
-      
-      if (currentUserId.isEmpty) {
-        debugPrint('Current user ID is empty, trying to reload user data');
-        // Force a refresh of the conversation which now fetches user data first
-        await chatViewModel.refreshConversation();
-      }
-    } catch (e) {
-      debugPrint('Error ensuring user data is loaded: $e');
-    }
-  }
 
-  
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
@@ -157,33 +121,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                                     Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
                                     SizedBox(height: 16),
                                     Text('No messages yet', style: TextStyle(color: Colors.grey)),
-                                    if (chatState.error != null)
-                                      Padding(
-                                        padding: const EdgeInsets.all(16.0),
-                                        child: Column(
-                                          children: [
-                                            Text(
-                                              'Could not load messages from server',
-                                              style: TextStyle(color: Colors.red),
-                                            ),
-                                            SizedBox(height: 8),
-                                            Text(
-                                              'Pull down to refresh or check your connection',
-                                              style: TextStyle(color: Colors.grey),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            SizedBox(height: 16),
-                                            ElevatedButton.icon(
-                                              onPressed: () {
-                                                // Retry loading conversation
-                                                ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
-                                              },
-                                              icon: Icon(Icons.refresh),
-                                              label: Text('Try Again'),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
                                   ],
                                 ),
                               ),
@@ -275,7 +212,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
             final messagesForDate = chatState.messagesByDate[dateKey]!;
             
             // Determine if we should show the date divider
-            bool showDivider = true;
+            bool showDivider = false;
 
             // Check if previous date exists
             if (index > 0) {
@@ -457,9 +394,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
-            Text('Selected Image', 
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
             SizedBox(height: 16),
             Expanded(
               child: Image.file(
@@ -485,7 +419,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                     Navigator.pop(context);
                     _sendAttachment();
                   },
-                  icon: Icon(Icons.check),
                   label: Text('Send'),
                 ),
               ],
@@ -505,9 +438,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
-            Text('Selected Document', 
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
             SizedBox(height: 16),
             Container(
               padding: EdgeInsets.all(16),
@@ -557,7 +487,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                     Navigator.pop(context);
                     _sendAttachment();
                   },
-                  icon: Icon(Icons.check),
                   label: Text('Send'),
                 ),
               ],
@@ -569,37 +498,12 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   }
   
   Future<void> _sendAttachment() async {
-    
-    
-    try {
-      final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
-      final result = await chatViewModel.sendMessageWithAttachment();
+    final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+    final result = await chatViewModel.sendMessageWithAttachment();
       
-
-      
-      if (result['success'] == true) {
-        // Scroll to bottom to show the sent message
-        _scrollToBottom();
-      } else {
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error sending attachment: ${result['error']}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      // Hide the loading indicator
-
-      
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error sending attachment: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (result['success'] == true) {
+      // Scroll to bottom to show the sent message
+      _scrollToBottom();
     }
   }
   
