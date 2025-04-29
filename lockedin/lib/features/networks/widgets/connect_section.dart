@@ -15,7 +15,7 @@ class ConnectSection extends StatefulWidget {
 class _ConnectSectionState extends State<ConnectSection> {
   // Track pending connection requests
   final Set<String> _pendingConnections = {};
-  
+
   // Track if expanded view is shown
   bool _showExpandedView = false;
 
@@ -29,7 +29,7 @@ class _ConnectSectionState extends State<ConnectSection> {
         listen: false,
       );
       viewModel.fetchSuggestions();
-      
+
       // Initialize pending connections from the ViewModel if available
       if (viewModel.pendingConnectionIds != null) {
         setState(() {
@@ -116,9 +116,12 @@ class _ConnectSectionState extends State<ConnectSection> {
         }
 
         // Get displayed suggestions based on expanded state
-        final displayedSuggestions = _showExpandedView 
-            ? viewModel.suggestions 
-            : viewModel.suggestions.take(viewModel.initialDisplayCount).toList();
+        final displayedSuggestions =
+            _showExpandedView
+                ? viewModel.suggestions
+                : viewModel.suggestions
+                    .take(viewModel.initialDisplayCount)
+                    .toList();
 
         // Display grid of connection suggestions
         return Column(
@@ -131,18 +134,25 @@ class _ConnectSectionState extends State<ConnectSection> {
                         (suggestion) => ConnectCard(
                           backgroundImage:
                               suggestion.coverPhoto.startsWith('assets/')
-                                  ? suggestion.coverPhoto
-                                  : 'assets/images/default_cover_photo.jpeg',
+                                  ? 'assets/images/default_cover_photo.jpeg'
+                                  : suggestion
+                                      .coverPhoto, //'assets/images/default_cover_photo.jpeg',
                           profileImage:
-                              suggestion.profilePicture.startsWith('assets/')
-                                  ? suggestion.profilePicture
-                                  : 'assets/images/default_profile_photo.png',
+                              suggestion.profilePicture != ''
+                                  ? NetworkImage(suggestion.profilePicture)
+                                  : AssetImage(
+                                        'assets/images/default_cover_photo.jpeg',
+                                      )
+                                      as ImageProvider,
                           name:
                               "${suggestion.firstName} ${suggestion.lastName}",
                           headline: suggestion.headline,
                           onCardTap: () => _handleCardTap(suggestion.id),
-                          isPending: _pendingConnections.contains(suggestion.id),
-                          onConnectTap: () => _handleConnect(suggestion.id, viewModel),
+                          isPending: _pendingConnections.contains(
+                            suggestion.id,
+                          ),
+                          onConnectTap:
+                              () => _handleConnect(suggestion.id, viewModel),
                         ),
                       )
                       .toList(),
@@ -153,7 +163,7 @@ class _ConnectSectionState extends State<ConnectSection> {
                   onPressed: () {
                     setState(() {
                       _showExpandedView = true;
-                      
+
                       // Load more suggestions if needed
                       if (viewModel.shouldLoadMoreOnExpand) {
                         viewModel.loadAllSuggestions();
@@ -198,18 +208,18 @@ class _ConnectSectionState extends State<ConnectSection> {
     if (_pendingConnections.contains(suggestionId)) {
       return;
     }
-    
+
     try {
       // Set as pending immediately for UI feedback
       setState(() {
         _pendingConnections.add(suggestionId);
       });
-      
+
       // Send the connection request
       await viewModel.sendConnectionRequest(suggestionId);
-      
+
       // Maintain the pending state (don't remove from _pendingConnections)
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Connection request sent'),
@@ -223,7 +233,7 @@ class _ConnectSectionState extends State<ConnectSection> {
           _pendingConnections.remove(suggestionId);
         });
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to send connection request'),

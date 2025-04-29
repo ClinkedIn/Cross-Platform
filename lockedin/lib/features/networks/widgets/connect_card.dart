@@ -3,7 +3,7 @@ import 'package:sizer/sizer.dart';
 
 class ConnectCard extends StatefulWidget {
   final String backgroundImage;
-  final String profileImage;
+  final ImageProvider profileImage;
   final String name;
   final String headline;
   final VoidCallback onCardTap;
@@ -65,7 +65,7 @@ class _ConnectCardState extends State<ConnectCard> {
                     backgroundColor: Colors.white,
                     child: CircleAvatar(
                       radius: 28,
-                      backgroundImage: AssetImage(widget.profileImage),
+                      backgroundImage: widget.profileImage,
                     ),
                   ),
                 ),
