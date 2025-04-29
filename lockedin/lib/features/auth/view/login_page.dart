@@ -193,6 +193,7 @@ class LoginPage extends ConsumerWidget {
                       ref
                           .read(loginViewModelProvider.notifier)
                           .signInWithGoogle();
+                          context.go('/home');
                     },
                   ),
                 ],
