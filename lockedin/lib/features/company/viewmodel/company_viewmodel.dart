@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:lockedin/features/company/model/company_model.dart';
+import 'package:lockedin/features/company/model/company_post_model.dart';
 import 'package:lockedin/features/company/repository/company_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -26,16 +27,16 @@ class CompanyViewModel extends ChangeNotifier {
       logoPath: logoPath,
     );
 
-    if (createdResult != null) {
-      // Immediately fetch full company details after creation
+    if (createdResult != null &&
+        createdResult.id != null &&
+        createdResult.id!.isNotEmpty) {
       final fetchedResult = await _companyRepository.getCompanyById(
-        createdResult.address,
+        createdResult.id!,
       );
 
       if (fetchedResult != null) {
         _createdCompany = fetchedResult;
       } else {
-        // If fetching fails, fallback to the createdResult
         _createdCompany = createdResult;
         _errorMessage = 'Company created, but failed to retrieve full data.';
       }
@@ -117,6 +118,47 @@ class CompanyViewModel extends ChangeNotifier {
 
     _setLoading(false);
     return success;
+  }
+
+  Future<bool> createPost({
+    required String companyId,
+    required String description,
+    List<Map<String, dynamic>>? taggedUsers,
+    String? whoCanSee,
+    String? whoCanComment,
+    List<String>? filePaths,
+  }) async {
+    _setLoading(true);
+    _clearError();
+
+    final success = await _companyRepository.createCompanyPost(
+      companyId: companyId,
+      description: description,
+      taggedUsers: taggedUsers,
+      whoCanSee: whoCanSee,
+      whoCanComment: whoCanComment,
+      filePaths: filePaths,
+    );
+
+    if (!success) {
+      _errorMessage = 'Failed to create post.';
+    }
+
+    _setLoading(false);
+    return success;
+  }
+
+  List<CompanyPost> _companyPosts = [];
+  List<CompanyPost> get companyPosts => _companyPosts;
+
+  Future<void> fetchCompanyPosts(String companyId) async {
+    _setLoading(true);
+    _clearError();
+
+    final posts = await _companyRepository.fetchCompanyPosts(companyId);
+    _companyPosts = posts;
+
+    _setLoading(false);
   }
 }
 

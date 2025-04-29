@@ -1,8 +1,11 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/company/view/create_post_screen.dart';
 import 'package:lockedin/features/company/view/edit_company_profile_view.dart';
 import 'package:lockedin/features/company/viewmodel/company_viewmodel.dart';
 import 'package:lockedin/features/company/model/company_post_model.dart';
+import 'package:lockedin/features/company/widgets/create_company_post.dart';
 import 'package:lockedin/features/company/widgets/post_card.dart';
 import 'package:sizer/sizer.dart';
 
@@ -22,7 +25,6 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
     super.initState();
     Future.microtask(() {
       ref.read(companyViewModelProvider).fetchCompanyById(widget.companyId);
-      // If you want to fetch posts too, call that here
     });
   }
 
@@ -33,18 +35,17 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
     final errorMessage = companyViewModel.errorMessage;
     final company = companyViewModel.fetchedCompany;
 
-    // Example list of posts (replace with your real data)
-    final List<PostModel> posts = [
-      PostModel(
-        title: 'We Are Hiring!',
-        description: 'Excited to expand our team with new talents.',
-        timeAgo: '2h ago',
-        imageUrl: 'assets/images/experience.jpg',
-        likes: 34,
-        comments: 12,
-        reposts: 5,
-      ),
-    ];
+    // final List<CompanyPost> posts = [
+    //   CompanyPost(
+    //     title: 'We Are Hiring!',
+    //     description: 'Excited to expand our team with new talents.',
+    //     timeAgo: '2h ago',
+    //     imageUrl: 'assets/images/experience.jpg',
+    //     likes: 34,
+    //     comments: 12,
+    //     reposts: 5,
+    //   ),
+    // ];
 
     return Scaffold(
       appBar: AppBar(
@@ -130,7 +131,7 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
               ? Center(
                 child: Text(
                   errorMessage,
-                  style: TextStyle(color: Colors.red, fontSize: 16.sp),
+                  style: TextStyle(color: Colors.red, fontSize: 14.sp),
                   textAlign: TextAlign.center,
                 ),
               )
@@ -138,23 +139,22 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
               ? Center(
                 child: Text(
                   'No company data found.',
-                  style: TextStyle(fontSize: 16.sp),
+                  style: TextStyle(fontSize: 14.sp),
                 ),
               )
               : ListView(
+                padding: EdgeInsets.all(3.w),
                 children: [
-                  Padding(
-                    padding: EdgeInsets.all(3.w),
-                    child: Text(
-                      "Company Overview",
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  Text(
+                    "Company Overview",
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                  SizedBox(height: 1.h),
                   Card(
-                    margin: EdgeInsets.all(3.w),
+                    margin: EdgeInsets.zero,
                     child: Padding(
                       padding: EdgeInsets.all(3.w),
                       child: Column(
@@ -183,42 +183,66 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                           SizedBox(height: 2.w),
                           Text(
                             'Location: ${company.address}',
-                            style: TextStyle(fontSize: 16.sp),
+                            style: TextStyle(fontSize: 14.sp),
                           ),
                           SizedBox(height: 1.w),
                           Text(
                             'Industry: ${company.industry}',
-                            style: TextStyle(fontSize: 16.sp),
+                            style: TextStyle(fontSize: 14.sp),
                           ),
                           SizedBox(height: 1.w),
                           if (company.tagLine != null)
                             Text(
                               'Tagline: ${company.tagLine}',
-                              style: TextStyle(fontSize: 16.sp),
+                              style: TextStyle(fontSize: 14.sp),
                             ),
                           SizedBox(height: 1.w),
                           if (company.website != null)
                             Text(
                               'Website: ${company.website}',
-                              style: TextStyle(fontSize: 16.sp),
+                              style: TextStyle(fontSize: 14.sp),
                             ),
                         ],
                       ),
                     ),
                   ),
+                  SizedBox(height: 2.h),
 
-                  Padding(
-                    padding: EdgeInsets.all(3.w),
-                    child: Text(
-                      "Recent Posts",
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  Text(
+                    "Create New Post",
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                  SizedBox(height: 1.h),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => CreatePostScreen(
+                                companyId: company.id!,
+                                description: 'We just created our company!',
+                              ),
+                        ),
+                      );
+                    },
+                    child: const Text("What do you want to talk about?"),
+                  ),
 
-                  ...posts.map((post) => PostCard(post: post)).toList(),
+                  // CreateCompanyPostWidget(companyId: widget.companyId),
+                  // SizedBox(height: 2.h),
+                  Text(
+                    "Recent Posts",
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 1.h),
+                  // ...posts.map((post) => PostCard(post: post)).toList(),
                 ],
               ),
     );
