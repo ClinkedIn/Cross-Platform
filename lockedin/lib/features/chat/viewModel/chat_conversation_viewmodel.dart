@@ -1,8 +1,13 @@
 // chat_conversation_viewmodel.dart
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:lockedin/core/services/auth_service.dart';
+import 'package:lockedin/features/chat/model/attachment_model.dart';
 import 'package:lockedin/features/chat/model/chat_message_model.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
 import 'package:lockedin/features/chat/repository/chat_conversation_repository.dart';
@@ -26,6 +31,7 @@ class ChatConversationState {
   final Map<String, List<ChatMessage>> messagesByDate;
   final bool isMarkedAsRead;
   final bool isSending;
+  final ChatAttachment? selectedAttachment;
 
   ChatConversationState({
     this.messages = const [],
@@ -34,6 +40,7 @@ class ChatConversationState {
     this.messagesByDate = const {},
     this.isMarkedAsRead = false,
     this.isSending = false,
+    this.selectedAttachment,
   });
 
   ChatConversationState copyWith({
@@ -43,6 +50,7 @@ class ChatConversationState {
     Map<String, List<ChatMessage>>? messagesByDate,
     bool? isMarkedAsRead,
     bool? isSending,
+    ChatAttachment? selectedAttachment,
   }) {
     return ChatConversationState(
       messages: messages ?? this.messages,
@@ -51,6 +59,7 @@ class ChatConversationState {
       messagesByDate: messagesByDate ?? this.messagesByDate,
       isMarkedAsRead: isMarkedAsRead ?? this.isMarkedAsRead,
       isSending: isSending ?? this.isSending,
+      selectedAttachment: selectedAttachment,
     );
   }
 }
@@ -81,9 +90,7 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       
       // Then load the conversation
       await _loadConversation();
-      
-      // Mark as read when opening the conversation
-      await markChatAsRead();
+
     } catch (e) {
       debugPrint('Error in initialization: $e');
       state = state.copyWith(error: e.toString(), isLoading: false);
@@ -196,11 +203,6 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       // Update state to indicate sending in progress
       state = state.copyWith(isSending: true, error: null);
       
-      // // Check if user is authenticated
-      // if (_authService.currentUser == null) {
-      //   throw Exception('You must be logged in to send messages');
-      // }
-      
       // Create a temporary message to display immediately
       final temporaryMessage = ChatMessage(
         id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
@@ -265,6 +267,103 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     }
   }
   
+  /// Sends a message with an attachment to the current chat
+  Future<Map<String, dynamic>> sendMessageWithAttachment({
+    String? messageText,
+  }) async {
+    if (state.selectedAttachment == null) {
+      return {
+        'success': false,
+        'error': 'No attachment selected',
+      };
+    }
+    
+    final attachment = state.selectedAttachment!;
+    
+    try {
+      // Update state to indicate sending in progress
+      state = state.copyWith(isSending: true, error: null);
+      
+      // Create a temporary message to display immediately
+      final temporaryMessage = ChatMessage(
+        id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+        sender: MessageSender(
+          id: currentUserId,
+          firstName: _authService.currentUser?.firstName ?? 'You',
+          lastName: _authService.currentUser?.lastName ?? '',
+          profilePicture: _authService.currentUser?.profilePicture,
+        ),
+        messageText: messageText ?? '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        messageAttachment: [attachment.previewUrl ?? ''], // Use preview URL or empty
+        attachmentType: attachment.type,
+      );
+      
+      // Add the temporary message to the UI for immediate feedback
+      _addTemporaryMessage(temporaryMessage);
+      
+      // Determine chat type from the chat object if available
+      String chatType = chat?.chatType ?? 'direct';
+      
+      try {
+        // Send the message with attachment to the server 
+        final result = await _repository.sendMessageWithAttachment(
+          chatId: chatId,
+          messageText: messageText ?? '',
+          chatType: chatType,
+          attachment: attachment.file,
+          attachmentType: attachment.type,
+          fileName: attachment.fileName,
+        );
+        
+        // Check if the message was sent successfully
+        if (result['success'] != true) {
+          throw Exception(result['error'] ?? 'Failed to send message with attachment');
+        }
+        
+        // Message sent successfully
+        debugPrint('Message with attachment sent successfully');
+        
+        // Clear the selected attachment since it was sent
+        clearSelectedAttachment();
+        
+        // Refresh the conversation to get the actual message from the server
+        // Wait a moment to give the server time to process the message
+        await Future.delayed(const Duration(milliseconds: 500));
+        await refreshConversation();
+        
+        // Update state to indicate sending is complete
+        state = state.copyWith(isSending: false);
+        
+        return {
+          'success': true
+        };
+      } catch (e) {
+        // Set detailed error state with the specific API error
+        debugPrint('Error sending message with attachment: ${e.toString()}');
+        state = state.copyWith(
+          error: 'Failed to send message with attachment: ${e.toString()}',
+          isSending: false,
+        );
+        
+        return {
+          'success': false,
+          'error': e.toString()
+        };
+      }
+    } catch (e) {
+      // Handle errors - but keep the temporary message in UI
+      debugPrint('Error preparing message with attachment: ${e.toString()}');
+      state = state.copyWith(isSending: false);
+      
+      return {
+        'success': false,
+        'error': e.toString()
+      };
+    }
+  }
+  
   /// Helper method to add a temporary message to the UI
   void _addTemporaryMessage(ChatMessage message) {
     // Update the flat list of messages
@@ -302,34 +401,149 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     );
   }
   
-  /// Mark chat as read
-  /// This sets the unread count to zero for the current user
-  Future<bool> markChatAsRead() async {
+  Future<ChatAttachment?> selectImageFromCamera() async {
     try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 70,
+      );
       
-      // Call the repository method to mark as read
-      final success = await _repository.markChatAsRead(chatId);
-      
-      // Update the state to reflect the read status
-      if (success) {
-        state = state.copyWith(isMarkedAsRead: true);
+      if (image != null) {
+        final file = File(image.path);
+        final attachment = ChatAttachment(
+          file: file,
+          type: AttachmentType.image,
+          localId: 'local_${DateTime.now().millisecondsSinceEpoch}',
+        );
         
-        // Also update the unread count in the parent chat list if possible
-        try {
-          // This would be implemented in a real app to update the chat list
-          // For now just log it
-          debugPrint('Chat marked as read successfully');
-        } catch (e) {
-          debugPrint('Error updating chat list unread count: $e');
-        }
+        state = state.copyWith(selectedAttachment: attachment);
+        return attachment;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error selecting image from camera: $e');
+      throw Exception('Could not access camera: ${e.toString()}');
+    }
+  }
+
+  Future<ChatAttachment?> selectImageFromGallery() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+      
+      if (image != null) {
+        final file = File(image.path);
+        final attachment = ChatAttachment(
+          file: file,
+          type: AttachmentType.image,
+          localId: 'local_${DateTime.now().millisecondsSinceEpoch}',
+        );
+        
+        state = state.copyWith(selectedAttachment: attachment);
+        return attachment;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error selecting image from gallery: $e');
+      throw Exception('Could not access gallery: ${e.toString()}');
+    }
+  }
+
+  Future<ChatAttachment?> selectDocument() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt'],
+      );
+      
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        final fileName = result.files.single.name;
+        
+        final attachment = ChatAttachment(
+          file: file,
+          type: AttachmentType.document,
+          localId: 'local_${DateTime.now().millisecondsSinceEpoch}',
+          fileName: fileName,
+        );
+        
+        state = state.copyWith(selectedAttachment: attachment);
+        return attachment;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error selecting document: $e');
+      throw Exception('Could not select document: ${e.toString()}');
+    }
+  }
+
+  void clearSelectedAttachment() {
+    state = state.copyWith(selectedAttachment: null);
+  }
+
+  String? getReceiverUserId() {
+    // First try getting from the repository (which extracts it from the API response)
+    final receiverId = _repository.receiverId;
+    if (receiverId != null) {
+      return receiverId;
+    }
+
+    return null;
+  }
+  
+  Future<bool> isUserBlocked() async {
+    final receiverId = getReceiverUserId();
+    if (receiverId == null) {
+      debugPrint('Cannot check block status: No receiver ID found');
+      return false;
+    }
+    
+    try {
+      return await _repository.isUserBlocked(receiverId);
+    } catch (e) {
+      debugPrint('Error checking block status: $e');
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> toggleBlockUser() async {
+    final receiverId = getReceiverUserId();
+    if (receiverId == null) {
+      return {
+        'success': false,
+        'error': 'Cannot find the user to block/unblock',
+      };
+    }
+
+    try {
+      // Check if the user is already blocked
+      final isBlocked = await isUserBlocked();
+      
+      Map<String, dynamic> result;
+      if (isBlocked) {
+        // If blocked, unblock them
+        result = await _repository.unblockUser(receiverId);
       } else {
-        debugPrint('Failed to mark chat as read');
+        // If not blocked, block them
+        result = await _repository.blockUser(receiverId);
       }
       
-      return success;
+      // If successful, refresh the conversation
+      if (result['success'] == true) {
+        await refreshConversation();
+      }
+      
+      return result;
     } catch (e) {
-      debugPrint('Error in markChatAsRead: $e');
-      return false;
+      debugPrint('Error toggling block status: $e');
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
     }
   }
 }

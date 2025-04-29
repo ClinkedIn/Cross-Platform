@@ -13,6 +13,9 @@ void main() async {
   // Initialize the base URL before the app starts
   await Constants.initializeBaseUrl();
 
+  // Initialize token services
+  await TokenService.deleteCookie();
+
   // Initialize Firebase
   await Firebase.initializeApp();
 

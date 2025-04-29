@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
+import 'package:lockedin/features/chat/model/attachment_model.dart';
+import 'package:lockedin/features/chat/widgets/attachment_widget.dart';
 import 'package:lockedin/features/chat/widgets/chat_bubble_widget.dart';
 import 'package:lockedin/features/chat/widgets/chat_input_field_widget.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
+
 
 
 class ChatConversationScreen extends ConsumerStatefulWidget {
@@ -28,12 +30,8 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     super.initState();
     // Mark chat as read when opening the conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Make sure user profile is loaded
-      _ensureUserDataLoaded();
       // Mark messages as read
-      ref.read(chatConversationProvider(widget.chat.id).notifier).markChatAsRead();
-      // Check connection to help debug server issues
-      //_checkServerConnection();
+      _scrollToBottom();
     });
   }
 
@@ -48,131 +46,34 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 1000),
         curve: Curves.easeOut,
       );
     }
   }
 
+
   // Updated to use the viewModel's sendMessage implementation
   void sendMessage() {
+
+    // Ensure the message is not empty before sending
     if (_messageController.text.trim().isEmpty) return;
     
+    // Get the trimmed message text and clear the input field
     final messageText = _messageController.text.trim();
     _messageController.clear();
     
     // Get the current user ID and log it for debugging
     final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
-    final userId = chatViewModel.currentUserId;
-    debugPrint('Sending message with user ID: ${userId.isNotEmpty ? userId : "EMPTY"}');
     
     // Call the viewModel's sendMessage method
     chatViewModel.sendMessage(messageText).then((_) {
       // Success! Message sent
       _scrollToBottom();
-    }).catchError((error) {
-      // Show a detailed error message if something went wrong
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Error sending message', 
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 4),
-              Text(
-                error.toString(),
-                style: TextStyle(fontSize: 12),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 5),
-          action: SnackBarAction(
-            label: 'DETAILS',
-            textColor: Colors.white,
-            onPressed: () {
-              // Show a dialog with the full error details
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text('API Error Details'),
-                  content: SingleChildScrollView(
-                    child: Text(error.toString()),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('CLOSE'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      );
     });
   }
   
-  /// Show a dialog with connection diagnostic information
-  // void _showConnectionDiagnosticDialog() {
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: Text('Server Connection Issue'),
-  //       content: Column(
-  //         mainAxisSize: MainAxisSize.min,
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           Text('Unable to load messages from the server.'),
-  //           SizedBox(height: 16),
-  //           Text('Potential issues:', style: TextStyle(fontWeight: FontWeight.bold)),
-  //           SizedBox(height: 8),
-  //           Text('• The server may be offline or unreachable'),
-  //           Text('• You may need to check your network connection'),
-  //           Text('• The chat ID may be invalid'),
-  //           SizedBox(height: 16),
-  //           Text('Try refreshing the conversation or checking the server status.'),
-  //         ],
-  //       ),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () => context.pop(),
-  //           child: Text('CLOSE'),
-  //         ),
-  //         ElevatedButton(
-  //           onPressed: () {
-  //             context.pop();
-  //             ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
-  //           },
-  //           child: Text('RETRY'),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-  
-  // Ensure the user data is loaded
-  Future<void> _ensureUserDataLoaded() async {
-    try {
-      final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
-      final currentUserId = chatViewModel.currentUserId;
-      
-      if (currentUserId.isEmpty) {
-        debugPrint('Current user ID is empty, trying to reload user data');
-        // Force a refresh of the conversation which now fetches user data first
-        await chatViewModel.refreshConversation();
-      }
-    } catch (e) {
-      debugPrint('Error ensuring user data is loaded: $e');
-    }
-  }
-  
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
@@ -196,10 +97,8 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
               ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
             },
           ),
-          IconButton(
-            icon: Icon(Icons.more_vert),
-            onPressed: () {},
-          ),
+          // Block/unblock button
+          _buildBlockButton(),
         ],
       ),
       body: Column(
@@ -222,33 +121,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                                     Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
                                     SizedBox(height: 16),
                                     Text('No messages yet', style: TextStyle(color: Colors.grey)),
-                                    if (chatState.error != null)
-                                      Padding(
-                                        padding: const EdgeInsets.all(16.0),
-                                        child: Column(
-                                          children: [
-                                            Text(
-                                              'Could not load messages from server',
-                                              style: TextStyle(color: Colors.red),
-                                            ),
-                                            SizedBox(height: 8),
-                                            Text(
-                                              'Pull down to refresh or check your connection',
-                                              style: TextStyle(color: Colors.grey),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            SizedBox(height: 16),
-                                            ElevatedButton.icon(
-                                              onPressed: () {
-                                                // Retry loading conversation
-                                                ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
-                                              },
-                                              icon: Icon(Icons.refresh),
-                                              label: Text('Try Again'),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
                                   ],
                                 ),
                               ),
@@ -258,11 +130,62 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                       )
                     : _buildChatMessagesList(chatState),
           ),
-          ChatInputField(
-            messageController: _messageController,
-            onAttachmentPressed: () {}, // Placeholder for future implementation
-            onSendPressed: sendMessage,
-            isDarkMode: isDarkMode,
+          // Conditionally show chat input based on block status
+          FutureBuilder<bool>(
+            future: ref.read(chatConversationProvider(widget.chat.id).notifier).isUserBlocked(),
+            builder: (context, snapshot) {
+              final isBlocked = snapshot.data ?? false;
+              
+              if (isBlocked) {
+                // Show a message instead of input field when blocked
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    border: Border(
+                      top: BorderSide(color: Colors.grey[300]!),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.block, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text(
+                        'You cannot message this user',
+                        style: TextStyle(color: Colors.red[700]),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              
+              // Show regular chat input field when not blocked
+              return ChatInputField(
+                messageController: _messageController,
+                onAttachmentPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (context) => AttachmentWidget(
+                      onDocumentPressed: () {
+                        _pickDocument(); 
+                        Navigator.pop(context);
+                      },
+                      onCameraPressed: () {
+                        _pickImageFromCamera();
+                        Navigator.pop(context);
+                      },
+                      onMediaPressed: () {
+                        _pickImageFromGallery();
+                        Navigator.pop(context);
+                      },
+                    ),
+                  );
+                },
+                onSendPressed: sendMessage,
+                isDarkMode: isDarkMode,
+              );
+            },
           ),
         ],
       ),
@@ -289,7 +212,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
             final messagesForDate = chatState.messagesByDate[dateKey]!;
             
             // Determine if we should show the date divider
-            bool showDivider = true;
+            bool showDivider = false;
 
             // Check if previous date exists
             if (index > 0) {
@@ -416,5 +339,258 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     
     // Return null if date couldn't be parsed
     return null;
+  }
+
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final viewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+      await viewModel.selectImageFromCamera();
+      _showSelectedImagePreview();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error accessing camera: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final viewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+      await viewModel.selectImageFromGallery();
+      _showSelectedImagePreview();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error accessing gallery: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _pickDocument() async {
+    try {
+      final viewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+      final attachment = await viewModel.selectDocument();
+      
+      if (attachment != null) {
+        _showSelectedDocumentPreview(attachment);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error selecting document: ${e.toString()}')),
+      );
+    }
+  }
+
+  void _showSelectedImagePreview() {
+    final chatState = ref.read(chatConversationProvider(widget.chat.id));
+    final attachment = chatState.selectedAttachment;
+    
+    if (attachment == null) return;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        padding: EdgeInsets.all(16),
+        child: Column(
+          children: [
+            SizedBox(height: 16),
+            Expanded(
+              child: Image.file(
+                attachment.file,
+                fit: BoxFit.contain,
+              ),
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    ref.read(chatConversationProvider(widget.chat.id).notifier)
+                      .clearSelectedAttachment();
+                    Navigator.pop(context);
+                  },
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  label: Text('Cancel', style: TextStyle(color: Colors.red)),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _sendAttachment();
+                  },
+                  label: Text('Send'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSelectedDocumentPreview(ChatAttachment attachment) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.4,
+        padding: EdgeInsets.all(16),
+        child: Column(
+          children: [
+            SizedBox(height: 16),
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.description, size: 40, color: Colors.blue),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          attachment.fileName ?? 'Document',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          '${(attachment.file.lengthSync() / 1024).toStringAsFixed(2)} KB',
+                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    ref.read(chatConversationProvider(widget.chat.id).notifier)
+                      .clearSelectedAttachment();
+                    Navigator.pop(context);
+                  },
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  label: Text('Cancel', style: TextStyle(color: Colors.red)),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _sendAttachment();
+                  },
+                  label: Text('Send'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Future<void> _sendAttachment() async {
+    final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+    final result = await chatViewModel.sendMessageWithAttachment();
+      
+    if (result['success'] == true) {
+      // Scroll to bottom to show the sent message
+      _scrollToBottom();
+    }
+  }
+  
+  // Add this function to check the block status
+  Widget _buildBlockButton() {
+    return FutureBuilder<bool>(
+      future: ref.read(chatConversationProvider(widget.chat.id).notifier).isUserBlocked(),
+      builder: (context, snapshot) {
+        final isBlocked = snapshot.data ?? false;
+        
+        return IconButton(
+          icon: Icon(
+            isBlocked ? Icons.block : Icons.block_outlined,
+            color: isBlocked ? Colors.red : null,
+          ),
+          onPressed: () {
+            _showBlockUserDialog(context, isBlocked);
+          },
+        );
+      },
+    );
+  }
+
+  void _showBlockUserDialog(BuildContext context, bool isBlocked) {
+    // Store a reference to the scaffold messenger before showing dialog
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(isBlocked ? 'Unblock User' : 'Block User'),
+        content: Text(
+          isBlocked
+              ? 'Would you like to unblock this user? They will be able to send you messages again.'
+              : 'Would you like to block this user? You won\'t receive any more messages from them.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Close the dialog first
+              Navigator.pop(dialogContext);
+              
+              // Get the view model
+              final viewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
+              
+              
+              
+              // Call the toggle block method
+              viewModel.toggleBlockUser().then((result) {
+                if (result['success'] == true) {
+                  // Use the stored scaffold messenger reference
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        isBlocked
+                            ? 'User has been unblocked'
+                            : 'User has been blocked',
+                      ),
+                      backgroundColor: isBlocked ? Colors.green : Colors.red,
+                    ),
+                  );
+                  // Force a rebuild to update the block button
+                  setState(() {});
+                } else {
+                  // Use the stored scaffold messenger reference
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text('Error: ${result['error']}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              });
+            },
+            child: Text(
+              isBlocked ? 'Unblock' : 'Block',
+              style: TextStyle(
+                color: isBlocked ? Colors.green : Colors.red,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

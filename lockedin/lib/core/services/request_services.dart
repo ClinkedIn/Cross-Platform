@@ -48,6 +48,7 @@ class RequestService {
       // Determine file extension and content type
       final String path = file.path;
       final String extension = path.split('.').last.toLowerCase();
+      final String fileName = path.split('/').last;
 
       // Set appropriate content type based on file extension
       MediaType contentType;
@@ -99,13 +100,19 @@ class RequestService {
           contentType = MediaType('application', 'octet-stream');
       }
 
+      // Based on the server error, we need to use exactly 'files' as the field name
+      // without any array notation since multer is configured to expect this field name
       request.files.add(
         await http.MultipartFile.fromPath(
-          fileFieldName,
+          fileFieldName, // Keep this as-is without adding any brackets
           file.path,
           contentType: contentType,
+          filename: fileName,
         ),
       );
+
+      // Log the request for debugging
+      debugPrint('Adding file to field name: $fileFieldName');
     }
 
     // Add regular fields
@@ -363,4 +370,5 @@ class RequestService {
         body.contains('<html>') ||
         (body.isNotEmpty && !body.startsWith('{') && !body.startsWith('['));
   }
+    
 }
