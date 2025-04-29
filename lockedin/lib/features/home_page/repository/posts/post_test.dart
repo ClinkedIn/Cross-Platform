@@ -124,4 +124,8 @@ class MockPostRepository implements PostRepository {
      // TODO: implement deletePost
     throw UnimplementedError();
   }
+  @override
+ Future<Map<String, dynamic>> getPostLikes(String postId,{int page = 1}) {
+    throw UnimplementedError();
+  }
 }

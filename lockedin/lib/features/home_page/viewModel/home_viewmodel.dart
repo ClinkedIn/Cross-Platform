@@ -248,4 +248,36 @@ class HomeViewModel extends StateNotifier<HomeState> {
           rethrow;
         }
       }
+      /// get the post likes
+      Future<Map<String, dynamic>> getPostLikes(String postId, {int page = 1}) async {
+        try {
+          final likesData = await repository.getPostLikes(postId, page: page);
+          
+          // // Filter to only show 'like' type reactions
+          // if (likesData.containsKey('impressions') && likesData['impressions'] is List) {
+          //   final allImpressions = likesData['impressions'] as List;
+          //   final likesOnly = allImpressions.where((impression) => 
+          //     impression['type'] == null || 
+          //     impression['type'] == 'like'
+          //   ).toList();
+            
+          //   // Replace the full list with filtered list
+          //   likesData['impressions'] = likesOnly;
+            
+          //   // Update counts to only show likes
+          //   if (likesData.containsKey('counts') && likesData['counts'] is Map) {
+          //     final counts = likesData['counts'] as Map<String, dynamic>;
+          //     likesData['counts'] = {
+          //       'total': counts['like'] ?? likesOnly.length,
+          //       'like': counts['like'] ?? likesOnly.length
+          //     };
+          //   }
+          // }
+          
+          return likesData;
+        } catch (e) {
+          debugPrint('Error getting post likes: $e');
+          rethrow;
+        }
+      }
 }

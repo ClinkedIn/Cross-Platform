@@ -122,4 +122,6 @@ class Constants {
       '/posts/%s/report'; // %s will be replaced with the postId
   static const String searchUsersEndpoint = '/search/users';
   static const String googleLoginEndpoint = '/user/auth/google';
+  // Add this constant to the Constants class
+  static const String getPostLikesEndpoint = '/posts/%s/like'; // %s will be replaced with the postId
 }

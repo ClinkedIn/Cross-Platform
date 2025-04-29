@@ -126,22 +126,22 @@ class _PostPageState extends ConsumerState<PostPage> {
               // User profile info
               Row(
                 children: [
-                  CircleAvatar(
+                    CircleAvatar(
                     radius: 6.w,
-                    backgroundImage: userState.when(
-                      data: (user) => NetworkImage(user.profilePicture ?? ""),
-                      error:
-                          (error, _) => AssetImage(
-                            'assets/images/default_profile_photo.png',
-                          ),
-                      loading:
-                          () => AssetImage(
-                            'assets/images/default_profile_photo.png',
-                          ),
-                    ), // Placeholder avatar
-
+                    backgroundImage: userState.whenOrNull(
+                    data: (user) => user.profilePicture != null && user.profilePicture!.isNotEmpty
+                    ? NetworkImage(user.profilePicture!)
+                    : null,
+                    ),
+                    backgroundColor: Colors.grey[300],
                     onBackgroundImageError: (_, __) {},
-                    child: const Icon(Icons.person),
+                    child: userState.when(
+                    data: (user) => (user.profilePicture == null || user.profilePicture!.isEmpty)
+                    ? Icon(Icons.person, color: Colors.white)
+                    : null,
+                    error: (_, __) => Icon(Icons.person, color: Colors.white),
+                    loading: () => Icon(Icons.person, color: Colors.white),
+                    ),
                   ),
                   SizedBox(width: 3.w),
                   Expanded(

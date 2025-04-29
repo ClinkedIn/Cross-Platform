@@ -1,4 +1,3 @@
-import '../model/createpost_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/utils/constants.dart';

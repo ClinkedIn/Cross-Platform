@@ -254,7 +254,7 @@ class PostList extends ConsumerWidget {
             
             if (selectedReason != null) {
               try {
-                final success = await ref.read(homeViewModelProvider.notifier)
+                   await ref.read(homeViewModelProvider.notifier)
                     .reportPost(posts[index].id, selectedReason);
                 
                 if (context.mounted) {
