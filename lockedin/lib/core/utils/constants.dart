@@ -121,17 +121,10 @@ class Constants {
       '/notifications/%s'; // %s will be replaced with the notificationId
   static const String deletePostEndpoint =
       '/posts/%s'; // %s will be replaced with the postId
-  static const String editPostEndpoint = '/posts/%s'; 
+  static const String editPostEndpoint = '/posts/%s';
   // Add these constants after the other endpoint definitions
-  static const String reportPostEndpoint = 
-    '/posts/%s/report'; // %s will be replaced with the postId
+  static const String reportPostEndpoint =
+      '/posts/%s/report'; // %s will be replaced with the postId
   static const String searchUsersEndpoint = '/search/users';
   static const String googleLoginEndpoint = '/user/auth/google';
-
-
-      '$baseApiPath/notifications/%s'; // %s will be replaced with the notificationId
-
-  static const String deletePostEndpoint =
-      '$baseApiPath/posts/%s'; // %s will be replaced with the postId
-
 }

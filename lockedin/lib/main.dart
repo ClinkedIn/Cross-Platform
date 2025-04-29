@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/core/services/token_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/routing.dart';
@@ -40,7 +39,6 @@ class _MyAppState extends ConsumerState<MyApp> {
   void initState() {
     super.initState();
   }
-
 
   @override
   Widget build(BuildContext context) {
