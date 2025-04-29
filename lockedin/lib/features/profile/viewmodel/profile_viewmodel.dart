@@ -35,17 +35,9 @@ class ProfileViewModel {
   }
 
   Future<void> fetchAllProfileData() async {
-    try {
-      // Try to fetch user data first
-      await fetchUser();
-
-      // Only proceed with fetching additional data if user fetch was successful
-
-      await fetchEducation();
-      await fetchExperience();
-    } catch (e) {
-      // You can add a snackbar or other user feedback here
-    }
+    await fetchUser();
+    await fetchEducation();
+    await fetchExperience();
   }
 
   Future<File?> pickImage(ImageSource source) async {
