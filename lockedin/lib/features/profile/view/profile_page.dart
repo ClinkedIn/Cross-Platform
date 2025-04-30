@@ -118,7 +118,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               Spacer(),
                               IconButton(
                                 onPressed: () {
-                                  context.push('/admin-dashboard');
+                                  context.push('/edit-profile');
                                 },
                                 icon: Icon(Icons.edit, color: AppColors.gray),
                               ),

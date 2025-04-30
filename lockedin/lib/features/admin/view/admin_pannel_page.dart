@@ -14,7 +14,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   final List<Widget> _pages = [
     AdminDashboardView(),
     ContentReportsView(),
-    JobManagementView(),
+    FlaggedJobsPage(),
   ];
 
   @override
