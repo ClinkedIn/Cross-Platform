@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lockedin/features/company/view/company_profile.dart';
+import 'package:lockedin/features/company/view/create_company_view.dart';
+import 'package:lockedin/features/company/view/my_companies.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
 
 class SidebarDrawer extends ConsumerWidget {
@@ -116,6 +119,26 @@ class SidebarDrawer extends ConsumerWidget {
                 _buildMenuItem("Puzzle games"),
                 _buildMenuItem("Saved posts"),
                 _buildMenuItem("Groups"),
+                _buildMenuItem(
+                  "Create company",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => CompanyView()),
+                    );
+                  },
+                ),
+                _buildMenuItem(
+                  "My Companies",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MyCompaniesView(),
+                      ),
+                    );
+                  },
+                ),
 
                 SizedBox(height: 12),
                 Divider(color: Colors.grey.shade700),
@@ -220,13 +243,13 @@ class SidebarDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildMenuItem(String title) {
+  Widget _buildMenuItem(String title, {VoidCallback? onTap}) {
     return ListTile(
       title: Text(
         title,
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
       ),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 }

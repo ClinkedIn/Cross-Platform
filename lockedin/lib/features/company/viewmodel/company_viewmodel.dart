@@ -171,6 +171,32 @@ class CompanyViewModel extends ChangeNotifier {
 
     _setLoading(false);
   }
+
+  List<Company> _fetchedCompanies = [];
+  List<Company> get fetchedCompanies => _fetchedCompanies;
+
+  Future<void> fetchCompanies({
+    int page = 1,
+    int limit = 10,
+    String? sort,
+    String? fields,
+    String? industry,
+  }) async {
+    _setLoading(true);
+    _clearError();
+
+    final companies = await _companyRepository.fetchCompanies(
+      page: page,
+      limit: limit,
+      sort: sort,
+      fields: fields,
+      industry: industry,
+    );
+
+    _fetchedCompanies = companies;
+
+    _setLoading(false);
+  }
 }
 
 // CompanyViewModel provider for accessing this class in UI
