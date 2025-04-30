@@ -44,6 +44,27 @@ class PostViewModel extends StateNotifier<PostState> {
     }
   }
 
+  /// Pick a video from the gallery
+    Future<List<File>?> pickVideo() async {
+      try {
+        final pickedVideo = await _imagePicker.pickVideo(
+          source: ImageSource.gallery,
+          maxDuration: const Duration(minutes: 5), // Limit video length to 5 minutes
+        );
+        
+        if (pickedVideo != null) {
+          final attachments = [File(pickedVideo.path)];
+          state = state.copyWith(attachments: attachments, fileType: 'video');
+          return attachments;
+        }
+        return null;
+      } catch (e) {
+        debugPrint('Error picking video: $e');
+        state = state.copyWith(error: 'Failed to select video');
+        return null;
+      }
+    }
+
   /// Remove the selected image
   void removeImage() {
     state = state.copyWith(attachments: null);

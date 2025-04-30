@@ -4,6 +4,7 @@ import '../../home_page/model/post_model.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:go_router/go_router.dart';
+import '../widgets/videoplayer_view.dart';
 
 //some helper functions for media handling
 // Add this at the top of the file, after your imports
@@ -141,6 +142,8 @@ class PostCard extends StatelessWidget {
     this.onDelete, // New callback
     Key? key,
   }) : super(key: key);
+
+  
 
   @override
   Widget build(BuildContext context) {
@@ -648,70 +651,7 @@ class PostCard extends StatelessWidget {
         );
         
       case MediaType.video:
-        return InkWell(
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Opening video player...')),
-            );
-          },
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 100.w,
-                height: 25.h,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(1.h),
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.movie,
-                    size: 4.h,
-                    color: Colors.white70,
-                  ),
-                ),
-              ),
-              CircleAvatar(
-                backgroundColor: Colors.black54,
-                radius: 4.h,
-                child: Icon(
-                  Icons.play_arrow,
-                  color: Colors.white,
-                  size: 4.h,
-                ),
-              ),
-              Positioned(
-                bottom: 1.h,
-                left: 1.h,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 0.5.h),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(0.5.h),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.videocam,
-                        color: Colors.white,
-                        size: 1.5.h,
-                      ),
-                      SizedBox(width: 0.5.w),
-                      Text(
-                        'Video',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.sp,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
+      return VideoPlayerWidget(url: url);
         
       case MediaType.document:
         return InkWell(
@@ -795,6 +735,13 @@ class PostCard extends StatelessWidget {
         
         
       case MediaType.unknown:
+
+        print('URL: $url');
+        print('Explicit media type: ${post.mediaType}'); // Note: This might cause an error if post is not accessible
+        final extension = _getFileExtension(url);
+        print('Detected extension: $extension');
+        MediaType detectedType = _getMediaType(url, explicitType: post.mediaType); // Same issue with post.mediaType
+        print('Detected media type: $detectedType');
         // Try to preview the URL rather than just showing an error
         return _buildGenericUrlPreview(context, url, theme);
     }

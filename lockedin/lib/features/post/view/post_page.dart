@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/features/post/viewmodel/post_viewmodel.dart';
+import 'package:video_player/video_player.dart'; // Add this import
 
 class PostPage extends ConsumerStatefulWidget {
   const PostPage({Key? key}) : super(key: key);
@@ -16,6 +18,9 @@ class PostPage extends ConsumerStatefulWidget {
 class _PostPageState extends ConsumerState<PostPage> {
   // Mock state for UI demonstration only
   late TextEditingController textController;
+  VideoPlayerController? _videoController;
+  bool _isVideoInitialized = false;
+
   @override
   void initState() {
     super.initState();
@@ -25,16 +30,36 @@ class _PostPageState extends ConsumerState<PostPage> {
     if (initialData.content.isNotEmpty) {
       textController.text = initialData.content;
     }
+    
+    // Initialize video controller if video is already selected
+    if (initialData.attachments != null && 
+        initialData.attachments!.isNotEmpty && 
+        initialData.fileType == 'video') {
+      _initializeVideoController(initialData.attachments!.first);
+    }
   }
 
   @override
   void dispose() {
     textController.dispose();
+    _videoController?.dispose();
     super.dispose();
   }
 
+  // Initialize video controller
+  void _initializeVideoController(File videoFile) {
+    _videoController = VideoPlayerController.file(videoFile)
+      ..initialize().then((_) {
+        // Ensure the first frame is shown
+        if (mounted) {
+          setState(() {
+            _isVideoInitialized = true;
+          });
+        }
+      });
+  }
 
-// Add this method to your _PostPageState class
+  // Add this method to your _PostPageState class
   IconData _getDocumentIcon(String path) {
     final extension = path.split('.').last.toLowerCase();
     
@@ -57,6 +82,28 @@ class _PostPageState extends ConsumerState<PostPage> {
     }
   }
 
+  // Listen for changes in the selected file
+  @override
+  void didUpdateWidget(covariant PostPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    final data = ref.read(postViewModelProvider);
+    if (data.attachments != null && 
+        data.attachments!.isNotEmpty && 
+        data.fileType == 'video') {
+      // If the file is a video and we don't have a controller or it's for a different file
+      if (_videoController == null || 
+          _videoController!.dataSource != 'file://${data.attachments!.first.path}') {
+        _videoController?.dispose();
+        _initializeVideoController(data.attachments!.first);
+      }
+    } else if (_videoController != null) {
+      // If we have a controller but no video file selected anymore
+      _videoController!.dispose();
+      _videoController = null;
+      _isVideoInitialized = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,21 +133,23 @@ class _PostPageState extends ConsumerState<PostPage> {
                 ),
               )
               : FilledButton(
-                onPressed: () {
-                  ref
-                      .read(postViewModelProvider.notifier)
-                      .submitPost(
-                        content: textController.text,
-                        attachments:
-                            data.attachments ??
-                            [], // Provide an empty list if null
-                        visibility: data.visibility,
-                      );
-                  context.go('/home'); // Navigate to home page after posting
-                },
+                onPressed: data.canSubmit
+                    ? () {
+                        ref
+                            .read(postViewModelProvider.notifier)
+                            .submitPost(
+                              content: textController.text,
+                              attachments:
+                                  data.attachments ??
+                                  [], // Provide an empty list if null
+                              visibility: data.visibility,
+                            );
+                        context.go('/home'); // Navigate to home page after posting
+                      }
+                    : null,
                 style: FilledButton.styleFrom(
                   backgroundColor:
-                      textController.text.isNotEmpty
+                      data.canSubmit
                           ? AppColors.primary
                           : AppColors.gray.withOpacity(0.5),
                   padding: EdgeInsets.symmetric(horizontal: 5.w),
@@ -262,109 +311,171 @@ class _PostPageState extends ConsumerState<PostPage> {
 
               SizedBox(height: 2.h),
 
-              // No image preview since this is just UI demo
-              // Add after TextField
-              SizedBox(height: 2.h),
-
-
-          // Replace the existing attachment preview section
-    // Image preview section when attachments exist
-    if (data.attachments != null && data.attachments!.isNotEmpty)
-      for (var file in data.attachments!)
-        Stack(
-          children: [
-            Container(
-              margin: EdgeInsets.only(bottom: 2.h),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(2.w),
-                border: Border.all(color: AppColors.gray.withOpacity(0.3)),
-              ),
-              child: data.fileType == 'document'
-                  ? Container(
-                      padding: EdgeInsets.all(3.w),
-                      height: 15.h,
-                      width: double.infinity,
-                      child: Row(
-                        children: [
-                          // Document icon based on file extension
-                          Container(
-                            width: 12.w,
-                            height: 12.w,
+              // Media preview section when attachments exist
+              if (data.attachments != null && data.attachments!.isNotEmpty)
+                for (var file in data.attachments!)
+                  Stack(
+                    children: [
+                      Container(
+                        margin: EdgeInsets.only(bottom: 2.h),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(2.w),
+                          border: Border.all(color: AppColors.gray.withOpacity(0.3)),
+                        ),
+                        child: data.fileType == 'document'
+                            ? Container(
+                                padding: EdgeInsets.all(3.w),
+                                height: 15.h,
+                                width: double.infinity,
+                                child: Row(
+                                  children: [
+                                    // Document icon based on file extension
+                                    Container(
+                                      width: 12.w,
+                                      height: 12.w,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[200],
+                                        borderRadius: BorderRadius.circular(1.w),
+                                      ),
+                                      child: Icon(
+                                        _getDocumentIcon(file.path),
+                                        size: 8.w,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                    SizedBox(width: 4.w),
+                                    // Document details
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            file.path.split('/').last,
+                                            style: TextStyle(fontWeight: FontWeight.bold),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          SizedBox(height: 1.h),
+                                          Text(
+                                            '${(file.lengthSync() / 1024).toStringAsFixed(1)} KB',
+                                            style: TextStyle(
+                                              color: Colors.grey[600], 
+                                              fontSize: 12.sp
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : data.fileType == 'video'
+                                ? Container(
+                                    height: 30.h,
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: Colors.black,
+                                      borderRadius: BorderRadius.circular(2.w),
+                                    ),
+                                    child: _isVideoInitialized && _videoController != null
+                                        ? Stack(
+                                            alignment: Alignment.center,
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius: BorderRadius.circular(2.w),
+                                                child: AspectRatio(
+                                                  aspectRatio: _videoController!.value.aspectRatio,
+                                                  child: VideoPlayer(_videoController!),
+                                                ),
+                                              ),
+                                              // Play button overlay
+                                              IconButton(
+                                                icon: Icon(
+                                                  _videoController!.value.isPlaying
+                                                      ? Icons.pause_circle_filled
+                                                      : Icons.play_circle_filled,
+                                                  color: Colors.white,
+                                                  size: 15.w,
+                                                ),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _videoController!.value.isPlaying
+                                                        ? _videoController!.pause()
+                                                        : _videoController!.play();
+                                                  });
+                                                },
+                                              ),
+                                              // Video duration indicator
+                                              Positioned(
+                                                bottom: 1.h,
+                                                right: 2.w,
+                                                child: Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 2.w,
+                                                    vertical: 0.5.h,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.black.withOpacity(0.7),
+                                                    borderRadius: BorderRadius.circular(4.w),
+                                                  ),
+                                                  child: Text(
+                                                    _formatDuration(_videoController!.value.duration),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 12.sp,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : Center(
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                  )
+                                : ClipRRect(
+                                    borderRadius: BorderRadius.circular(2.w),
+                                    child: Image.file(
+                                      file,
+                                      height: 30.h,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                      ),
+                      Positioned(
+                        right: 1.w,
+                        top: 1.w,
+                        child: InkWell(
+                          onTap: () {
+                            ref.read(postViewModelProvider.notifier).removeAttachment();
+                            _videoController?.dispose();
+                            _videoController = null;
+                            _isVideoInitialized = false;
+                          },
+                          child: Container(
+                            padding: EdgeInsets.all(1.w),
                             decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(1.w),
+                              color: Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              _getDocumentIcon(file.path),
-                              size: 8.w,
-                              color: AppColors.primary,
+                              Icons.close,
+                              color: Colors.white,
+                              size: 5.w,
                             ),
                           ),
-                          SizedBox(width: 4.w),
-                          // Document details
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  file.path.split('/').last,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                SizedBox(height: 1.h),
-                                Text(
-                                  '${(file.lengthSync() / 1024).toStringAsFixed(1)} KB',
-                                  style: TextStyle(
-                                    color: Colors.grey[600], 
-                                    fontSize: 12.sp
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    )
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(2.w),
-                      child: Image.file(
-                        file,
-                        height: 30.h,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-            ),
-            Positioned(
-              right: 1.w,
-              top: 1.w,
-              child: InkWell(
-                onTap: () {
-                  ref.read(postViewModelProvider.notifier).removeAttachment();
-                },
-                child: Container(
-                  padding: EdgeInsets.all(1.w),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    shape: BoxShape.circle,
+                    ],
                   ),
-                  child: Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 5.w,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-                ],
-              ),
-            ),
-
+            ],
           ),
+        ),
+      ),
       bottomNavigationBar: Container(
         padding: EdgeInsets.symmetric(vertical: 1.h, horizontal: 4.w),
         decoration: BoxDecoration(
@@ -376,7 +487,6 @@ class _PostPageState extends ConsumerState<PostPage> {
           children: [
             IconButton(
               onPressed: () {
-                // No functionality
                 ref.read(postViewModelProvider.notifier).pickImage();
               },
               icon: Icon(Icons.image, color: AppColors.primary),
@@ -384,14 +494,13 @@ class _PostPageState extends ConsumerState<PostPage> {
             ),
             IconButton(
               onPressed: () {
-                // No functionality
+                ref.read(postViewModelProvider.notifier).pickVideo();
               },
               icon: Icon(Icons.videocam, color: AppColors.primary),
               tooltip: 'Add video',
             ),
             IconButton(
               onPressed: () {
-                // No functionality
                 ref.read(postViewModelProvider.notifier).pickDocument();
               },
               icon: Icon(Icons.document_scanner, color: AppColors.primary),
@@ -401,7 +510,6 @@ class _PostPageState extends ConsumerState<PostPage> {
             IconButton(
               onPressed: () {
                 // No functionality
-                
               },
               icon: Icon(
                 Icons.emoji_emotions_outlined,
@@ -413,5 +521,13 @@ class _PostPageState extends ConsumerState<PostPage> {
         ),
       ),
     );
+  }
+
+  // Helper method to format video duration
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return "${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
   }
 }
