@@ -19,13 +19,15 @@ class CompanyPost {
 
   factory CompanyPost.fromJson(Map<String, dynamic> json) {
     return CompanyPost(
-      id: json['id'],
-      description: json['description'],
+      id: json['postId'],
+      description: json['postDescription'] ?? '',
       attachments: List<String>.from(json['attachments'] ?? []),
       createdAt: DateTime.parse(json['createdAt']),
       commentCount: json['commentCount'] ?? 0,
       repostCount: json['repostCount'] ?? 0,
-      impressionCounts: json['impressionCounts'] ?? {},
+      impressionCounts: Map<String, dynamic>.from(
+        json['impressionCounts'] ?? {},
+      ),
     );
   }
 }

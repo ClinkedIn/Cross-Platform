@@ -216,8 +216,17 @@ class CompanyRepository {
     print("Status: ${streamedResponse.statusCode}");
     print("Response: $responseBody");
 
-    return streamedResponse.statusCode == 200 ||
-        streamedResponse.statusCode == 201;
+    // Check if the post was created successfully
+    if (streamedResponse.statusCode == 200 ||
+        streamedResponse.statusCode == 201) {
+      // Trigger a refresh of the posts list
+      await fetchCompanyPosts(
+        companyId,
+      ); // Ensure the posts are reloaded after creation
+      return true;
+    } else {
+      return false;
+    }
   }
 
   Future<List<CompanyPost>> fetchCompanyPosts(

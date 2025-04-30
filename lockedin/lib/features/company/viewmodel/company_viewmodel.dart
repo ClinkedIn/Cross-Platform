@@ -44,9 +44,7 @@ class CompanyViewModel extends ChangeNotifier {
       _errorMessage = 'Failed to create company.';
     }
 
-    _setLoading(
-      false,
-    ); // Ensure this is called after the state has been updated
+    _setLoading(false);
   }
 
   void _setLoading(bool value) {
@@ -142,20 +140,33 @@ class CompanyViewModel extends ChangeNotifier {
 
     if (!success) {
       _errorMessage = 'Failed to create post.';
+      _setLoading(false);
+      return false;
     }
 
+    // Fetch the latest posts after successful creation
+    await fetchCompanyPosts(companyId);
+
     _setLoading(false);
-    return success;
+    return true;
   }
 
   List<CompanyPost> _companyPosts = [];
   List<CompanyPost> get companyPosts => _companyPosts;
 
-  Future<void> fetchCompanyPosts(String companyId) async {
+  Future<void> fetchCompanyPosts(
+    String companyId, {
+    int page = 1,
+    int limit = 10,
+  }) async {
     _setLoading(true);
     _clearError();
 
-    final posts = await _companyRepository.fetchCompanyPosts(companyId);
+    final posts = await _companyRepository.fetchCompanyPosts(
+      companyId,
+      page: page,
+      limit: limit,
+    );
     _companyPosts = posts;
 
     _setLoading(false);
