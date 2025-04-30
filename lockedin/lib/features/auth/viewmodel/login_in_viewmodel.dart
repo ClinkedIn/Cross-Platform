@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -44,10 +45,26 @@ class LoginViewModel extends StateNotifier<AsyncValue<void>> {
     }
 
     state = const AsyncValue.loading();
+    
     try {
+      String? fcmToken;
+      try {
+        // This is a placeholder - implement FCM token retrieval based on your setup
+        final settings = await FirebaseMessaging.instance.requestPermission();
+        if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+          fcmToken = await FirebaseMessaging.instance.getToken();
+        } else {
+          debugPrint("Push notification permission not granted");
+        }
+      } catch (e) {
+        debugPrint("Warning: Could not get FCM token: $e");
+      }
+
+      debugPrint("📱 FCM Token to send: $fcmToken");
       final response = await RequestService.login(
         email: email,
         password: password,
+        fcmToken: fcmToken,
       );
 
       if (response.statusCode == 200) {
@@ -164,7 +181,12 @@ class LoginViewModel extends StateNotifier<AsyncValue<void>> {
       String? fcmToken;
       try {
         // This is a placeholder - implement FCM token retrieval based on your setup
-        // fcmToken = await FirebaseMessaging.instance.getToken();
+        final settings = await FirebaseMessaging.instance.requestPermission();
+        if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+          fcmToken = await FirebaseMessaging.instance.getToken();
+        } else {
+          debugPrint("Push notification permission not granted");
+        }
       } catch (e) {
         debugPrint("Warning: Could not get FCM token: $e");
       }

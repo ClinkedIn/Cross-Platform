@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lockedin/features/auth/repository/sign_up_repository.dart';
@@ -73,6 +74,19 @@ class SignupViewModel extends Notifier<SignupState> {
 
     state = state.copyWith(isLoading: true);
 
+    String? fcmToken;
+    try {
+      final settings = await FirebaseMessaging.instance.requestPermission();
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        fcmToken = await FirebaseMessaging.instance.getToken();
+        print("📱 FCM Token: $fcmToken");
+      } else {
+        print("⚠️ Push notification permission not granted");
+      }
+    } catch (e) {
+      print("⚠️ Could not retrieve FCM token: $e");
+    }
+
     try {
       final response = await _repository.registerUser(
         firstName: state.firstName,
@@ -80,6 +94,7 @@ class SignupViewModel extends Notifier<SignupState> {
         email: state.email,
         password: state.password,
         rememberMe: state.rememberMe,
+        fcmToken: fcmToken,
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
