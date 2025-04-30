@@ -1,6 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'package:lockedin/core/services/request_services.dart';
 import 'dart:convert';
+import 'package:lockedin/features/admin/models/flagged_job.dart';
 
 class AdminRepository {
   Future<void> updateUserStatus(String userId, String status) async {
@@ -27,6 +28,16 @@ class AdminRepository {
       return Map<String, dynamic>.from(data["data"]);
     } else {
       throw Exception('Failed to load dashboard stats');
+    }
+  }
+
+  Future<List<FlaggedJob>> fetchFlaggedJobs() async {
+    final response = await RequestService.get("/admin/jobs");
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body)['data'];
+      return data.map((json) => FlaggedJob.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load flagged jobs');
     }
   }
 

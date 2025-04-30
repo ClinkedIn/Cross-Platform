@@ -57,10 +57,6 @@ class AdminDashboardView extends StatelessWidget {
             final postStats = viewModel.postStats;
             final jobStats = viewModel.jobStats;
             final companyStats = viewModel.companyStats;
-            print('User Stats: $userStats\n');
-            print('Post Stats: $postStats\n');
-            print('Job Stats: $jobStats\n');
-            print('Company Stats: $companyStats');
 
             return Container(
               decoration: BoxDecoration(
@@ -210,7 +206,11 @@ class AdminDashboardView extends StatelessWidget {
                     DonutChartCard(
                       title: "User Profile Privacy",
                       data: userStats['usersByProfilePrivacy'],
-                      colors: [Colors.blue, Colors.green, Colors.amber],
+                      colors: [
+                        Colors.blueGrey[100] ?? Colors.blueGrey,
+                        Colors.blueGrey[400] ?? Colors.blueGrey,
+                        Colors.blueGrey[700] ?? Colors.blueGrey,
+                      ],
                     ),
                     SizedBox(height: 24),
 
@@ -227,7 +227,10 @@ class AdminDashboardView extends StatelessWidget {
                     DonutChartCard(
                       title: "Connection Request Privacy",
                       data: userStats['usersByConnectionRequestPrivacy'],
-                      colors: [Colors.teal, Colors.deepOrange],
+                      colors: [
+                        Colors.deepPurple[200] ?? Colors.purple,
+                        Colors.deepPurple[400] ?? Colors.purple,
+                      ],
                       subtitle: "Who can send connection requests",
                     ),
                     SizedBox(height: 24),
@@ -325,13 +328,13 @@ class AdminDashboardView extends StatelessWidget {
                       title: "Job Types",
                       data: jobStats['jobsByType'],
                       colors: [
-                        Colors.purple.shade300,
-                        Colors.purple.shade500,
-                        Colors.purple.shade700,
-                        Colors.indigo.shade400,
-                        Colors.indigo.shade600,
-                        Colors.blue.shade500,
+                        Colors.blue.shade900,
+                        Colors.blue.shade800,
                         Colors.blue.shade700,
+                        Colors.blue.shade600,
+                        Colors.blue.shade500,
+                        Colors.blue.shade400,
+                        Colors.blue.shade300,
                       ],
                       subtitle: "Distribution of job posting types",
                     ),
@@ -343,8 +346,8 @@ class AdminDashboardView extends StatelessWidget {
                       subtitle: "Remote vs hybrid vs onsite distribution",
                       data: jobStats['jobsByWorkplaceType'],
                       gradientColors: [
-                        Colors.cyan.shade300,
-                        Colors.cyan.shade700,
+                        const Color.fromARGB(255, 4, 2, 109),
+                        const Color.fromARGB(255, 7, 15, 176),
                       ],
                     ),
                     SizedBox(height: 32),

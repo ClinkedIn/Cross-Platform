@@ -57,6 +57,7 @@ void main() async {
   // Initialize push notification logic
   await _initializeFCM();
 
+
   runApp(
     ProviderScope(
       child: Sizer(

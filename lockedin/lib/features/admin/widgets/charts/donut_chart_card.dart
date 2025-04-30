@@ -115,7 +115,7 @@ class DonutChartCard extends StatelessWidget {
                 color: colors[index % colors.length],
                 value: (item['count'] as num).toDouble(),
                 title: '',
-                radius: 50,
+                radius: 40,
                 titleStyle: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
