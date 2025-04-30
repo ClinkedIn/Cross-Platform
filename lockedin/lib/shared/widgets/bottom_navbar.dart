@@ -15,7 +15,7 @@ final notificationsProvider = StateNotifierProvider<
 final unseenNotificationsCountProvider = Provider<int>((ref) {
   final state = ref.watch(notificationsProvider);
   return state.when(
-    data: (notifications) => notifications.where((n) => !n.isRead).length,
+    data: (notifications) => notifications.where((n) => !n.isRead && !n.isSeen).length,
     loading: () => 0,
     error: (_, __) => 0,
   );

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
-import 'package:lockedin/features/auth/view/main_page.dart';
 import 'package:lockedin/features/notifications/model/notification_model.dart';
 import 'dart:convert';
 
@@ -92,7 +91,7 @@ class NotificationsViewModel
           relatedPostId: notification.relatedPostId,
           relatedCommentId: notification.relatedCommentId,
           isRead: true, // ✅ Mark as read
-          isSeen: notification.isSeen,
+          isSeen: true, //must be seen if read
           isPlaceholder: notification.isPlaceholder,
           sendingUser: notification.sendingUser,
         );
