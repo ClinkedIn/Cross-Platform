@@ -119,19 +119,19 @@ class ConnectionListService {
     }
   }
 
-  Future<void> removeConnection(String connectionId) async {
+  Future<bool> removeConnection(String connectionId) async {
     try {
       final response = await RequestService.delete(
-        'user/connections/$connectionId',
+        '/user/connections/$connectionId',
       );
 
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
-      if (response.statusCode != 200) {
-        throw Exception('Failed to delete connection: ${response.statusCode}');
-      }
+
+      return response.statusCode == 200;
     } catch (e) {
-      throw Exception('Error removing connection: $e');
+      print('Error removing connection: $e');
+      return false;
     }
   }
 }

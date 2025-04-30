@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lockedin/features/networks/repository/network_repository.dart';
 import 'package:lockedin/features/networks/widgets/connection.dart';
 import 'package:sizer/sizer.dart';
 import 'package:provider/provider.dart';
@@ -34,7 +33,7 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
   void dispose() {
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
-    _viewModel.dispose(); 
+    _viewModel.dispose();
     super.dispose();
   }
 
@@ -177,21 +176,7 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
           onNameTap: () {
             context.push('/other-profile/${connection.id}');
           },
-          // onRemoveTap: () async {
-          //   final confirmed = await _showRemoveConfirmationDialog(connection);
-          //   if (confirmed == true) {
-          //     try {
-          //       await viewModel.removeConnection(connection.id);
-          //       ScaffoldMessenger.of(context).showSnackBar(
-          //         const SnackBar(content: Text('Connection removed')),
-          //       );
-          //     } catch (e) {
-          //       ScaffoldMessenger.of(context).showSnackBar(
-          //         SnackBar(content: Text('Failed to remove connection: $e')),
-          //       );
-          //     }
-          //   }
-          // },
+          onRemove: () => viewModel.removeConnection(connection.id),
         );
       },
     );
@@ -317,7 +302,7 @@ class ConnectionSearchDelegate extends SearchDelegate<String> {
                         as ImageProvider,
           ),
           title: Text('${connection.firstName} ${connection.lastName}'),
-          subtitle: Text(connection.lastJobTitle)
+          subtitle: Text(connection.lastJobTitle),
         );
       },
     );
