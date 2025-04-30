@@ -149,7 +149,7 @@ class SidebarDrawer extends ConsumerWidget {
                   child: Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Color(0xFF8B5700), // Golden brown
+                      color: Color(0xFF8B5700),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Stack(
