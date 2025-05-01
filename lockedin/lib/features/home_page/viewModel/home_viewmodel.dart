@@ -4,6 +4,7 @@ import '../repository/posts/post_repository.dart';
 import '../repository/posts/post_api.dart';
 import 'package:flutter/foundation.dart';
 import '../state/home_state.dart';
+import '../model/taggeduser_model.dart';
 
 /// Provider for the HomeViewModel
 final homeViewModelProvider = StateNotifierProvider<HomeViewModel, HomeState>((
@@ -211,41 +212,39 @@ class HomeViewModel extends StateNotifier<HomeState> {
           }
         }
       /// Edit a post
-      Future<bool> editPost(String postId, String content) async {
+      Future<bool> editPost(String postId, String content, {List<TaggedUser>? taggedUsers}) async {
         try {
-          // Find the post index
-          final postIndex = state.posts.indexWhere((post) => post.id == postId);
-          if (postIndex == -1) return false;
-          
-          // Set loading state
-          state = state.copyWith(isLoading: true, error: null);
-          
-          // Call repository method
-          final success = await repository.editPost(postId, content: content);
-          
-          if (success) {
-            // Update the post in the list
-            final updatedPosts = List<PostModel>.from(state.posts);
-            final updatedPost = updatedPosts[postIndex].copyWith(
-              content: content,
-              isEdited: true,
-            );
-            
-            // Replace the old post with the updated one
-            updatedPosts[postIndex] = updatedPost;
-            
-            // Update state
-            state = state.copyWith(posts: updatedPosts, isLoading: false);
-            return true;
+          debugPrint('📝 Editing post: $postId');
+          if (taggedUsers != null && taggedUsers.isNotEmpty) {
+            debugPrint('👥 With ${taggedUsers.length} tagged users');
           }
           
-          // Reset loading state if unsuccessful
-          state = state.copyWith(isLoading: false);
-          return false;
+          // Use the updated API method that now accepts TaggedUser objects
+          final success = await repository.editPost(
+            postId,
+            content: content,
+            taggedUsers: taggedUsers,
+          );
+          
+          if (success) {
+            // Update the post in the local posts list
+            state = state.copyWith(
+              posts: state.posts.map((post) {
+                if (post.id == postId) {
+                  return post.copyWith(
+                    content: content,
+                    taggedUsers: taggedUsers ?? post.taggedUsers,
+                  );
+                }
+                return post;
+              }).toList(),
+            );
+          }
+          
+          return success;
         } catch (e) {
-          debugPrint('Error in editPost: $e');
-          state = state.copyWith(isLoading: false, error: e.toString());
-          rethrow;
+          debugPrint('❌ Error editing post: $e');
+          return false;
         }
       }
       

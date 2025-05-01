@@ -110,7 +110,7 @@ class MockPostRepository implements PostRepository {
     throw UnimplementedError();
   }
   @override
-  Future<bool> editPost(String postId, {required String content, List<Map<String, dynamic>>? taggedUsers}) {
+  Future<bool> editPost(String postId, {required String content, List<TaggedUser>? taggedUsers}) {
     // TODO: implement deletePost
     throw UnimplementedError();
   }

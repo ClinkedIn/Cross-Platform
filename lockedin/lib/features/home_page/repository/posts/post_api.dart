@@ -399,40 +399,46 @@ class PostApi implements PostRepository {
         rethrow;
       }
     }
-    @override
-      Future<bool> editPost(String postId, {required String content, List<Map<String, dynamic>>? taggedUsers}) async {
-        try {
-          final String formattedEndpoint = Constants.editPostEndpoint.replaceFirst('%s', postId);
+   @override
+    Future<bool> editPost(String postId, {required String content, List<TaggedUser>? taggedUsers}) async {
+      try {
+        final String formattedEndpoint = Constants.editPostEndpoint.replaceFirst('%s', postId);
+        
+        // Create request body
+        final Map<String, dynamic> body = {
+          "description": content,
+        };
+        
+        // Add tagged users if provided - USE THE SAME FORMAT AS COMMENTS API
+        if (taggedUsers != null && taggedUsers.isNotEmpty) {
+          debugPrint('👥 Including ${taggedUsers.length} tagged users in post edit');
           
-          // Create request body
-          final Map<String, dynamic> body = {
-            "description": content,
-          };
-          
-          // Add tagged users if provided
-          if (taggedUsers != null && taggedUsers.isNotEmpty) {
-            body["taggedUsers"] = taggedUsers;
-          }
-          
-          final response = await RequestService.put(
-            formattedEndpoint,
-            body: body,
+          // Convert tagged users to JSON string - same as comment API
+          final taggedUsersJson = jsonEncode(
+            taggedUsers.map((user) => user.toJson()).toList()
           );
-          
-          debugPrint('📥 Edit post response status: ${response.statusCode}');
-          debugPrint('📥 Edit post response body: ${response.body}');
-          
-          if (response.statusCode == 200) {
-            debugPrint('✅ Post edited successfully: $postId');
-            return true;
-          } else {
-            throw Exception('Failed to edit post: ${response.statusCode} - ${response.body}');
-          }
-        } catch (e) {
-          debugPrint('❌ Error editing post: $e');
-          rethrow;
+          body["taggedUsers"] = taggedUsersJson;
         }
+        
+        final response = await RequestService.put(
+          formattedEndpoint,
+          body: body,
+        );
+        
+        debugPrint('📥 Edit post response status: ${response.statusCode}');
+        debugPrint('📥 Edit post response body: ${response.body}');
+        
+        if (response.statusCode == 200) {
+          debugPrint('✅ Post edited successfully: $postId');
+          return true;
+        } else {
+          throw Exception('Failed to edit post: ${response.statusCode} - ${response.body}');
+        }
+      } catch (e) {
+        debugPrint('❌ Error editing post: $e');
+        rethrow;
       }
+    }
       // Implement the methods at the end of your class
       @override
       Future<bool> reportPost(String postId, String policy, {String? dontWantToSee}) async {
