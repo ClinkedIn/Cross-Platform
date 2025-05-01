@@ -170,6 +170,7 @@ class PostApi implements PostRepository {
               ? '${postJson['reposterFirstName']} ${postJson['reposterLastName'] ?? ''}'.trim()
               : null,
           reposterProfilePicture: postJson['reposterProfilePicture'],
+          taggedUsers: _extractTaggedUsers(postJson),
         );
         }).toList();
       } else {
@@ -623,6 +624,25 @@ class PostApi implements PostRepository {
         };
       }
     }
+
+      List<TaggedUser> _extractTaggedUsers(Map<String, dynamic> postJson) {
+        List<TaggedUser> taggedUsers = [];
+        
+        if (postJson.containsKey('taggedUsers') && postJson['taggedUsers'] is List) {
+          final List<dynamic> taggedUsersJson = postJson['taggedUsers'];
+          debugPrint('📌 Found ${taggedUsersJson.length} tagged users in post: ${postJson['postId']}');
+          
+          try {
+            taggedUsers = taggedUsersJson
+                .map((user) => TaggedUser.fromJson(user))
+                .toList();
+          } catch (e) {
+            debugPrint('❌ Error parsing tagged users: $e');
+          }
+        }
+        
+        return taggedUsers;
+      }
 
 }
 
