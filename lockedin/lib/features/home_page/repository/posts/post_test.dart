@@ -1,5 +1,6 @@
 import 'package:lockedin/features/home_page/model/post_model.dart';
 import 'package:lockedin/features/home_page/repository/posts/post_repository.dart';
+import 'package:lockedin/features/home_page/model/taggeduser_model.dart';
 
 class MockPostRepository implements PostRepository {
   bool shouldThrow = false;
@@ -106,6 +107,25 @@ class MockPostRepository implements PostRepository {
   @override
   Future<bool> deletePost(String postId) {
     // TODO: implement deletePost
+    throw UnimplementedError();
+  }
+  @override
+  Future<bool> editPost(String postId, {required String content, List<Map<String, dynamic>>? taggedUsers}) {
+    // TODO: implement deletePost
+    throw UnimplementedError();
+  }
+  @override
+  Future<bool> reportPost(String postId, String policy, {String? dontWantToSee}) {
+     // TODO: implement deletePost
+    throw UnimplementedError();
+  }
+  @override
+  Future<List<TaggedUser>> searchUsers(String name, {int page = 1, int limit = 10}) {
+     // TODO: implement deletePost
+    throw UnimplementedError();
+  }
+  @override
+ Future<Map<String, dynamic>> getPostLikes(String postId,{int page = 1}) {
     throw UnimplementedError();
   }
 }

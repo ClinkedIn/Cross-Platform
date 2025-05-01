@@ -3,6 +3,8 @@ import 'package:sizer/sizer.dart';
 import '../../home_page/model/post_model.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:go_router/go_router.dart';
+import '../widgets/videoplayer_view.dart';
 
 //some helper functions for media handling
 // Add this at the top of the file, after your imports
@@ -141,6 +143,8 @@ class PostCard extends StatelessWidget {
     Key? key,
   }) : super(key: key);
 
+  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -172,7 +176,7 @@ class PostCard extends StatelessWidget {
                             ? Icon(Icons.person, size: 3.h)
                             : null,
                   ),
-                  SizedBox(width: 2.w),
+                  SizedBox(width: 1.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,18 +184,37 @@ class PostCard extends StatelessWidget {
                         Row(
                           children: [
                             // Username with overflow handling
-                            Flexible(
-                              child: Text(
-                                post.username,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15.sp,
+                              Flexible(
+                              child: TextButton(
+                                onPressed: () {
+                                  // Navigate to appropriate profile
+                                  if (post.isMine) {
+                                    // Navigate to user's own profile
+                                    context.push('/profile');
+                                  } else if (post.userId.isNotEmpty) {
+                                    // Navigate to other user's profile
+                                    context.push('/other-profile/${post.userId}');
+                                  }
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  alignment: Alignment.centerLeft,
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
+                                child: Text(
+                                  post.username,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15.sp,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
                               ),
                             ),
                             SizedBox(width: 1.w),
+                            if (!post.isMine)
                             TextButton(
                               onPressed: onFollow,
                               style: TextButton.styleFrom(
@@ -208,6 +231,31 @@ class PostCard extends StatelessWidget {
                             ),
                           ],
                         ),
+                        if (post.userId.isEmpty && post.companyId != null) ...[
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.business,
+                                size: 1.8.h,
+                                color: AppColors.gray,
+                              ),
+                              SizedBox(width: 0.2.h),
+                              Expanded(
+                                child: Text(
+                                  [
+                                    post.companyId?['industry'],
+                                    post.companyId?['organizationSize'],
+                                    post.companyId?['organizationType'],
+                                  ].where((e) => e != null && e.toString().isNotEmpty).join(' • '),
+                                  style: TextStyle(
+                                    color: AppColors.gray,
+                                    fontSize: 15.sp,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         // Time info with null safety
                         Text(
                           "${post.time.isNotEmpty ? post.time : 'Just now'} ${post.isEdited ? '· Edited' : ''}",
@@ -216,6 +264,15 @@ class PostCard extends StatelessWidget {
                             fontSize: 15.sp,
                           ),
                         ),
+                      ] else ...[// Regular user post time info
+                          Text(
+                            "${post.time.isNotEmpty ? post.time : 'Just now'} ${post.isEdited ? '· Edited' : ''}",
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.gray,
+                              fontSize: 15.sp,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -359,24 +416,46 @@ class PostCard extends StatelessWidget {
               Row(
                 children: [
                   if (post.likes > 0) ...[
-                    Icon(Icons.thumb_up, size: 2.h, color: AppColors.gray),
-                    SizedBox(width: 1.w),
-                    Text(
-                      '${post.likes}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.gray,
-                        fontSize: 15.sp,
+                    InkWell(
+                      onTap: () {
+                        // Navigate to the likes list page
+                        context.push('/post-likes/${post.id}');
+                      },
+                      child: Row(
+                        children: [
+                          Icon(Icons.thumb_up, size: 2.h, color: AppColors.gray),
+                          SizedBox(width: 1.w),
+                          Text(
+                            '${post.likes}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.gray,
+                              fontSize: 15.sp,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     SizedBox(width: 3.w),
                   ],
                   Spacer(),
                   if (post.comments > 0) ...[
-                    Text(
-                      '${post.comments} comments .',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.gray,
-                        fontSize: 15.sp,
+                    TextButton(
+                      onPressed: () {
+                        // Navigate to detailed post view, same as comment button
+                        context.push('/detailed-post/${post.id}');
+                      },
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        alignment: Alignment.centerLeft,
+                      ),
+                      child: Text(
+                        '${post.comments} comments .',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.gray,
+                          fontSize: 15.sp,
+                        ),
                       ),
                     ),
                   ],
@@ -572,70 +651,7 @@ class PostCard extends StatelessWidget {
         );
         
       case MediaType.video:
-        return InkWell(
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Opening video player...')),
-            );
-          },
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 100.w,
-                height: 25.h,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(1.h),
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.movie,
-                    size: 4.h,
-                    color: Colors.white70,
-                  ),
-                ),
-              ),
-              CircleAvatar(
-                backgroundColor: Colors.black54,
-                radius: 4.h,
-                child: Icon(
-                  Icons.play_arrow,
-                  color: Colors.white,
-                  size: 4.h,
-                ),
-              ),
-              Positioned(
-                bottom: 1.h,
-                left: 1.h,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 0.5.h),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(0.5.h),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.videocam,
-                        color: Colors.white,
-                        size: 1.5.h,
-                      ),
-                      SizedBox(width: 0.5.w),
-                      Text(
-                        'Video',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.sp,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
+      return VideoPlayerWidget(url: url);
         
       case MediaType.document:
         return InkWell(
@@ -719,15 +735,15 @@ class PostCard extends StatelessWidget {
         
         
       case MediaType.unknown:
-      default:
-      // // In your _buildMediaContent method, add at the beginning:
-      // print('URL: $url');
-      // print('Explicit media type: ${post.mediaType}');
-      // final extension = _getFileExtension(url);
-      // print('Detected extension: $extension');
-      // MediaType detectedType = _getMediaType(url, explicitType: post.mediaType);
-      // print('Detected media type: $detectedType');
-        return _buildErrorContainer(context, theme, 'Unsupported media type');
+
+        print('URL: $url');
+        print('Explicit media type: ${post.mediaType}'); // Note: This might cause an error if post is not accessible
+        final extension = _getFileExtension(url);
+        print('Detected extension: $extension');
+        MediaType detectedType = _getMediaType(url, explicitType: post.mediaType); // Same issue with post.mediaType
+        print('Detected media type: $detectedType');
+        // Try to preview the URL rather than just showing an error
+        return _buildGenericUrlPreview(context, url, theme);
     }
   }
 
@@ -841,5 +857,124 @@ class PostCard extends StatelessWidget {
     ),
   );
 }
+
+
+
+  // Build a generic URL preview card
+    Widget _buildGenericUrlPreview(BuildContext context, String url, ThemeData theme) {
+      // Try to load the URL as an image first
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(1.h),
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          width: 100.w,
+          height: 25.h,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            
+            // Show loading indicator while image loads
+            return Container(
+              width: 100.w,
+              height: 25.h,
+              color: theme.cardColor,
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / 
+                        loadingProgress.expectedTotalBytes!
+                      : null,
+                  color: AppColors.primary,
+                ),
+              ),
+            );
+          },
+          // Only if image loading fails, show link preview
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('Unable to load as image, showing link preview: $error');
+            
+            // Extract domain for display
+            final Uri? uri = Uri.tryParse(url);
+            final String domain = uri?.host ?? 'Unknown source';
+            
+            return InkWell(
+              onTap: () {
+                _launchUrl(context, url);
+              },
+              child: Container(
+                width: 100.w,
+                padding: EdgeInsets.all(2.h),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(1.h),
+                  border: Border.all(color: AppColors.gray.withOpacity(0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.link,
+                          size: 2.5.h,
+                          color: AppColors.primary,
+                        ),
+                        SizedBox(width: 1.w),
+                        Expanded(
+                          child: Text(
+                            domain,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 1.h),
+                    Text(
+                      url,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.gray,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 1.h),
+                    Text(
+                      'Tap to open link',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+  // Launch URL in browser
+  void _launchUrl(BuildContext context, String url) {
+    final Uri? uri = Uri.tryParse(url);
+    if (uri != null) {
+      // You'll need to add the url_launcher package for this
+      // For now, show a snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Opening URL: $url')),
+      );
+      
+      // When url_launcher is added:
+      // launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Invalid URL')),
+      );
+    }
+  }
  // <-- End of class
 }

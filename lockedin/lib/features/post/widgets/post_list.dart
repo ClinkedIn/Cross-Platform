@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../home_page/model/post_model.dart';
 import '../../home_page/viewModel/home_viewmodel.dart';
 import 'post_card.dart';
+import 'package:sizer/sizer.dart';
 
 class PostList extends ConsumerWidget {
   final List<PostModel> posts;
@@ -20,10 +21,12 @@ class PostList extends ConsumerWidget {
           // Add other existing properties...
             onEdit: posts[index].isMine ? () {
               // Implement edit functionality
+              // Navigate to edit page, passing the post as extra data
+              context.push('/edit-post', extra: posts[index]);
               print("Editing post: ${posts[index].id}");
               // Navigate to edit page or show edit dialog
             } : null,
-            onDelete: posts[index].isMine ? () async {
+            onDelete: (posts[index].isMine && posts[index].userId.isNotEmpty) ?() async {
               // Implement delete functionality
                 final delete = await showDialog<bool>(
                   context: context,
@@ -185,15 +188,99 @@ class PostList extends ConsumerWidget {
             );
             print("Saved post: ${posts[index].id}");
           },
-          onReport: () {
-            // Add report functionality
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Post reported'),
-                duration: Duration(seconds: 2),
+          // Replace the onReport and onNotInterested callbacks in your PostList's PostCard creation
+
+          onReport: () async {
+            // Define the report reasons based on backend validation
+            final List<String> reportReasons = [
+              // General content violations
+              "Harassment",
+              "Fraud or scam",
+              "Spam",
+              "Misinformation",
+              "Hateful speech",
+              "Threats or violence",
+              "Self-harm",
+              "Graphic content",
+              "Dangerous or extremist organizations",
+              "Sexual content",
+              "Fake account",
+              "Child exploitation",
+              "Illegal goods and services",
+              "Infringement",
+              // User-specific violations
+              "This person is impersonating someone",
+              "This account has been hacked",
+              "This account is not a real person",
+            ];
+            
+            // Show a dialog to choose the report reason
+            final selectedReason = await showDialog<String>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text('Report Post'),
+                content: Container(
+                  width: double.maxFinite,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Why are you reporting this post?'),
+                      SizedBox(height: 2.h),
+                      Container(
+                        height: 40.h,
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: reportReasons.length,
+                          itemBuilder: (context, index) {
+                            return ListTile(
+                              title: Text(reportReasons[index]),
+                              onTap: () => Navigator.pop(context, reportReasons[index]),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Cancel'),
+                  ),
+                ],
               ),
             );
+            
+            if (selectedReason != null) {
+              try {
+                   await ref.read(homeViewModelProvider.notifier)
+                    .reportPost(posts[index].id, selectedReason);
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Post reported successfully'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to report post: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            }
+            
             print("Reported post: ${posts[index].id}");
+          },
+
+          onNotInterested: () {
           },
         );
       },

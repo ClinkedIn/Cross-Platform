@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sizer/sizer.dart';
@@ -6,6 +7,7 @@ import 'package:lockedin/features/post/widgets/post_card.dart';
 import '../viewModel/comment_viewmodel.dart';
 import '../state/comment_state.dart';
 import '../model/comment_model.dart';
+import '../model/taggeduser_model.dart';
 
 class PostDetailView extends ConsumerStatefulWidget {
   final String postId;
@@ -22,19 +24,120 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
   String? _replyingToUsername;
   bool _isSubmittingComment = false;
   String? _currentUserProfilePicture; // Add this line to store profile picture
+  bool _showMentionSuggestions = false;
+  String _mentionQuery = '';
+  int _mentionStartIndex = -1;
+  List<TaggedUser> _taggedUsers = [];
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
-    _loadUserProfilePicture(); // Load profile picture when widget initializes
+    _loadUserProfilePicture();
+    _commentController.addListener(_onCommentChanged); // Load profile picture when widget initializes
   }
 
   @override
   void dispose() {
+    _commentController.removeListener(_onCommentChanged);
     _commentController.dispose();
     _commentFocusNode.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
+  void _onCommentChanged() {
+    final text = _commentController.text;
+    final selection = _commentController.selection;
+    
+    if (selection.baseOffset != selection.extentOffset) {
+      // If there's a selection, don't try to find mentions
+      setState(() {
+        _showMentionSuggestions = false;
+      });
+      return;
+    }
+    
+    final currentPosition = selection.baseOffset;
+    
+    // Find the last @ before the cursor
+    int lastAtIndex = -1;
+    for (int i = currentPosition - 1; i >= 0; i--) {
+      if (text[i] == '@') {
+        lastAtIndex = i;
+        break;
+      } else if (text[i] == ' ' || text[i] == '\n') {
+        // Stop at spaces or newlines
+        break;
+      }
+    }
+      if (lastAtIndex >= 0) {
+      // Extract query text between @ and cursor
+      final query = text.substring(lastAtIndex + 1, currentPosition);
+      
+      if (query.isNotEmpty) {
+        setState(() {
+          _mentionStartIndex = lastAtIndex;
+          _mentionQuery = query;
+          _showMentionSuggestions = true;
+        });
+        
+        // Debounce search to avoid too many API calls
+        if (_debounce?.isActive ?? false) _debounce?.cancel();
+        _debounce = Timer(const Duration(milliseconds: 500), () {
+          _searchUsers(query);
+        });
+        return;
+      }
+    }
+    
+    setState(() {
+      _showMentionSuggestions = false;
+    });
+  }
+
+    Future<void> _searchUsers(String query) async {
+      if (query.length < 2) return;
+
+      try {
+        await ref
+            .read(commentsViewModelProvider(widget.postId).notifier)
+            .searchUsers(query);
+      } catch (e) {
+        debugPrint('Error searching users: $e');
+        }
+    }
+
+    
+    void _onMentionSelected(TaggedUser user) {
+      final text = _commentController.text;
+      final mentionText = "${user.firstName} ${user.lastName}";
+      
+      // Replace the @query with the selected username
+      final newText = text.replaceRange(
+        _mentionStartIndex, 
+        _commentController.selection.baseOffset, 
+        "@$mentionText "
+      );
+      
+      // Add the user to tagged users list if not already there
+      if (!_taggedUsers.any((u) => u.userId == user.userId)) {
+        setState(() {
+          _taggedUsers.add(user);
+        });
+      }
+      
+      // Update the text and cursor position
+      _commentController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(
+          offset: _mentionStartIndex + mentionText.length + 2, // +2 for @ and space
+        ),
+      );
+      
+      setState(() {
+        _showMentionSuggestions = false;
+      });
+    }
 
   // Add this method to load the profile picture
   Future<void> _loadUserProfilePicture() async {
@@ -463,7 +566,10 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
     );
   }
 
-  Widget _buildCommentInputField(BuildContext context, WidgetRef ref) {
+    Widget _buildCommentInputField(BuildContext context, WidgetRef ref) {
+    final commentsState = ref.watch(commentsViewModelProvider(widget.postId));
+    final theme = Theme.of(context);
+    
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 2.h, vertical: 1.h),
       decoration: BoxDecoration(
@@ -479,6 +585,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Reply indicator
           if (_replyingToUsername != null)
             Padding(
               padding: EdgeInsets.only(bottom: 0.5.h),
@@ -507,9 +614,99 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                 ],
               ),
             ),
+            
+          // Tagged users chips
+          if (_taggedUsers.isNotEmpty)
+            Container(
+              margin: EdgeInsets.only(bottom: 1.h),
+              child: Wrap(
+                spacing: 1.w,
+                runSpacing: 0.5.h,
+                children: _taggedUsers.map((user) {
+                  return Chip(
+                    backgroundColor: theme.primaryColor.withOpacity(0.1),
+                    avatar: CircleAvatar(
+                      backgroundImage: user.profilePicture != null && 
+                                      user.profilePicture!.isNotEmpty
+                          ? NetworkImage(user.profilePicture!)
+                          : null,
+                      child: (user.profilePicture == null || 
+                              user.profilePicture!.isEmpty)
+                          ? Icon(Icons.person, size: 1.5.h)
+                          : null,
+                    ),
+                    label: Text(
+                      '${user.firstName} ${user.lastName}',
+                      style: TextStyle(fontSize: 12.sp),
+                    ),
+                    deleteIcon: Icon(Icons.close, size: 1.5.h),
+                    onDeleted: () {
+                      setState(() {
+                        _taggedUsers.removeWhere((u) => u.userId == user.userId);
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+            
+          // User mention suggestions
+          if (_showMentionSuggestions && commentsState.userSearchResults.isNotEmpty)
+            Container(
+              constraints: BoxConstraints(maxHeight: 30.h),
+              margin: EdgeInsets.only(bottom: 1.h),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: commentsState.userSearchResults.length,
+                itemBuilder: (context, index) {
+                  final user = commentsState.userSearchResults[index];
+                  return ListTile(
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 2.h,
+                      vertical: 0.5.h,
+                    ),
+                    leading: CircleAvatar(
+                      backgroundImage: user.profilePicture != null && 
+                                    user.profilePicture!.isNotEmpty
+                          ? NetworkImage(user.profilePicture!)
+                          : null,
+                      child: (user.profilePicture == null || 
+                              user.profilePicture!.isEmpty)
+                          ? Icon(Icons.person)
+                          : null,
+                    ),
+                    title: Text(
+                      '${user.firstName} ${user.lastName}',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: user.headline != null && user.headline!.isNotEmpty
+                        ? Text(
+                            user.headline!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : null,
+                    onTap: () => _onMentionSelected(user),
+                  );
+                },
+              ),
+            ),
+            
+          // Main input row
           Row(
             children: [
-              // User avatar (replace with current user's avatar)
+              // User avatar
               CircleAvatar(
                 radius: 2.h,
                 backgroundImage:
@@ -518,7 +715,6 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                         ? NetworkImage(_currentUserProfilePicture!)
                         : null,
                 backgroundColor: Colors.grey[300],
-                // Show placeholder if no image is available
                 child:
                     (_currentUserProfilePicture == null ||
                             _currentUserProfilePicture!.isEmpty)
@@ -533,7 +729,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                   controller: _commentController,
                   focusNode: _commentFocusNode,
                   decoration: InputDecoration(
-                    hintText: 'Add a comment...',
+                    hintText: 'Add a comment... Type @ to mention someone',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
                       borderSide: BorderSide.none,
@@ -552,7 +748,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                 ),
               ),
 
-              // Send button
+              // Submit button
               SizedBox(width: 1.w),
               _isSubmittingComment
                   ? Padding(
@@ -586,16 +782,20 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
     });
 
     debugPrint('📝 Submitting comment: $content');
+        if (_taggedUsers.isNotEmpty) {
+          debugPrint('👥 With ${_taggedUsers.length} tagged users');
+        } 
 
     try {
       await ref
           .read(commentsViewModelProvider(widget.postId).notifier)
-          .addComment(content);
+          .addComment(content, taggedUsers: _taggedUsers.isNotEmpty ? _taggedUsers : null);
 
       _commentController.clear();
       setState(() {
         _replyingToUsername = null;
         _isSubmittingComment = false;
+        _taggedUsers = [];
       });
 
       // Show success message

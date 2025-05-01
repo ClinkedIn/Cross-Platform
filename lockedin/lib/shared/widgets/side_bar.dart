@@ -6,6 +6,9 @@ import 'package:lockedin/features/company/view/create_company_view.dart';
 import 'package:lockedin/features/company/view/my_companies.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
 
+
+
+
 class SidebarDrawer extends ConsumerWidget {
   const SidebarDrawer({Key? key}) : super(key: key);
 
@@ -26,7 +29,10 @@ class SidebarDrawer extends ConsumerWidget {
                   child: Row(
                     children: [
                       GestureDetector(
-                        onTap: () => context.push("/profile"),
+                        onTap: () {
+                          context.pop();
+                          context.push("/profile");
+                        },
                         child: CircleAvatar(
                           radius: 28,
                           backgroundImage:
@@ -117,7 +123,10 @@ class SidebarDrawer extends ConsumerWidget {
 
                 /// Menu Items
                 _buildMenuItem("Puzzle games"),
-                _buildMenuItem("Saved posts"),
+                _buildMenuItem("Saved posts",onTap: () {
+                  context.pop();
+                  context.push("/saved-posts");
+                }),
                 _buildMenuItem("Groups"),
                 _buildMenuItem(
                   "Create company",
@@ -211,7 +220,10 @@ class SidebarDrawer extends ConsumerWidget {
                       fontSize: 16,
                     ),
                   ),
-                  onTap: () {},
+                  onTap: () {
+                    context.pop();
+                    context.push("/settings");
+                  },
                 ),
 
                 SizedBox(height: 16),
@@ -249,7 +261,9 @@ class SidebarDrawer extends ConsumerWidget {
         title,
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
       ),
+
       onTap: onTap,
+
     );
   }
 }

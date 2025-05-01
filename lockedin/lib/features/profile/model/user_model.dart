@@ -16,7 +16,7 @@ class UserModel {
   final String? location;
   final String? lastJobTitle;
   final String? industry;
-  final int? mainEducation;
+  final String? mainEducation;
   final List<Skill> skills;
   final List<Education> education;
   final List<String> certificates;

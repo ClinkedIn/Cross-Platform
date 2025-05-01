@@ -164,21 +164,55 @@ class HomeViewModel extends StateNotifier<HomeState> {
 
     /// Delete a post
       Future<bool> deletePost(String postId) async {
+          try {
+            // Find the post first to double-check ownership
+            final postIndex = state.posts.indexWhere((post) => post.id == postId);
+            if (postIndex == -1) throw Exception('Post not found');
+            
+            final post = state.posts[postIndex];
+            if (!post.isMine) throw Exception('You can only delete your own posts');
+            
+            state = state.copyWith(isLoading: true, error: null);
+            final success = await repository.deletePost(postId);
+            
+            if (success) {
+              // Remove the post from the list
+              final updatedPosts = List<PostModel>.from(state.posts)..removeAt(postIndex);
+              state = state.copyWith(posts: updatedPosts, isLoading: false);
+              return true;
+            } else {
+              state = state.copyWith(isLoading: false);
+              return false;
+            }
+          } catch (e) {
+            debugPrint('Error in deletePost: $e');
+            state = state.copyWith(isLoading: false, error: e.toString());
+            rethrow;
+          }
+        }
+      /// Edit a post
+      Future<bool> editPost(String postId, String content) async {
         try {
           // Find the post index
           final postIndex = state.posts.indexWhere((post) => post.id == postId);
           if (postIndex == -1) return false;
           
-          // Set loading state (optional)
+          // Set loading state
           state = state.copyWith(isLoading: true, error: null);
           
           // Call repository method
-          final success = await repository.deletePost(postId);
+          final success = await repository.editPost(postId, content: content);
           
           if (success) {
-            // Remove the post from the list
+            // Update the post in the list
             final updatedPosts = List<PostModel>.from(state.posts);
-            updatedPosts.removeAt(postIndex);
+            final updatedPost = updatedPosts[postIndex].copyWith(
+              content: content,
+              isEdited: true,
+            );
+            
+            // Replace the old post with the updated one
+            updatedPosts[postIndex] = updatedPost;
             
             // Update state
             state = state.copyWith(posts: updatedPosts, isLoading: false);
@@ -189,8 +223,60 @@ class HomeViewModel extends StateNotifier<HomeState> {
           state = state.copyWith(isLoading: false);
           return false;
         } catch (e) {
-          debugPrint('Error in deletePost: $e');
+          debugPrint('Error in editPost: $e');
           state = state.copyWith(isLoading: false, error: e.toString());
+          rethrow;
+        }
+      }
+      
+      /// Report a post for policy violations
+      Future<bool> reportPost(String postId, String policyViolation, {String? dontWantToSee}) async {
+        try {
+          // Set loading state (optional)
+          state = state.copyWith(isLoading: true, error: null);
+          
+          // Call repository method
+          final success = await repository.reportPost(postId, policyViolation, dontWantToSee: dontWantToSee);
+          
+          // Update state after operation
+          state = state.copyWith(isLoading: false);
+          
+          return success;
+        } catch (e) {
+          debugPrint('Error reporting post: $e');
+          state = state.copyWith(isLoading: false, error: e.toString());
+          rethrow;
+        }
+      }
+      /// get the post likes
+      Future<Map<String, dynamic>> getPostLikes(String postId, {int page = 1}) async {
+        try {
+          final likesData = await repository.getPostLikes(postId, page: page);
+          
+          // // Filter to only show 'like' type reactions
+          // if (likesData.containsKey('impressions') && likesData['impressions'] is List) {
+          //   final allImpressions = likesData['impressions'] as List;
+          //   final likesOnly = allImpressions.where((impression) => 
+          //     impression['type'] == null || 
+          //     impression['type'] == 'like'
+          //   ).toList();
+            
+          //   // Replace the full list with filtered list
+          //   likesData['impressions'] = likesOnly;
+            
+          //   // Update counts to only show likes
+          //   if (likesData.containsKey('counts') && likesData['counts'] is Map) {
+          //     final counts = likesData['counts'] as Map<String, dynamic>;
+          //     likesData['counts'] = {
+          //       'total': counts['like'] ?? likesOnly.length,
+          //       'like': counts['like'] ?? likesOnly.length
+          //     };
+          //   }
+          // }
+          
+          return likesData;
+        } catch (e) {
+          debugPrint('Error getting post likes: $e');
           rethrow;
         }
       }
