@@ -16,4 +16,6 @@ abstract class PostRepository {
    // Add these methods to the interface
   Future<bool> reportPost(String postId, String policy, {String? dontWantToSee});
   Future<List<TaggedUser>> searchUsers(String name, {int page = 1, int limit = 10});
+  // Add this to the PostRepository interface
+  Future<Map<String, dynamic>> getPostLikes(String postId,{int page = 10});
 }

@@ -43,6 +43,8 @@ import 'package:lockedin/shared/widgets/bottom_navbar.dart';
 import 'package:lockedin/features/home_page/view/detailed_post.dart';
 import './features/home_page/view/editpost_view.dart';
 import './features/home_page/model/post_model.dart';
+import 'package:lockedin/features/home_page/view/post_likes_view.dart';
+import 'package:lockedin/features/home_page/view/saved_posts_view.dart';
 import 'package:lockedin/features/jobs/view/application_status.dart';
 
 // Use this to control drawer state
@@ -227,6 +229,21 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final post = state.extra as PostModel;
           return EditPostPage(post: post);
         },
+      ),
+
+      GoRoute(
+        path: '/post-likes/:postId',
+        name: 'post-likes',
+        builder: (context, state) {
+          final postId = state.pathParameters['postId']!;
+          return PostLikesPage(postId: postId);
+        },
+      ),
+
+      // Add this route to your GoRouter configuration
+      GoRoute(
+        path: '/saved-posts',
+        builder: (context, state) => const SavedPostsPage(),
       ),
 
       GoRoute(

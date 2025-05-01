@@ -563,7 +563,66 @@ class PostApi implements PostRepository {
             debugPrint('❌ Error searching users: $e');
             return [];
           }
-}
+       }
+
+    @override
+    Future<Map<String, dynamic>> getPostLikes(String postId, {int page = 1}) async {
+      try {
+        debugPrint('🔍 Fetching reactions for post: $postId, page: $page');
+        final String endpoint = '/posts/$postId/like?page=${page}';
+        
+        final response = await RequestService.get(endpoint);
+        debugPrint('📊 Get post reactions response status: ${response.statusCode}');
+        
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+
+          debugPrint('Raw API response: ${response.body.substring(0, min(500, response.body.length))}');
+          
+          // Check for impressions list
+          if (data['impressions'] == null || !(data['impressions'] is List)) {
+            debugPrint('❌ No impressions found or invalid response format');
+            
+            return {
+              'impressions': [],
+              'counts': {'total': 0},
+              'pagination': {'currentPage': 1, 'totalPages': 1}
+            };
+          }
+          
+          final List<dynamic> impressionsJson = data['impressions'];
+          final Map<String, dynamic> counts = data['counts'] ?? {'total': 0};
+          final Map<String, dynamic> pagination = data['pagination'] ?? {
+            'currentPage': 1,
+            'totalPages': 1,
+            'hasNextPage': false,
+            'hasPrevPage': false
+          };
+          
+          debugPrint('✅ Found ${impressionsJson.length} reactions. Total: ${counts['total'] ?? 0}');
+          
+          return {
+            'impressions': impressionsJson,
+            'counts': counts,
+            'pagination': pagination
+          };
+        } else {
+          debugPrint('❌ Failed to get post reactions: ${response.statusCode} - ${response.body}');
+          return {
+            'impressions': [],
+            'counts': {'total': 0},
+            'pagination': {'currentPage': 1, 'totalPages': 1}
+          };
+        }
+      } catch (e) {
+        debugPrint('❌ Error getting post reactions: $e');
+        return {
+          'impressions': [],
+          'counts': {'total': 0},
+          'pagination': {'currentPage': 1, 'totalPages': 1}
+        };
+      }
+    }
 
 }
 

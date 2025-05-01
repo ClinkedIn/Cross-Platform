@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
 
+
+
+
 class SidebarDrawer extends ConsumerWidget {
   const SidebarDrawer({Key? key}) : super(key: key);
 
@@ -117,7 +120,10 @@ class SidebarDrawer extends ConsumerWidget {
 
                 /// Menu Items
                 _buildMenuItem("Puzzle games"),
-                _buildMenuItem("Saved posts"),
+                _buildMenuItem("Saved posts",onTap: () {
+                  context.pop();
+                  context.push("/saved-posts");
+                }),
                 _buildMenuItem("Groups"),
 
                 SizedBox(height: 12),
@@ -226,13 +232,13 @@ class SidebarDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildMenuItem(String title) {
+  Widget _buildMenuItem(String title, {VoidCallback? onTap}) {
     return ListTile(
       title: Text(
         title,
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
       ),
-      onTap: () {},
+      onTap: onTap ?? () {},
     );
   }
 }
