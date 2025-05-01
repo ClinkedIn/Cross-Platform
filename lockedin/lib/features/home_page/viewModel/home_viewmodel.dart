@@ -66,46 +66,66 @@ class HomeViewModel extends StateNotifier<HomeState> {
     }
   }
 
-  /// Toggle like status for a post
-  Future<bool> toggleLike(String postId) async {
-    try {
-      // Find the current post
-      final postIndex = state.posts.indexWhere((post) => post.id == postId);
-      if (postIndex == -1) return false;
+    /// Toggle like status for a post
+    Future<bool> toggleLike(String postId) async {
+      try {
+        // Find the post in the current state
+        final index = state.posts.indexWhere((post) => post.id == postId);
+        if (index == -1) {
+          // Post not found in the current state
+          return false;
+        }
 
-      final post = state.posts[postIndex];
-      final currentlyLiked = post.isLiked;
+        final post = state.posts[index];
+        final isCurrentlyLiked = post.isLiked;
 
-      // Call the appropriate API method
-      bool success;
-      if (currentlyLiked) {
-        success = await repository.unlikePost(postId); // Unlike
-      } else {
-        success = await repository.likePost(postId); // Like
-      }
-
-      if (success) {
-        // Create a new list with the updated post
-        final updatedPosts = List<PostModel>.from(state.posts);
+        // Optimistically update UI
         final updatedPost = post.copyWith(
-          isLiked: !currentlyLiked,
-          likes: currentlyLiked ? post.likes - 1 : post.likes + 1,
+          isLiked: !isCurrentlyLiked,
+          likes: isCurrentlyLiked ? post.likes - 1 : post.likes + 1,
         );
-
-        // Replace the old post with the updated one
-        updatedPosts[postIndex] = updatedPost;
-
-        // Update the state with the new list
+        final updatedPosts = List<PostModel>.from(state.posts);
+        updatedPosts[index] = updatedPost;
         state = state.copyWith(posts: updatedPosts);
-        return true;
-      }
 
-      return false;
-    } catch (e) {
-      debugPrint('Error in toggleLike: $e');
-      rethrow;
+        // Make the API call based on the new state
+        bool success;
+        if (!isCurrentlyLiked) {
+          // Like the post
+          try {
+            success = await repository.likePost(postId);
+          } catch (e) {
+            // Check for "already liked" error
+            if (e.toString().contains("already liked this post")) {
+              // This is fine, the server state matches our optimistic update
+              return true;
+            }
+            // Rethrow other errors
+            rethrow;
+          }
+        } else {
+          // Unlike the post
+          try { 
+            success = await repository.unlikePost(postId);
+          } catch (e) {
+            // Check for "not liked" error
+            if (e.toString().contains("not liked this post")) {
+              // This is fine, the server state matches our optimistic update
+              return true;
+            }
+            // Rethrow other errors
+            rethrow;
+          }
+        }
+
+        return success;
+      } catch (e) {
+        // If there was an error, revert the optimistic update
+        await refreshFeed(); // Refresh to get the correct state
+        debugPrint('Error in toggleLike: $e');
+        throw e; // Rethrow to allow UI to handle the error
+      }
     }
-  }
 
   /// Toggle repost for a post
   Future<bool> toggleRepost(String postId, {String? description}) async {

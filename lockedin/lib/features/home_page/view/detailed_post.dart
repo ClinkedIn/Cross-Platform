@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sizer/sizer.dart';
@@ -7,156 +6,19 @@ import 'package:lockedin/features/post/widgets/post_card.dart';
 import '../viewModel/comment_viewmodel.dart';
 import '../state/comment_state.dart';
 import '../model/comment_model.dart';
-import '../model/taggeduser_model.dart';
+import '../viewModel/post_detail_viewmodel.dart';
+import 'package:go_router/go_router.dart';
 
-class PostDetailView extends ConsumerStatefulWidget {
+class PostDetailView extends ConsumerWidget {
   final String postId;
 
   const PostDetailView({required this.postId, Key? key}) : super(key: key);
 
   @override
-  ConsumerState<PostDetailView> createState() => _PostDetailViewState();
-}
-
-class _PostDetailViewState extends ConsumerState<PostDetailView> {
-  final TextEditingController _commentController = TextEditingController();
-  final FocusNode _commentFocusNode = FocusNode();
-  String? _replyingToUsername;
-  bool _isSubmittingComment = false;
-  String? _currentUserProfilePicture; // Add this line to store profile picture
-  bool _showMentionSuggestions = false;
-  String _mentionQuery = '';
-  int _mentionStartIndex = -1;
-  List<TaggedUser> _taggedUsers = [];
-  Timer? _debounce;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserProfilePicture();
-    _commentController.addListener(_onCommentChanged); // Load profile picture when widget initializes
-  }
-
-  @override
-  void dispose() {
-    _commentController.removeListener(_onCommentChanged);
-    _commentController.dispose();
-    _commentFocusNode.dispose();
-    _debounce?.cancel();
-    super.dispose();
-  }
-  void _onCommentChanged() {
-    final text = _commentController.text;
-    final selection = _commentController.selection;
-    
-    if (selection.baseOffset != selection.extentOffset) {
-      // If there's a selection, don't try to find mentions
-      setState(() {
-        _showMentionSuggestions = false;
-      });
-      return;
-    }
-    
-    final currentPosition = selection.baseOffset;
-    
-    // Find the last @ before the cursor
-    int lastAtIndex = -1;
-    for (int i = currentPosition - 1; i >= 0; i--) {
-      if (text[i] == '@') {
-        lastAtIndex = i;
-        break;
-      } else if (text[i] == ' ' || text[i] == '\n') {
-        // Stop at spaces or newlines
-        break;
-      }
-    }
-      if (lastAtIndex >= 0) {
-      // Extract query text between @ and cursor
-      final query = text.substring(lastAtIndex + 1, currentPosition);
-      
-      if (query.isNotEmpty) {
-        setState(() {
-          _mentionStartIndex = lastAtIndex;
-          _mentionQuery = query;
-          _showMentionSuggestions = true;
-        });
-        
-        // Debounce search to avoid too many API calls
-        if (_debounce?.isActive ?? false) _debounce?.cancel();
-        _debounce = Timer(const Duration(milliseconds: 500), () {
-          _searchUsers(query);
-        });
-        return;
-      }
-    }
-    
-    setState(() {
-      _showMentionSuggestions = false;
-    });
-  }
-
-    Future<void> _searchUsers(String query) async {
-      if (query.length < 2) return;
-
-      try {
-        await ref
-            .read(commentsViewModelProvider(widget.postId).notifier)
-            .searchUsers(query);
-      } catch (e) {
-        debugPrint('Error searching users: $e');
-        }
-    }
-
-    
-    void _onMentionSelected(TaggedUser user) {
-      final text = _commentController.text;
-      final mentionText = "${user.firstName} ${user.lastName}";
-      
-      // Replace the @query with the selected username
-      final newText = text.replaceRange(
-        _mentionStartIndex, 
-        _commentController.selection.baseOffset, 
-        "@$mentionText "
-      );
-      
-      // Add the user to tagged users list if not already there
-      if (!_taggedUsers.any((u) => u.userId == user.userId)) {
-        setState(() {
-          _taggedUsers.add(user);
-        });
-      }
-      
-      // Update the text and cursor position
-      _commentController.value = TextEditingValue(
-        text: newText,
-        selection: TextSelection.collapsed(
-          offset: _mentionStartIndex + mentionText.length + 2, // +2 for @ and space
-        ),
-      );
-      
-      setState(() {
-        _showMentionSuggestions = false;
-      });
-    }
-
-  // Add this method to load the profile picture
-  Future<void> _loadUserProfilePicture() async {
-    try {
-      final commentsApi = ref.read(commentsApiProvider);
-      final userData = await commentsApi.getCurrentUserData();
-      if (mounted) {
-        setState(() {
-          _currentUserProfilePicture = userData['profilePicture'];
-        });
-      }
-    } catch (e) {
-      debugPrint('❌ Error loading user profile picture: $e');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final commentsState = ref.watch(commentsViewModelProvider(widget.postId));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final commentsState = ref.watch(commentsViewModelProvider(postId));
+    final postDetailState = ref.watch(postDetailViewModelProvider(postId));
+    final postDetailViewModel = ref.read(postDetailViewModelProvider(postId).notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -171,7 +33,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
               ? _buildLoadingView()
               : commentsState.error != null && !commentsState.hasPost
               ? _buildErrorView(context, commentsState.error!, ref)
-              : _buildContentView(context, commentsState, ref),
+              : _buildContentView(context, commentsState, postDetailState, postDetailViewModel, ref),
     );
   }
 
@@ -211,7 +73,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
             ElevatedButton(
               onPressed: () {
                 ref
-                    .read(commentsViewModelProvider(widget.postId).notifier)
+                    .read(commentsViewModelProvider(postId).notifier)
                     .fetchPostAndComments();
               },
               style: ElevatedButton.styleFrom(
@@ -228,10 +90,12 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
 
   Widget _buildContentView(
     BuildContext context,
-    CommentsState state,
+    CommentsState commentsState,
+    PostDetailState postDetailState,
+    PostDetailViewModel viewModel,
     WidgetRef ref,
   ) {
-    if (!state.hasPost) {
+    if (!commentsState.hasPost) {
       return Center(child: Text('Post not found'));
     }
 
@@ -242,20 +106,20 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
           child: RefreshIndicator(
             onRefresh: () async {
               // Save focus and cursor position state before refreshing
-              final hadFocus = _commentFocusNode.hasFocus;
-              final text = _commentController.text;
-              final selection = _commentController.selection;
+              final hadFocus = postDetailState.commentFocusNode.hasFocus;
+              final text = postDetailState.commentController.text;
+              final selection = postDetailState.commentController.selection;
 
               await ref
-                  .read(commentsViewModelProvider(widget.postId).notifier)
+                  .read(commentsViewModelProvider(postId).notifier)
                   .fetchPostAndComments();
 
               // Restore focus and text after refresh
               if (hadFocus) {
                 Future.delayed(Duration(milliseconds: 100), () {
-                  _commentFocusNode.requestFocus();
-                  _commentController.text = text;
-                  _commentController.selection = selection;
+                  postDetailState.commentFocusNode.requestFocus();
+                  postDetailState.commentController.text = text;
+                  postDetailState.commentController.selection = selection;
                 });
               }
             },
@@ -264,24 +128,226 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                 // Post card
                 SliverToBoxAdapter(
                   child: PostCard(
-                    post: state.post!,
-                    onLike: () {
-                      // This would need to handle like functionality
-                      // You might need to create a separate provider or method
+                    post: commentsState.post!,
+                    onLike: () async {
+                      try {
+                        await viewModel.likePost();
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to update like status'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
                     },
                     onComment: () {
                       // Focus the comment input field
-                      _commentFocusNode.requestFocus();
+                      postDetailState.commentFocusNode.requestFocus();
                     },
-                    onShare: () {
-                      // Handle share functionality
+                    onShare: () async {
+                      print("Shared post: ${commentsState.post!.id}");
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Opening share options...')),
+                      );
+                    },
+                    onRepost: () async {
+                      try {
+                        await viewModel.repostPost();
+                        
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                commentsState.post!.isRepost
+                                    ? 'Repost removed'
+                                    : 'Post reposted successfully',
+                              ),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e')),
+                          );
+                        }
+                      }
                     },
                     onFollow: () {
-                      // Handle follow functionality
+                      print("Following ${commentsState.post!.username}");
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Following ${commentsState.post!.username}...')),
+                      );
                     },
-                    onRepost: () {
-                      // Handle repost functionality
+                    onSaveForLater: () async {
+                      try {
+                        await viewModel.savePostForLater();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '✅ Post saved for later',
+                                style: TextStyle(color: Colors.black87),
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: Colors.white,
+                              margin: EdgeInsets.only(
+                                bottom: MediaQuery.of(context).size.height - 200,
+                                left: 10,
+                                right: 10,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                side: BorderSide(color: Colors.grey.shade300),
+                              ),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e')),
+                          );
+                        }
+                      }
                     },
+                    onReport: () async {
+                      final List<String> reportReasons = [
+                        "Harassment",
+                        "Fraud or scam",
+                        "Spam",
+                        "Misinformation",
+                        "Hateful speech",
+                        "Threats or violence",
+                        "Self-harm",
+                        "Graphic content",
+                        "Dangerous or extremist organizations",
+                        "Sexual content",
+                        "Fake account",
+                        "Child exploitation",
+                        "Illegal goods and services",
+                        "Infringement",
+                        "This person is impersonating someone",
+                        "This account has been hacked",
+                        "This account is not a real person",
+                      ];
+                      
+                      final selectedReason = await showDialog<String>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text('Report Post'),
+                          content: Container(
+                            width: double.maxFinite,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Why are you reporting this post?'),
+                                SizedBox(height: 2.h),
+                                Container(
+                                  height: 40.h,
+                                  child: ListView.builder(
+                                    shrinkWrap: true,
+                                    itemCount: reportReasons.length,
+                                    itemBuilder: (context, index) {
+                                      return ListTile(
+                                        title: Text(reportReasons[index]),
+                                        onTap: () => Navigator.pop(context, reportReasons[index]),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text('Cancel'),
+                            ),
+                          ],
+                        ),
+                      );
+                      
+                      if (selectedReason != null) {
+                        try {
+                          await viewModel.reportPost(selectedReason);
+                          
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Post reported successfully'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to report post: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    onNotInterested: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('You won\'t see similar posts'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    onEdit: commentsState.post!.isMine ? () {
+                      context.push('/edit-post', extra: commentsState.post);
+                    } : null,
+                    onDelete: (commentsState.post!.isMine && commentsState.post!.userId.isNotEmpty) ? () async {
+                      final delete = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text('Delete Post'),
+                          content: Text('Are you sure you want to delete this post?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: Text('Delete', style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        ),
+                      );
+                      
+                      if (delete == true) {
+                        try {
+                          await viewModel.deletePost();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Post deleted successfully')),
+                            );
+                            // Go back to previous screen after deletion
+                            Navigator.pop(context);
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to delete post: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    } : null,
                   ),
                 ),
 
@@ -301,20 +367,20 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Comments (${state.comments.length})',
+                          'Comments (${commentsState.comments.length})',
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        _buildSortDropdown(state, ref),
+                        _buildSortDropdown(commentsState, ref),
                       ],
                     ),
                   ),
                 ),
 
                 // Comments list or loading/empty state
-                state.isLoading && state.comments.isEmpty
+                commentsState.isLoading && commentsState.comments.isEmpty
                     ? SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.all(4.h),
@@ -325,16 +391,17 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                         ),
                       ),
                     )
-                    : state.comments.isEmpty
+                    : commentsState.comments.isEmpty
                     ? SliverToBoxAdapter(child: _buildEmptyCommentsView())
                     : SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) => _buildCommentItem(
                           context,
-                          state.comments[index],
+                          commentsState.comments[index],
                           ref,
+                          viewModel,
                         ),
-                        childCount: state.comments.length,
+                        childCount: commentsState.comments.length,
                       ),
                     ),
               ],
@@ -343,7 +410,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
         ),
 
         // Comment input field
-        _buildCommentInputField(context, ref),
+        _buildCommentInputField(context, commentsState, postDetailState, viewModel, ref),
       ],
     );
   }
@@ -363,7 +430,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
       onChanged: (value) {
         if (value != null) {
           ref
-              .read(commentsViewModelProvider(widget.postId).notifier)
+              .read(commentsViewModelProvider(postId).notifier)
               .setSortOrder(value);
         }
       },
@@ -400,6 +467,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
     BuildContext context,
     CommentModel comment,
     WidgetRef ref,
+    PostDetailViewModel viewModel,
   ) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 2.h, vertical: 1.h),
@@ -492,13 +560,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                       // Like button
                       TextButton(
                         onPressed: () {
-                          ref
-                              .read(
-                                commentsViewModelProvider(
-                                  widget.postId,
-                                ).notifier,
-                              )
-                              .toggleCommentLike(comment.id);
+                          viewModel.toggleCommentLike(comment.id);
                         },
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.symmetric(horizontal: 1.w),
@@ -514,11 +576,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                       // Reply button
                       TextButton(
                         onPressed: () {
-                          setState(() {
-                            _replyingToUsername = comment.username;
-                            _commentController.text = '@${comment.username} ';
-                            _commentFocusNode.requestFocus();
-                          });
+                          viewModel.setReplyingToUsername(comment.username);
                         },
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.symmetric(horizontal: 1.w),
@@ -566,8 +624,13 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
     );
   }
 
-    Widget _buildCommentInputField(BuildContext context, WidgetRef ref) {
-    final commentsState = ref.watch(commentsViewModelProvider(widget.postId));
+  Widget _buildCommentInputField(
+    BuildContext context, 
+    CommentsState commentsState,
+    PostDetailState postDetailState,
+    PostDetailViewModel viewModel,
+    WidgetRef ref
+  ) {
     final theme = Theme.of(context);
     
     return Container(
@@ -586,13 +649,13 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Reply indicator
-          if (_replyingToUsername != null)
+          if (postDetailState.replyingToUsername != null)
             Padding(
               padding: EdgeInsets.only(bottom: 0.5.h),
               child: Row(
                 children: [
                   Text(
-                    'Replying to $_replyingToUsername',
+                    'Replying to ${postDetailState.replyingToUsername}',
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: AppColors.primary,
@@ -604,25 +667,20 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                     icon: Icon(Icons.close, size: 2.h),
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(),
-                    onPressed: () {
-                      setState(() {
-                        _replyingToUsername = null;
-                        _commentController.clear();
-                      });
-                    },
+                    onPressed: () => viewModel.cancelReply(),
                   ),
                 ],
               ),
             ),
             
           // Tagged users chips
-          if (_taggedUsers.isNotEmpty)
+          if (postDetailState.taggedUsers.isNotEmpty)
             Container(
               margin: EdgeInsets.only(bottom: 1.h),
               child: Wrap(
                 spacing: 1.w,
                 runSpacing: 0.5.h,
-                children: _taggedUsers.map((user) {
+                children: postDetailState.taggedUsers.map((user) {
                   return Chip(
                     backgroundColor: theme.primaryColor.withOpacity(0.1),
                     avatar: CircleAvatar(
@@ -640,18 +698,14 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                       style: TextStyle(fontSize: 12.sp),
                     ),
                     deleteIcon: Icon(Icons.close, size: 1.5.h),
-                    onDeleted: () {
-                      setState(() {
-                        _taggedUsers.removeWhere((u) => u.userId == user.userId);
-                      });
-                    },
+                    onDeleted: () => viewModel.removeTaggedUser(user.userId),
                   );
                 }).toList(),
               ),
             ),
             
           // User mention suggestions
-          if (_showMentionSuggestions && commentsState.userSearchResults.isNotEmpty)
+          if (postDetailState.showMentionSuggestions && commentsState.userSearchResults.isNotEmpty)
             Container(
               constraints: BoxConstraints(maxHeight: 30.h),
               margin: EdgeInsets.only(bottom: 1.h),
@@ -697,7 +751,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                             overflow: TextOverflow.ellipsis,
                           )
                         : null,
-                    onTap: () => _onMentionSelected(user),
+                    onTap: () => viewModel.onMentionSelected(user),
                   );
                 },
               ),
@@ -710,14 +764,14 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
               CircleAvatar(
                 radius: 2.h,
                 backgroundImage:
-                    _currentUserProfilePicture != null &&
-                            _currentUserProfilePicture!.isNotEmpty
-                        ? NetworkImage(_currentUserProfilePicture!)
+                    postDetailState.currentUserProfilePicture != null &&
+                            postDetailState.currentUserProfilePicture!.isNotEmpty
+                        ? NetworkImage(postDetailState.currentUserProfilePicture!)
                         : null,
                 backgroundColor: Colors.grey[300],
                 child:
-                    (_currentUserProfilePicture == null ||
-                            _currentUserProfilePicture!.isEmpty)
+                    (postDetailState.currentUserProfilePicture == null ||
+                            postDetailState.currentUserProfilePicture!.isEmpty)
                         ? Icon(Icons.person, color: Colors.grey[600])
                         : null,
               ),
@@ -726,8 +780,8 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
               // Comment input field
               Expanded(
                 child: TextField(
-                  controller: _commentController,
-                  focusNode: _commentFocusNode,
+                  controller: postDetailState.commentController,
+                  focusNode: postDetailState.commentFocusNode,
                   decoration: InputDecoration(
                     hintText: 'Add a comment... Type @ to mention someone',
                     border: OutlineInputBorder(
@@ -750,7 +804,7 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
 
               // Submit button
               SizedBox(width: 1.w),
-              _isSubmittingComment
+              postDetailState.isSubmittingComment
                   ? Padding(
                     padding: EdgeInsets.symmetric(horizontal: 2.w),
                     child: SizedBox(
@@ -764,64 +818,40 @@ class _PostDetailViewState extends ConsumerState<PostDetailView> {
                   )
                   : IconButton(
                     icon: Icon(Icons.send, color: AppColors.primary),
-                    onPressed: () => _submitComment(ref),
+                    onPressed: () async {
+                      try {
+                        await viewModel.submitComment();
+                        
+                        // Show success message
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Comment posted successfully'),
+                              backgroundColor: Colors.green,
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        // Show error message with the specific error
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Failed to add comment: ${e.toString().split(': ').last}',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
                   ),
             ],
           ),
         ],
       ),
     );
-  }
-
-  void _submitComment(WidgetRef ref) async {
-    final content = _commentController.text.trim();
-    if (content.isEmpty) return;
-
-    setState(() {
-      _isSubmittingComment = true;
-    });
-
-    debugPrint('📝 Submitting comment: $content');
-        if (_taggedUsers.isNotEmpty) {
-          debugPrint('👥 With ${_taggedUsers.length} tagged users');
-        } 
-
-    try {
-      await ref
-          .read(commentsViewModelProvider(widget.postId).notifier)
-          .addComment(content, taggedUsers: _taggedUsers.isNotEmpty ? _taggedUsers : null);
-
-      _commentController.clear();
-      setState(() {
-        _replyingToUsername = null;
-        _isSubmittingComment = false;
-        _taggedUsers = [];
-      });
-
-      // Show success message
-      debugPrint('✅ Comment successfully sent to backend!');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Comment posted successfully'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      setState(() {
-        _isSubmittingComment = false;
-      });
-      debugPrint('❌ Failed to send comment: $e');
-      // Show error message with the specific error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to add comment: ${e.toString().split(': ').last}',
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 
   void _showCommentOptions(
