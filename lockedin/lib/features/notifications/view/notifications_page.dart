@@ -181,7 +181,7 @@ class NotificationsPageState extends ConsumerState<NotificationsPage> {
                   onTap: () {
                     if (notification.isPlaceholder) return;
                     ref.read(notificationsProvider.notifier).markAsRead(notification.id);
-                    ref.read(notificationsProvider.notifier).navigateToPost(context);
+                    ref.read(notificationsProvider.notifier).navigateToPost(context, notification.relatedPostId);
                   },
                   child: buildNotificationItem(notification, isDarkMode, ref, context),
                 ),

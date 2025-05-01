@@ -110,11 +110,11 @@ class NotificationsViewModel
 
   /// Navigates the user to the post related to a notification.
   // will deep link with the home page later to navigate to the post
-  void navigateToPost(BuildContext context) {
+  void navigateToPost(BuildContext context, String id) {
     //int index needed as well
 
     //final notification = state[index]; // ✅ Navigate to the related post
-    context.go("/notifications");
+    context.push('/detailed-post/$id');
   }
 
   /// Marks all notifications as seen (for UI highlighting).
