@@ -9,16 +9,23 @@ class ConnectCardsGridView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Calculate the height based on the number of cards
+    // Each row has 2 cards, so divide the total by 2 and round up
+    int rowCount = (connectCards.length / 2).ceil();
+
+    // Each card has a fixed height of around 220-250 pixels
+    // Adding spacing between rows (16.0)
+    double gridHeight = rowCount * 240.0 + (rowCount - 1) * 16.0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      // Wrap GridView in Expanded if it's inside a Column/Row, or use a fixed height
       child: SizedBox(
-        height: MediaQuery.of(context).size.height, // Or a fixed height
+        height: gridHeight,
         child: GridView.builder(
           physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2, // Two cards per row
-            childAspectRatio: 0.95, // Adjusted for card proportions
+            childAspectRatio: 0.75, // Adjusted for card proportions
             crossAxisSpacing: 8.0,
             mainAxisSpacing: 16.0,
           ),
@@ -30,6 +37,9 @@ class ConnectCardsGridView extends StatelessWidget {
               profileImage: card.profileImage,
               name: card.name,
               headline: card.headline,
+              onCardTap: card.onCardTap,
+              onConnectTap: card.onConnectTap,
+              isPending: card.isPending,
             );
           },
         ),
