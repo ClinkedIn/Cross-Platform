@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class JobModel {
   final String title;
   final String id;
@@ -12,11 +14,9 @@ class JobModel {
   final String? logoUrl;
   final String? industry;
   final List<Map<String, dynamic>> screeningQuestions;
-
   final List<Map<String, dynamic>> applicants;
   final List<String> accepted;
   final List<String> rejected;
-
   String applicationStatus;
 
   JobModel({
@@ -56,13 +56,22 @@ class JobModel {
       return [];
     }
 
+    // Defensive company object parsing
+    final companyData = json['company'];
+    final company =
+        companyData is String
+            ? jsonDecode(companyData) // If company is a string, decode it
+            : companyData; // If it's already an object, use it directly
+
+    print('Fetched company data: $company');
+    print('Fetched company name: ${company?['name']}');
+    print('Fetched logo URL: ${company?['logo']}');
+
     return JobModel(
       id: (json['_id'] ?? json['id'] ?? json['jobId'])?.toString() ?? '',
       title: json['title'] ?? 'Unknown Position',
-      company:
-          json['companyName'] ??
-          'Unknown Company', // You could add companyName if backend adds later
-      companyId: (json['companyId'] ?? '').toString(),
+      company: company?['name'] ?? 'Unknown Company',
+      companyId: (company?['id'] ?? json['companyId'] ?? '').toString(),
       location: json['jobLocation'] ?? 'Unknown Location',
       description: json['description'] ?? '',
       experienceLevel:
@@ -74,7 +83,7 @@ class JobModel {
       isRemote:
           (json['workplaceType']?.toString().toLowerCase() ?? '') == 'remote',
       workplaceType: json['workplaceType']?.toString() ?? 'Unknown',
-      logoUrl: json['logoUrl'], // or you can get it later via getCompanyById
+      logoUrl: company?['logo'],
       industry: json['industry'],
       screeningQuestions: _mapList(json['screeningQuestions']),
       applicants: _mapList(json['applicants']),
@@ -88,6 +97,5 @@ class JobModel {
     return applicants.any((applicant) => applicant['userId'] == userId);
   }
 
-  // Getter to access company name
   String get companyName => company;
 }

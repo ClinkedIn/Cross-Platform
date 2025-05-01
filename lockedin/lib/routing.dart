@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/core/services/token_services.dart';
+import 'package:lockedin/features/admin/view/admin_pannel_page.dart';
 import 'package:lockedin/features/auth/view/change_password_page.dart';
 import 'package:lockedin/features/auth/view/edit_email_view.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
@@ -45,7 +46,6 @@ import './features/home_page/model/post_model.dart';
 import 'package:lockedin/features/home_page/view/post_likes_view.dart';
 import 'package:lockedin/features/home_page/view/saved_posts_view.dart';
 import 'package:lockedin/features/jobs/view/application_status.dart';
-
 
 // Use this to control drawer state
 final scaffoldKeyProvider = Provider((ref) => GlobalKey<ScaffoldState>());
@@ -217,7 +217,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return ViewOtherProfilePage(userId: userId);
         },
       ),
-      // Add the new route
+      GoRoute(
+        path: '/admin-dashboard',
+        name: 'admin-dashboard',
+        builder: (context, state) => AdminHomePage(),
+      ),
+
       GoRoute(
         path: '/edit-post',
         builder: (context, state) {
