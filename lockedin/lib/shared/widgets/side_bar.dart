@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lockedin/features/company/view/company_profile.dart';
+import 'package:lockedin/features/company/view/create_company_view.dart';
+import 'package:lockedin/features/company/view/my_companies.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
 
 
@@ -125,6 +128,26 @@ class SidebarDrawer extends ConsumerWidget {
                   context.push("/saved-posts");
                 }),
                 _buildMenuItem("Groups"),
+                _buildMenuItem(
+                  "Create company",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => CompanyView()),
+                    );
+                  },
+                ),
+                _buildMenuItem(
+                  "My Companies",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MyCompaniesView(),
+                      ),
+                    );
+                  },
+                ),
 
                 SizedBox(height: 12),
                 Divider(color: Colors.grey.shade700),
@@ -135,7 +158,7 @@ class SidebarDrawer extends ConsumerWidget {
                   child: Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Color(0xFF8B5700), // Golden brown
+                      color: Color(0xFF8B5700),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Stack(
@@ -238,7 +261,9 @@ class SidebarDrawer extends ConsumerWidget {
         title,
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
       ),
-      onTap: onTap ?? () {},
+
+      onTap: onTap,
+
     );
   }
 }

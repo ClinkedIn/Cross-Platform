@@ -38,11 +38,14 @@ class JobCardWidget extends StatelessWidget {
                         job.logoUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          return Image.asset('assets/images/experience.jpg');
+                          return Image.network(
+                            'https://loremflickr.com/3873/2493?lock=7302116690423685',
+                            fit: BoxFit.cover,
+                          );
                         },
                       )
-                      : Image.asset(
-                        'assets/images/experience.jpg',
+                      : Image.network(
+                        'https://loremflickr.com/3873/2493?lock=7302116690423685',
                         fit: BoxFit.cover,
                       ),
             ),
@@ -91,7 +94,6 @@ class JobCardWidget extends StatelessWidget {
                 }
               },
             ),
-
             onTap: () {
               Navigator.push(
                 context,
