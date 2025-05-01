@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lockedin/features/company/view/company_profile.dart';
 import 'package:lockedin/features/company/view/create_company_view.dart';
 import 'package:lockedin/features/company/view/my_companies.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
-
-
-
 
 class SidebarDrawer extends ConsumerWidget {
   const SidebarDrawer({Key? key}) : super(key: key);
@@ -86,14 +82,19 @@ class SidebarDrawer extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                   child: Row(
                     children: [
-                      Image.asset(
-                        'assets/images/experience.jpg',
-                        width: 24,
-                        height: 24,
+                      ClipOval(
+                        child: Image.network(
+                          user.workExperience[0].media ?? "",
+                          width: 24,
+                          height: 24,
+                          fit:
+                              BoxFit
+                                  .cover, // Ensures the image fills the circle
+                        ),
                       ),
                       SizedBox(width: 8),
                       Text(
-                        user.lastJobTitle ?? "Career Center",
+                        user.workExperience[0].jobTitle,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -111,9 +112,20 @@ class SidebarDrawer extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Column(
                     children: [
-                      _buildStatRow("27", "profile viewers"),
+                      _buildStatRow(
+                        user.profileViews.length.toString(),
+                        "profile viewers",
+                      ),
                       SizedBox(height: 8),
-                      _buildStatRow("3", "post impressions"),
+                      _buildStatRow(
+                        user.followers.length.toString(),
+                        "followers",
+                      ),
+                      SizedBox(height: 8),
+                      _buildStatRow(
+                        user.following.length.toString(),
+                        "following",
+                      ),
                     ],
                   ),
                 ),
@@ -121,13 +133,13 @@ class SidebarDrawer extends ConsumerWidget {
                 SizedBox(height: 12),
                 Divider(color: Colors.grey.shade700),
 
-                /// Menu Items
-                _buildMenuItem("Puzzle games"),
-                _buildMenuItem("Saved posts",onTap: () {
-                  context.pop();
-                  context.push("/saved-posts");
-                }),
-                _buildMenuItem("Groups"),
+                _buildMenuItem(
+                  "Saved posts",
+                  onTap: () {
+                    context.pop();
+                    context.push("/saved-posts");
+                  },
+                ),
                 _buildMenuItem(
                   "Create company",
                   onTap: () {
@@ -263,7 +275,6 @@ class SidebarDrawer extends ConsumerWidget {
       ),
 
       onTap: onTap,
-
     );
   }
 }
