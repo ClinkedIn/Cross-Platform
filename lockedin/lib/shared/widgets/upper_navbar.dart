@@ -10,7 +10,8 @@ import 'dart:async';
 
 final navigationProvider = StateProvider<String>((ref) => '/');
 
-class UpperNavbar extends ConsumerStatefulWidget implements PreferredSizeWidget {
+class UpperNavbar extends ConsumerStatefulWidget
+    implements PreferredSizeWidget {
   final Widget leftIcon;
   final VoidCallback leftOnPress;
 
@@ -38,7 +39,7 @@ class _UpperNavbarState extends ConsumerState<UpperNavbar> {
   @override
   void initState() {
     super.initState();
-    
+
     _searchController.addListener(_onSearchChanged);
     _searchFocusNode.addListener(() {
       if (_searchFocusNode.hasFocus) {
@@ -68,11 +69,13 @@ class _UpperNavbarState extends ConsumerState<UpperNavbar> {
   void _onSearchChanged() {
     // Cancel previous timer
     _debounceTimer?.cancel();
-    
+
     // Start new debounce timer
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       if (_searchController.text.trim().length >= 2) {
-        ref.read(searchViewModelProvider.notifier).searchPosts(_searchController.text);
+        ref
+            .read(searchViewModelProvider.notifier)
+            .searchPosts(_searchController.text);
         if (!_searchFocusNode.hasFocus) {
           _searchFocusNode.requestFocus();
         }
@@ -84,33 +87,34 @@ class _UpperNavbarState extends ConsumerState<UpperNavbar> {
 
   void _showOverlay() {
     _removeOverlay();
-    
-   // Update the onPostSelected callback
+
+    // Update the onPostSelected callback
     _overlayEntry = OverlayEntry(
-      builder: (context) => SearchResultsOverlay(
-        link: _layerLink,
-        searchBarKey: _searchBarKey,
-// In the onPostSelected callback:
-        onPostSelected: (post) {
-          _searchFocusNode.unfocus();
-          
-          // Try multiple field names that could contain the post ID
-          final postId = post.id;
-          
-          print('Post selected: $postId');
-          print('Entire post object: $post');
-          if (postId != null) {
-            context.push('/detailed-post/$postId');
-          } else {
-            // Show error if post ID is null
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error: Could not find post ID')),
-            );
-          }
-        },
-      ),
+      builder:
+          (context) => SearchResultsOverlay(
+            link: _layerLink,
+            searchBarKey: _searchBarKey,
+            // In the onPostSelected callback:
+            onPostSelected: (post) {
+              _searchFocusNode.unfocus();
+
+              // Try multiple field names that could contain the post ID
+              final postId = post.id;
+
+              print('Post selected: $postId');
+              print('Entire post object: $post');
+              if (postId != null) {
+                context.push('/detailed-post/$postId');
+              } else {
+                // Show error if post ID is null
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: Could not find post ID')),
+                );
+              }
+            },
+          ),
     );
-    
+
     if (_overlayEntry != null) {
       Overlay.of(context).insert(_overlayEntry!);
     }
@@ -119,6 +123,11 @@ class _UpperNavbarState extends ConsumerState<UpperNavbar> {
   void _removeOverlay() {
     _overlayEntry?.remove();
     _overlayEntry = null;
+  }
+
+  String _getCurrentRoute(BuildContext context) {
+    final GoRouterState routerState = GoRouterState.of(context);
+    return routerState.matchedLocation;
   }
 
   @override
@@ -143,24 +152,37 @@ class _UpperNavbarState extends ConsumerState<UpperNavbar> {
             focusNode: _searchFocusNode,
             decoration: InputDecoration(
               fillColor: isDarkMode ? Colors.grey[700] : Colors.grey[200],
-              hintText: "Search posts...",
+              hintText:
+                  _getCurrentRoute(context) == "/home"
+                      ? "Search posts"
+                      : _getCurrentRoute(context) == "/users"
+                      ? "Search users"
+                      : _getCurrentRoute(context) == "/jobs"
+                      ? "Search jobs"
+                      : "Search",
+
               hintStyle: TextStyle(color: Colors.grey[400]),
               prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-              suffixIcon: _searchController.text.isNotEmpty 
-                  ? IconButton(
-                      icon: Icon(Icons.clear, color: Colors.grey[400], size: 20),
-                      onPressed: () {
-                        _searchController.clear();
-                        ref.read(searchViewModelProvider.notifier).clearSearch();
-                      },
-                    ) 
-                  : null,
+              suffixIcon:
+                  _searchController.text.isNotEmpty
+                      ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          color: Colors.grey[400],
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          ref
+                              .read(searchViewModelProvider.notifier)
+                              .clearSearch();
+                        },
+                      )
+                      : null,
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(vertical: 10.0),
             ),
-            style: TextStyle(
-              color: isDarkMode ? Colors.white : Colors.black87,
-            ),
+            style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
             textInputAction: TextInputAction.search,
             onSubmitted: (value) {
               if (value.trim().isNotEmpty) {
@@ -180,13 +202,19 @@ class _UpperNavbarState extends ConsumerState<UpperNavbar> {
           onPressed: () => ref.read(themeProvider.notifier).toggleTheme(),
         ),
         IconButton(
-          icon: Icon(Icons.settings, color: isDarkMode ? Colors.white70 : Colors.grey[700]),
+          icon: Icon(
+            Icons.settings,
+            color: isDarkMode ? Colors.white70 : Colors.grey[700],
+          ),
           onPressed: () {
             context.push("/settings");
           },
         ),
         IconButton(
-          icon: Icon(Icons.chat, color: isDarkMode ? Colors.white70 : Colors.grey[700]),
+          icon: Icon(
+            Icons.chat,
+            color: isDarkMode ? Colors.white70 : Colors.grey[700],
+          ),
           onPressed: () {
             ref.read(navigationProvider.notifier).state = '/chats';
             Navigator.push(

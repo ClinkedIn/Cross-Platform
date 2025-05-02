@@ -7,6 +7,7 @@ import 'package:lockedin/features/profile/model/user_model.dart';
 class ProfileService {
   Future<UserModel> fetchUserData() async {
     final response = await RequestService.get(Constants.getUserDataEndpoint);
+    print("User data:📀📀 ${response.body}");
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return UserModel.fromJson(data["user"]);
