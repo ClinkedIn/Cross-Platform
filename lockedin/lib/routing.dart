@@ -46,6 +46,7 @@ import './features/home_page/model/post_model.dart';
 import 'package:lockedin/features/home_page/view/post_likes_view.dart';
 import 'package:lockedin/features/home_page/view/saved_posts_view.dart';
 import 'package:lockedin/features/jobs/view/application_status.dart';
+import 'package:lockedin/features/payment/view/subescription_view.dart';
 
 // Use this to control drawer state
 final scaffoldKeyProvider = Provider((ref) => GlobalKey<ScaffoldState>());
@@ -240,7 +241,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Add this route to your GoRouter configuration
+      GoRoute(
+        path: '/subscription',
+        name: 'subscription',
+        builder: (context, state) => PremiumSubscriptionPage(),
+        ),
+
       GoRoute(
         path: '/saved-posts',
         builder: (context, state) => const SavedPostsPage(),

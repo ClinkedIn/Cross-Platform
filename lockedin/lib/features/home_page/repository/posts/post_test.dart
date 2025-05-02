@@ -110,7 +110,7 @@ class MockPostRepository implements PostRepository {
     throw UnimplementedError();
   }
   @override
-  Future<bool> editPost(String postId, {required String content, List<Map<String, dynamic>>? taggedUsers}) {
+  Future<bool> editPost(String postId, {required String content, List<TaggedUser>? taggedUsers}) {
     // TODO: implement deletePost
     throw UnimplementedError();
   }
@@ -127,5 +127,10 @@ class MockPostRepository implements PostRepository {
   @override
  Future<Map<String, dynamic>> getPostLikes(String postId,{int page = 1}) {
     throw UnimplementedError();
+  }
+  @override
+  Future<bool> unsavePostById(String postId) async {
+    if (shouldThrow) throw Exception("Error unsaving post");
+    return true; // Simulate a successful unsave
   }
 }

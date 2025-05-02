@@ -6,7 +6,7 @@ import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/features/post/viewmodel/post_viewmodel.dart';
-import 'package:video_player/video_player.dart'; // Add this import
+import 'package:video_player/video_player.dart'; 
 
 class PostPage extends ConsumerStatefulWidget {
   const PostPage({Key? key}) : super(key: key);
@@ -289,30 +289,123 @@ class _PostPageState extends ConsumerState<PostPage> {
                 ],
               ),
 
-              SizedBox(height: 4.h),
+SizedBox(height: 4.h),
+// Tagged users chips 
+if (data.taggedUsers.isNotEmpty)
+  Container(
+    margin: EdgeInsets.only(bottom: 2.h),
+    child: Wrap(
+      spacing: 1.w,
+      runSpacing: 0.5.h,
+      children: data.taggedUsers.map((user) {
+        return Chip(
+          backgroundColor: theme.primaryColor.withOpacity(0.1),
+          avatar: CircleAvatar(
+            backgroundImage: user.profilePicture != null && 
+                            user.profilePicture!.isNotEmpty
+                ? NetworkImage(user.profilePicture!)
+                : null,
+            child: (user.profilePicture == null || 
+                    user.profilePicture!.isEmpty)
+                ? Icon(Icons.person, size: 1.5.h)
+                : null,
+          ),
+          label: Text(
+            '${user.firstName} ${user.lastName}',
+            style: TextStyle(fontSize: 12.sp),
+          ),
+          deleteIcon: Icon(Icons.close, size: 1.5.h),
+          onDeleted: () => ref
+              .read(postViewModelProvider.notifier)
+              .removeTaggedUser(user.userId),
+        );
+      }).toList(),
+    ),
+  ),
+// Post content text field
+TextField(
+  controller: textController,
+  maxLines: null,
+  keyboardType: TextInputType.multiline,
+  decoration: InputDecoration(
+    hintText: 'What do you want to talk about?',
+    hintStyle: TextStyle(color: AppColors.gray, fontSize: 16.sp),
+    border: InputBorder.none,
+  ),
+  style: TextStyle(fontSize: 16.sp, height: 1.4),
+  onChanged: (text) {
+    // Just for UI updates
+    ref.read(postViewModelProvider.notifier).updateContent(text,textController);
+    setState(() {});
+  },
+),
 
-              // Post content text field
-              TextField(
-                controller: textController,
-                maxLines: null,
-                keyboardType: TextInputType.multiline,
-                decoration: InputDecoration(
-                  hintText: 'What do you want to talk about?',
-                  hintStyle: TextStyle(color: AppColors.gray, fontSize: 16.sp),
-                  border: InputBorder.none,
+// User mention suggestions overlay
+if (data.showMentionSuggestions && data.userSearchResults.isNotEmpty)
+  Container(
+    margin: EdgeInsets.only(top: 2.h),
+    constraints: BoxConstraints(maxHeight: 30.h),
+    decoration: BoxDecoration(
+      color: theme.cardColor,
+      borderRadius: BorderRadius.circular(8),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.1),
+          blurRadius: 4,
+          offset: Offset(0, 2),
+        ),
+      ],
+    ),
+    child: data.isSearchingUsers
+        ? Center(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        : ListView.builder(
+            shrinkWrap: true,
+            itemCount: data.userSearchResults.length,
+            itemBuilder: (context, index) {
+              final user = data.userSearchResults[index];
+              return ListTile(
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 2.h,
+                  vertical: 0.5.h,
                 ),
-                style: TextStyle(fontSize: 16.sp, height: 1.4),
-                onChanged: (text) {
-                  // Just for UI updates
-                  ref.read(postViewModelProvider.notifier).updateContent(text);
-                  setState(() {});
-                },
-              ),
+                leading: CircleAvatar(
+                  backgroundImage: user.profilePicture != null && 
+                                user.profilePicture!.isNotEmpty
+                      ? NetworkImage(user.profilePicture!)
+                      : null,
+                  child: (user.profilePicture == null || 
+                          user.profilePicture!.isEmpty)
+                      ? Icon(Icons.person)
+                      : null,
+                ),
+                title: Text(
+                  '${user.firstName} ${user.lastName}',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: user.headline != null && user.headline!.isNotEmpty
+                    ? Text(
+                        user.headline!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      )
+                    : null,
+                onTap: () => ref
+                    .read(postViewModelProvider.notifier)
+                    .onMentionSelected(user, textController),
+              );
+            },
+          ),
+  ),
 
-              SizedBox(height: 2.h),
+SizedBox(height: 2.h),
 
-              // Media preview section when attachments exist
-              if (data.attachments != null && data.attachments!.isNotEmpty)
+// Media preview section when attachments exist
+if (data.attachments != null && data.attachments!.isNotEmpty)
                 for (var file in data.attachments!)
                   Stack(
                     children: [

@@ -348,26 +348,31 @@ class PostCard extends StatelessWidget {
                       ]
                        // Menu options for other people's posts
                         : [
-                          PopupMenuItem(
-                            value: 'save',
-                            height: 5.h,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.bookmark_border,
-                                  size: 2.h,
-                                  color: theme.iconTheme.color,
+                        PopupMenuItem(
+                          value: 'save',
+                          height: 5.h,
+                          child: Row(
+                            children: [
+                              Icon(
+                                post.isSaved == true
+                                    ? Icons.bookmark
+                                    : Icons.bookmark_border,
+                                size: 2.h,
+                                color: post.isSaved == true
+                                    ? AppColors.primary
+                                    : theme.iconTheme.color,
+                              ),
+                              SizedBox(width: 2.w),
+                              Text(
+                                post.isSaved == true ? 'Unsave post' : 'Save for later',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontSize: 15.sp,
+                                  color: post.isSaved == true ? AppColors.primary : null,
                                 ),
-                                SizedBox(width: 2.w),
-                                Text(
-                                  'Save for later',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontSize: 15.sp,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
+                        ),
                           PopupMenuItem(
                             value: 'report',
                             height: 5.h,
