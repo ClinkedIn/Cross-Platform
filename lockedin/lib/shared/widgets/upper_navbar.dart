@@ -152,7 +152,15 @@ class _UpperNavbarState extends ConsumerState<UpperNavbar> {
             focusNode: _searchFocusNode,
             decoration: InputDecoration(
               fillColor: isDarkMode ? Colors.grey[700] : Colors.grey[200],
-              hintText: _getCurrentRoute(context),
+              hintText:
+                  _getCurrentRoute(context) == "/home"
+                      ? "Search posts"
+                      : _getCurrentRoute(context) == "/users"
+                      ? "Search users"
+                      : _getCurrentRoute(context) == "/jobs"
+                      ? "Search jobs"
+                      : "Search",
+
               hintStyle: TextStyle(color: Colors.grey[400]),
               prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
               suffixIcon:
