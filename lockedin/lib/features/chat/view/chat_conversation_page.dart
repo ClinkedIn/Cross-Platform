@@ -52,27 +52,20 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     }
   }
 
-
-  // Updated to use the viewModel's sendMessage implementation
   void sendMessage() {
-
     // Ensure the message is not empty before sending
     if (_messageController.text.trim().isEmpty) return;
-    
     // Get the trimmed message text and clear the input field
     final messageText = _messageController.text.trim();
     _messageController.clear();
-    
     // Get the current user ID and log it for debugging
     final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
-    
-    // Call the viewModel's sendMessage method
+    // Call the viewModel's sendMessage method (no participants field will be sent)
     chatViewModel.sendMessage(messageText).then((_) {
       // Success! Message sent
       _scrollToBottom();
     });
   }
-  
 
   @override
   Widget build(BuildContext context) {

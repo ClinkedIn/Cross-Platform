@@ -225,12 +225,16 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       // Determine chat type from the chat object if available
       String chatType = chat?.chatType ?? 'direct';
       
+      // Get receiver ID for direct messages
+      String? receiverId = getReceiverUserId();
+      
       try {
         // Send the message to the server using the repository
         final result = await _repository.sendMessage(
           chatId: chatId,
           messageText: messageText,
           chatType: chatType,
+          receiverId: receiverId,
         );
         
         // Check if the message was sent successfully

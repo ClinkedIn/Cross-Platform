@@ -6,6 +6,7 @@ import 'package:lockedin/routing.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:lockedin/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,8 +14,10 @@ void main() async {
   // Initialize the base URL before the app starts
   await Constants.initializeBaseUrl();
 
-  // Initialize Firebase
-  await Firebase.initializeApp();
+  // Initialize Firebase with the correct options
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(
     ProviderScope(

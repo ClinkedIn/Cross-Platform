@@ -8,7 +8,6 @@ import 'package:lockedin/core/services/auth_service.dart';
 import 'dart:io';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 
-
 class ChatConversationRepository {
   final AuthService _authService;
   String? _receiverId; // Add this to store the receiver ID
@@ -154,14 +153,23 @@ class ChatConversationRepository {
     try {
       // Make sure user data is loaded before trying to send a message
       await _authService.fetchCurrentUser();
-           
-      // Create the request body with the required fields according to the API spec
+      
+      // Get current user ID and receiver ID
+      final currentUserId = _authService.currentUser?.id;
+      final actualReceiverId = receiverId ?? _receiverId;
+
+      // Create the request body with all string values
       final Map<String, dynamic> body = {
         'type': chatType,
         'messageText': messageText,
-        'chatId': chatId,
+        'chatId': chatId.toString(), // Ensure chatId is a string
       };
       
+      // Only add receiverId if we have a valid ID - don't use participants array
+      if (actualReceiverId != null) {
+        body['receiverId'] = actualReceiverId.toString();
+      }
+
       // Log the request body for debugging
       debugPrint('Sending message with body: ${jsonEncode(body)}');
       
@@ -174,9 +182,14 @@ class ChatConversationRepository {
         body: body,
       );
       
+      // Log response for debugging
+      debugPrint('POST Response Code: ${response.statusCode}');
+      debugPrint('POST Response Body: ${response.body}');
+      
       // Check status code for success
       if (response.statusCode != 200 && response.statusCode != 201) {
         debugPrint('Error: Server returned status code ${response.statusCode}');
+        debugPrint('Response Body: ${response.body}');
         return {
           'success': false,
           'error': 'Server returned status code ${response.statusCode}',
@@ -231,27 +244,38 @@ class ChatConversationRepository {
       // Use the endpoint constant for messages
       final endpoint = Constants.chatMessagesEndpoint.replaceAll('{chatId}', chatId);
 
-      // Set up the body according to the form structure shown in the image
+      // Get receiver ID
+      final actualReceiverId = _receiverId;
+
+      // Set up the body with explicitly stringified values
       final body = {
         'messageText': messageText,
         'type': chatType,
-        'receiverId': _receiverId ?? '', // Make sure receiverId is available from previous API calls
-        'chatId': chatId, // Adding chatId to ensure proper routing
+        'chatId': chatId.toString(), // Ensure chatId is a string
       };
+      
+      // Only add receiverId if available - don't use participants array
+      if (actualReceiverId != null) {
+        body['receiverId'] = actualReceiverId.toString();
+      }
       
       // Log the request for debugging
       debugPrint('Sending message with attachment to chat: $chatId');
       debugPrint('File: ${attachment.path}, Type: ${attachmentType.toString()}');
       debugPrint('Receiver ID: ${_receiverId ?? "Not available"}');
+      debugPrint('Request body: ${jsonEncode(body)}');
       
       // Send the message with attachment using the multipart request
-      // Use 'files' as the field name without array notation based on the Multer error
       final response = await RequestService.postMultipart(
         endpoint,
         file: attachment,
-        fileFieldName: 'files', // Field name must match exactly what the server expects
+        fileFieldName: 'files', // Field name must match what the server expects
         additionalFields: body,
       );
+      
+      // Log response for debugging
+      debugPrint('Attachment POST Response Code: ${response.statusCode}');
+      debugPrint('Attachment POST Response Body: ${response.body}');
       
       // Check status code for success
       if (response.statusCode != 200 && response.statusCode != 201) {
