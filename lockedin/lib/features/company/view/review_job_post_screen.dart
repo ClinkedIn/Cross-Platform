@@ -45,15 +45,16 @@ class _ReviewJobPostScreenState extends ConsumerState<ReviewJobPostScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => JobDescriptionScreen(
-          initialText: jobDescription,
-          jobTitle: widget.jobTitle,
-          company: widget.company,
-          location: widget.location,
-          jobType: widget.jobType,
-          workplaceType: widget.workplaceType,
-          companyId: widget.companyId,
-        ),
+        builder:
+            (_) => JobDescriptionScreen(
+              initialText: jobDescription,
+              jobTitle: widget.jobTitle,
+              company: widget.company,
+              location: widget.location,
+              jobType: widget.jobType,
+              workplaceType: widget.workplaceType,
+              companyId: widget.companyId,
+            ),
       ),
     );
   }
@@ -73,24 +74,39 @@ class _ReviewJobPostScreenState extends ConsumerState<ReviewJobPostScreen> {
   }
 
   Future<void> submitJob() async {
-    final viewModel = ref.read(companyViewModelProvider);
+    final postText =
+        '''
+    Job Title: ${widget.jobTitle}
+    Company: ${widget.company}
+    Location: ${widget.location}
+    Job Type: ${widget.jobType}
+    Workplace Type: ${widget.workplaceType}
+    '''.trim();
 
-    final success = await viewModel.createJob(
-      jobTitle: widget.jobTitle,
-      location: widget.location,
-      jobType: widget.jobType,
-      workplaceType: widget.workplaceType,
+    if (postText.isEmpty) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text("Post description is required")),
+        );
+      return;
+    }
+
+    final viewModel = ref.read(companyViewModelProvider);
+    final success = await viewModel.createPost(
       companyId: widget.companyId,
-      description: jobDescription!.trim(), // use actual description
+      description: postText,
+      filePaths: null,
     );
 
-    // Make sure widget is still mounted before using context
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Job posted successfully!")));
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text("Job posted successfully!")),
+        );
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -98,10 +114,10 @@ class _ReviewJobPostScreenState extends ConsumerState<ReviewJobPostScreen> {
         ),
       );
     } else {
-      final error = viewModel.errorMessage ?? 'Failed to create job post.';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error)));
+      final error = viewModel.errorMessage ?? 'Failed to create post.';
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error)));
     }
   }
 

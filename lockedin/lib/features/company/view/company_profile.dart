@@ -28,7 +28,6 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
       Future.microtask(() {
     ref.read(companyViewModelProvider).fetchCompanyById(widget.companyId);
     ref.read(companyViewModelProvider).fetchCompanyPosts(widget.companyId);
-    ref.read(companyViewModelProvider).fetchCompanyJobs(widget.companyId); // <-- Add this
   });
   }
 

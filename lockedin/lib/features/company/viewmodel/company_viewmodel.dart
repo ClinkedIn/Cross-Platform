@@ -202,63 +202,6 @@ class CompanyViewModel extends ChangeNotifier {
 
     _setLoading(false);
   }
-
-    // Create a job
-  Future<bool> createJob({
-    required String companyId,
-    required String jobTitle,
-    required String description,
-    required String location,
-    required String jobType,
-    required String workplaceType,
-    String experienceLevel = "",
-    String salaryRange = "",
-    bool isRemote = false,
-    String industry = "",
-    String logoUrl = "",
-    // Add other fields as needed
-  }) async {
-    _setLoading(true);
-    _clearError();
-
-    final job = await _companyRepository.createJob(
-      companyId: companyId,
-      jobTitle: jobTitle,
-      description: description,
-      location: location,
-      jobType: jobType,
-      workplaceType: workplaceType,
-      experienceLevel: experienceLevel,
-      salaryRange: salaryRange,
-      isRemote: isRemote,
-      industry: industry,
-      logoUrl: logoUrl,
-      // Add other fields as needed
-    );
-
-    if (job != null) {
-      _companyJobs.insert(0, job);
-      notifyListeners();
-      _setLoading(false);
-      return true;
-    } else {
-      _errorMessage = "Failed to create job";
-      notifyListeners();
-      _setLoading(false);
-      return false;
-    }
-  }
-
-    // Fetch jobs for a company
-  Future<void> fetchCompanyJobs(String companyId) async {
-    _setLoading(true);
-    _clearError();
-
-    final jobs = await _companyRepository.getCompanyJobs(companyId);
-    _companyJobs = jobs;
-    notifyListeners();
-    _setLoading(false);
-  }
 }
 
 // CompanyViewModel provider for accessing this class in UI
