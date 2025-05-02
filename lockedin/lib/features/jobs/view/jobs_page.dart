@@ -35,17 +35,6 @@ class JobsPage extends ConsumerWidget {
                     fontSize: 18.sp,
                   ),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CompanyView(),
-                      ),
-                    );
-                  },
-                  child: const Text('Create Company'),
-                ),
               ],
             ),
             Align(
