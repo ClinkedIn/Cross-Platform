@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/core/services/token_services.dart';
+import 'package:lockedin/features/admin/view/admin_pannel_page.dart';
 import 'package:lockedin/features/auth/view/change_password_page.dart';
 import 'package:lockedin/features/auth/view/edit_email_view.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
@@ -25,10 +26,13 @@ import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:lockedin/features/profile/utils/picture_loader.dart';
 import 'package:lockedin/features/profile/view/add_education_page.dart';
 import 'package:lockedin/features/profile/view/add_position_page.dart';
+import 'package:lockedin/features/profile/view/add_resume_page.dart';
 import 'package:lockedin/features/profile/view/add_section_window.dart';
 import 'package:lockedin/features/profile/view/add_skill_page.dart';
+import 'package:lockedin/features/profile/view/block_list_page.dart';
 import 'package:lockedin/features/profile/view/edit_cover_photo.dart';
 import 'package:lockedin/features/profile/view/edit_profile_photo.dart';
+import 'package:lockedin/features/profile/view/other_profile_page.dart';
 import 'package:lockedin/features/profile/view/profile_page.dart';
 import 'package:lockedin/features/profile/view/setting_page.dart';
 import 'package:lockedin/features/profile/view/update_page.dart';
@@ -37,7 +41,12 @@ import 'package:lockedin/shared/widgets/side_bar.dart';
 import 'package:lockedin/shared/widgets/upper_navbar.dart';
 import 'package:lockedin/shared/widgets/bottom_navbar.dart';
 import 'package:lockedin/features/home_page/view/detailed_post.dart';
+import './features/home_page/view/editpost_view.dart';
+import './features/home_page/model/post_model.dart';
+import 'package:lockedin/features/home_page/view/post_likes_view.dart';
+import 'package:lockedin/features/home_page/view/saved_posts_view.dart';
 import 'package:lockedin/features/jobs/view/application_status.dart';
+import 'package:lockedin/features/payment/view/subescription_view.dart';
 
 // Use this to control drawer state
 final scaffoldKeyProvider = Provider((ref) => GlobalKey<ScaffoldState>());
@@ -61,7 +70,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       if (isAuthenticated && publicRoutes.contains(state.fullPath)) {
         return '/home';
       }
-
       // Going to a protected route while not authenticated
       if (!isAuthenticated && !publicRoutes.contains(state.fullPath)) {
         return '/login';
@@ -190,7 +198,58 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/edit-profile',
         name: 'edit-profile',
-        builder: (context, state) => UpdatePage(),
+        builder: (context, state) => UpdateProfileView(),
+      ),
+      GoRoute(
+        path: "/add-resume",
+        name: "add-resume",
+        builder: (context, state) => AddResumePage(),
+      ),
+      GoRoute(
+        path: '/blocklist',
+        name: 'blocklist',
+        builder: (context, state) => BlockedUsersPage(),
+      ),
+      GoRoute(
+        path: '/other-profile/:userId',
+        name: 'other-profile',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return ViewOtherProfilePage(userId: userId);
+        },
+      ),
+      GoRoute(
+        path: '/admin-dashboard',
+        name: 'admin-dashboard',
+        builder: (context, state) => AdminHomePage(),
+      ),
+
+      GoRoute(
+        path: '/edit-post',
+        builder: (context, state) {
+          final post = state.extra as PostModel;
+          return EditPostPage(post: post);
+        },
+      ),
+
+      GoRoute(
+        path: '/post-likes/:postId',
+        name: 'post-likes',
+        builder: (context, state) {
+          final postId = state.pathParameters['postId']!;
+          return PostLikesPage(postId: postId);
+        },
+      ),
+
+      GoRoute(
+        path: '/subscription',
+        name: 'subscription',
+        builder: (context, state) => PremiumSubscriptionPage(),
+        ),
+
+      GoRoute(
+        path: '/saved-posts',
+        builder: (context, state) => const SavedPostsPage(),
       ),
 
       GoRoute(

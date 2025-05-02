@@ -45,5 +45,12 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+    <!-- Add these keys -->
+    <key>NSCameraUsageDescription</key>
+    <string>This app needs camera access to take photos for chat messages</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>This app needs photos access to send images in chat</string>
+<key>NSDocumentsFolderUsageDescription</key>
+<string>This app needs access to documents to send files in chat</string>
 </dict>
 </plist>

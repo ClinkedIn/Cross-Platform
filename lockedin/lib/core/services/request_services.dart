@@ -48,6 +48,7 @@ class RequestService {
       // Determine file extension and content type
       final String path = file.path;
       final String extension = path.split('.').last.toLowerCase();
+      final String fileName = path.split('/').last;
 
       // Set appropriate content type based on file extension
       MediaType contentType;
@@ -99,13 +100,19 @@ class RequestService {
           contentType = MediaType('application', 'octet-stream');
       }
 
+      // Based on the server error, we need to use exactly 'files' as the field name
+      // without any array notation since multer is configured to expect this field name
       request.files.add(
         await http.MultipartFile.fromPath(
-          fileFieldName,
+          fileFieldName, // Keep this as-is without adding any brackets
           file.path,
           contentType: contentType,
+          filename: fileName,
         ),
       );
+
+      // Log the request for debugging
+      debugPrint('Adding file to field name: $fileFieldName');
     }
 
     // Add regular fields
@@ -158,9 +165,9 @@ class RequestService {
 
     try {
       final response = await _client.get(uri, headers: headers);
-
-      // Debug response information
-
+      if (response.statusCode == 401) {
+        TokenService.deleteCookie();
+      }
       return response;
     } catch (e) {
       // Retry network errors as well
@@ -319,16 +326,20 @@ class RequestService {
   static Future<http.Response> login({
     required String email,
     required String password,
+    String? fcmToken,
   }) async {
     final String url = '$_baseUrl${Constants.loginEndpoint}';
     debugPrint('LOGIN Request: $url');
+    debugPrint('LOGIN Request Body: $email, $password');
 
     try {
       final response = await _client.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
+        body: jsonEncode({'email': email, 'password': password, if (fcmToken != null) 'fcmToken': fcmToken}),
       );
+      debugPrint('LOGIN Response: ${response.body}');
+      debugPrint('LOGIN Response Headers: ${response.headers}');
 
       _storeCookiesFromResponse(response);
       return response;
@@ -360,4 +371,5 @@ class RequestService {
         body.contains('<html>') ||
         (body.isNotEmpty && !body.startsWith('{') && !body.startsWith('['));
   }
+    
 }

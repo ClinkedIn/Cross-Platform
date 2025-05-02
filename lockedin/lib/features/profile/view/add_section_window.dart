@@ -3,17 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class AddToProfilePage extends ConsumerWidget {
-  final List<String> coreItems = [
-    "education",
-    "position",
-    // "services",
-    // "career break",
-    "skills",
-  ];
+  final List<String> coreItems = ["education", "position", "skills"];
 
-  final List<String> recommendedItems = ["item 1", "item 2"];
-
-  final List<String> additionalItems = ["item 1", "item 2"];
+  final List<String> recommendedItems = ["resume"];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -66,14 +58,23 @@ class AddToProfilePage extends ConsumerWidget {
               ),
             ),
           ], theme: theme),
-          _buildExpansionTile(
-            context,
-            'Recommended',
-            recommendedItems
+          _buildExpansionTile(context, 'Recommended', [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Text(
+                'These sections are optional, but they can help you stand out to recruiters and people you may know',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.textTheme.bodySmall?.color,
+                ),
+              ),
+            ),
+            ...recommendedItems
                 .map(
                   (item) => ListTile(
                     title: Text(item, style: theme.textTheme.bodyLarge),
-                    onTap: () {},
+                    onTap: () {
+                      context.push("/add-$item");
+                    },
                     trailing: Icon(
                       Icons.arrow_forward_ios,
                       size: 16,
@@ -82,26 +83,7 @@ class AddToProfilePage extends ConsumerWidget {
                   ),
                 )
                 .toList(),
-            theme: theme,
-          ),
-          _buildExpansionTile(
-            context,
-            'Additional',
-            additionalItems
-                .map(
-                  (item) => ListTile(
-                    title: Text(item, style: theme.textTheme.bodyLarge),
-                    onTap: () {},
-                    trailing: Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: theme.iconTheme.color,
-                    ),
-                  ),
-                )
-                .toList(),
-            theme: theme,
-          ),
+          ], theme: theme),
         ],
       ),
     );

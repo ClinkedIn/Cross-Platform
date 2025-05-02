@@ -143,12 +143,14 @@ class LoginPage extends ConsumerWidget {
                               _passwordController.text,
                               context,
                             );
-                            if (isLoggedIn && context.mounted) {
+                           if (isLoggedIn && context.mounted) {
                               ref
                                   .read(profileViewModelProvider)
                                   .fetchAllProfileData();
-                              context.go('/home');
+                              context.go('/');
+
                             }
+
                           }
                         },
                 child:
@@ -193,6 +195,9 @@ class LoginPage extends ConsumerWidget {
                       ref
                           .read(loginViewModelProvider.notifier)
                           .signInWithGoogle();
+
+                          context.go('/');
+
                     },
                   ),
                 ],

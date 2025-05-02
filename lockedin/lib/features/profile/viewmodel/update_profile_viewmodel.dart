@@ -1,112 +1,155 @@
-import 'dart:convert';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/profile/service/update_profile_service.dart';
-import 'package:lockedin/features/profile/viewmodel/profile_viewmodel.dart';
+import 'package:flutter/material.dart';
+import 'package:lockedin/features/profile/model/user_model.dart';
+import 'package:lockedin/features/profile/repository/update_profile_repository.dart';
 
-// State class to manage the update process
-class UpdateProfileState {
-  final bool isLoading;
-  final String? errorMessage;
-  final bool isSuccess;
+class UpdateProfileViewModel {
+  final repository = UpdateProfileRepository();
 
-  UpdateProfileState({
-    this.isLoading = false,
-    this.errorMessage,
-    this.isSuccess = false,
-  });
+  // Controllers for Basic Information
+  late final TextEditingController firstNameController;
+  late final TextEditingController lastNameController;
+  late final TextEditingController additionalNameController;
+  late final TextEditingController headLineController;
+  late final TextEditingController websiteController;
+  late final TextEditingController locationController;
+  late final TextEditingController mainEducationController;
+  late final TextEditingController industryController;
 
-  UpdateProfileState copyWith({
-    bool? isLoading,
-    String? errorMessage,
-    bool? isSuccess,
-  }) {
-    return UpdateProfileState(
-      isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage ?? this.errorMessage,
-      isSuccess: isSuccess ?? this.isSuccess,
+  // Controllers for Contact Information
+  late final TextEditingController phoneController;
+  late final TextEditingController phoneTypeController;
+  late final TextEditingController addressController;
+  late final TextEditingController birthDayController;
+  late final TextEditingController birthMonthController;
+  late final TextEditingController websiteUrlController;
+  late final TextEditingController websiteTypeController;
+
+  // Controllers for About
+  late final TextEditingController descriptionController;
+  late final TextEditingController skillsController;
+
+  UpdateProfileViewModel(UserModel userState) {
+    firstNameController = TextEditingController(text: userState.firstName);
+    lastNameController = TextEditingController(text: userState.lastName);
+    additionalNameController = TextEditingController(
+      text: userState.additionalName ?? '',
+    );
+    headLineController = TextEditingController(text: userState.headline ?? '');
+    websiteController = TextEditingController(text: userState.website ?? '');
+    locationController = TextEditingController(text: userState.location ?? '');
+    mainEducationController = TextEditingController(
+      text: userState.mainEducation ?? '',
+    );
+    industryController = TextEditingController(text: userState.industry ?? '');
+
+    phoneController = TextEditingController(
+      text: userState.contactInfo?.phone.toString() ?? '',
+    );
+    phoneTypeController = TextEditingController(
+      text: userState.contactInfo?.phoneType.toString() ?? '',
+    );
+    addressController = TextEditingController(
+      text: userState.contactInfo?.address.toString() ?? '',
+    );
+    birthDayController = TextEditingController(
+      text: (userState.contactInfo?.birthDay.day ?? '').toString(),
+    );
+    birthMonthController = TextEditingController(
+      text: userState.contactInfo?.birthDay.month ?? '',
+    );
+    websiteUrlController = TextEditingController(
+      text: userState.contactInfo?.website?.url ?? '',
+    );
+    websiteTypeController = TextEditingController(
+      text: userState.contactInfo?.website?.type ?? '',
+    );
+
+    descriptionController = TextEditingController(
+      text: userState.about?.description ?? '',
+    );
+    skillsController = TextEditingController(
+      text: (userState.about?.skills as List<dynamic>?)?.join(', ') ?? '',
     );
   }
-}
 
-// ViewModel provider
-final updateProfileProvider =
-    StateNotifierProvider<UpdateProfileViewModel, UpdateProfileState>((ref) {
-      return UpdateProfileViewModel(ref);
+  List<Widget> buildBasicInfoForm() => [
+    _textField(controller: firstNameController, label: "First Name"),
+    _textField(controller: lastNameController, label: "Last Name"),
+    _textField(controller: additionalNameController, label: "Additional Name"),
+    _textField(controller: headLineController, label: "Headline"),
+    _textField(controller: websiteController, label: "Website"),
+    _textField(controller: locationController, label: "Location"),
+    _textField(controller: mainEducationController, label: "Main Education"),
+    _textField(controller: industryController, label: "Industry"),
+  ];
+
+  List<Widget> buildContactInfoForm() => [
+    _textField(controller: phoneController, label: "Phone"),
+    _textField(controller: phoneTypeController, label: "Phone Type"),
+    _textField(controller: addressController, label: "Address"),
+    _textField(controller: birthDayController, label: "Birth Day (number)"),
+    _textField(controller: birthMonthController, label: "Birth Month"),
+    _textField(controller: websiteUrlController, label: "Website URL"),
+    _textField(controller: websiteTypeController, label: "Website Type"),
+  ];
+
+  List<Widget> buildAboutInfoForm() => [
+    _textField(controller: descriptionController, label: "Description"),
+    _textField(controller: skillsController, label: "Skills (comma-separated)"),
+  ];
+
+  Future<void> submitBasicInfo() async {
+    await repository.updateBasicInfo({
+      "firstName": firstNameController.text,
+      "lastName": lastNameController.text,
+      "additinalName": additionalNameController.text,
+      "headLine": headLineController.text,
+      "website": websiteController.text,
+      "location": locationController.text,
+      "mainEducation": mainEducationController.text,
+      "industry": industryController.text,
     });
-
-class UpdateProfileViewModel extends StateNotifier<UpdateProfileState> {
-  final Ref ref;
-
-  UpdateProfileViewModel(this.ref) : super(UpdateProfileState());
-
-  Future<bool> updateProfile(Map<String, String> userData) async {
-    // Start loading
-    state = state.copyWith(
-      isLoading: true,
-      errorMessage: null,
-      isSuccess: false,
-    );
-
-    try {
-      // Clean up the data before sending
-      Map<String, dynamic> cleanData = {};
-
-      // Only include non-empty values
-      userData.forEach((key, value) {
-        if (value.trim().isNotEmpty) {
-          cleanData[key] = value.trim();
-        }
-      });
-
-      // Add nested objects if needed
-      if (userData.containsKey('link') && userData['link']!.trim().isNotEmpty) {
-        cleanData['contactInfo'] = {
-          'website': {'url': userData['link'], 'type': 'personal'},
-        };
-        // Remove from top level since we've added it to nested structure
-        cleanData.remove('link');
-      }
-
-      final response = await UpdateProfileService.updateProfile(cleanData);
-
-      if (response.statusCode == 200) {
-        // Success
-        state = state.copyWith(isLoading: false, isSuccess: true);
-
-        // Refresh the user data in the app
-        await ref.read(profileViewModelProvider).fetchUser();
-
-        return true;
-      } else {
-        // Error from server
-        String errorMsg;
-        try {
-          final errorData = jsonDecode(response.body);
-          errorMsg = errorData['message'] ?? 'Failed to update profile';
-        } catch (_) {
-          errorMsg =
-              'Failed to update profile. Status code: ${response.statusCode}';
-        }
-
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: errorMsg,
-          isSuccess: false,
-        );
-        return false;
-      }
-    } catch (e) {
-      // Exception during update
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Error: ${e.toString()}',
-        isSuccess: false,
-      );
-      return false;
-    }
   }
 
-  void resetState() {
-    state = UpdateProfileState();
+  Future<void> submitContactInfo() async {
+    await repository.updateContactInfo({
+      "phone": phoneController.text,
+      "phoneType": phoneTypeController.text,
+      "address": addressController.text,
+      "birthDay": {
+        "day": int.tryParse(birthDayController.text) ?? 0,
+        "month": birthMonthController.text,
+      },
+      "website": {
+        "url": websiteUrlController.text,
+        "type": websiteTypeController.text,
+      },
+    });
+  }
+
+  Future<void> submitAboutInfo() async {
+    await repository.updateAboutInfo({
+      "about": {
+        "description": descriptionController.text,
+        "skills":
+            skillsController.text.split(',').map((e) => e.trim()).toList(),
+      },
+    });
+  }
+
+  Widget _textField({
+    required TextEditingController controller,
+    required String label,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+    );
   }
 }

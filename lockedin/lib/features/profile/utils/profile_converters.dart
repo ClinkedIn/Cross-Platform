@@ -36,19 +36,6 @@ class ProfileConverters {
     );
   }
 
-  // static ProfileItemModel licenseToProfileItem(License license) {
-  //   final duration = license.issueDate != null ?
-  //     "${formatDate(license.issueDate)} - ${license.hasExpiration && license.expirationDate != null ? formatDate(license.expirationDate) : 'No Expiration'}" :
-  //     "";
-
-  //   return ProfileItemModel(
-  //     title: license.name,
-  //     subtitle: license.organization,
-  //     duration: duration,
-  //     logoUrl: license.media ?? "assets/images/certificate_default.png",
-  //   );
-  // }
-
   static String formatDate(String? dateString) {
     if (dateString == null) return '';
 

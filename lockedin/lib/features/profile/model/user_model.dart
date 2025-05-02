@@ -16,7 +16,7 @@ class UserModel {
   final String? location;
   final String? lastJobTitle;
   final String? industry;
-  final int? mainEducation;
+  final String? mainEducation;
   final List<Skill> skills;
   final List<Education> education;
   final List<String> certificates;
@@ -41,6 +41,7 @@ class UserModel {
   final List<String> receivedConnectionRequests;
   final List<String> messageRequests;
   final List<ChatInfo> chats;
+  // final List<String> impressions;
   final String defaultMode;
   final String? googleId;
   final List<String> fcmToken;
@@ -97,6 +98,7 @@ class UserModel {
     this.emailVerificationOTPExpiresAt,
     this.passwordResetOTPExpiresAt,
     this.notificationPauseExpiresAt,
+    // this.impressions = const [],
     required this.createdAt,
     required this.updatedAt,
   });
@@ -111,6 +113,7 @@ class UserModel {
       headline: json['headline'],
       profilePicture: json['profilePicture'],
       coverPicture: json['coverPicture'],
+      // impressions: json['impressions'],
       resume: json['resume'],
       website: json['website'],
       contactInfo:
@@ -298,6 +301,17 @@ class UserModel {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
+  }
+
+  static UserModel empty() {
+    return UserModel(
+      id: '',
+      firstName: '',
+      lastName: '',
+      email: '',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
   }
 }
 

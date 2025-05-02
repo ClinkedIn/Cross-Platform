@@ -41,6 +41,7 @@ class FakeJobRepository implements JobRepository {
     required List<Map<String, String>> answers,
   }) async {
     if (shouldThrow) throw Exception('Failed to apply');
+
     return {'status': 'success', 'jobId': jobId};
   }
 
