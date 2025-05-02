@@ -309,7 +309,7 @@ class PostDetailViewModel extends StateNotifier<PostDetailState> {
     try {
       await _ref
           .read(homeViewModelProvider.notifier)
-          .savePostById(
+          .toggleSaveForLater(
             _ref.read(commentsViewModelProvider(postId)).post!.id
           );
       return Future.value();

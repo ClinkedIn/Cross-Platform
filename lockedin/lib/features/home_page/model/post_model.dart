@@ -17,6 +17,7 @@ class PostModel {
   final int reposts;
   final bool isLiked;
   final bool isMine;
+  final bool? isSaved;
   final bool isRepost;
   final String? repostId;
   final String? repostDescription;
@@ -41,6 +42,7 @@ class PostModel {
     required this.reposts,
     this.isLiked = false,
     required this.isMine,
+    this.isSaved,
     this.isRepost = false,
     this.repostId,
     this.repostDescription,
@@ -67,6 +69,7 @@ class PostModel {
     int? reposts,
     bool? isLiked,
     bool? isMine,
+    bool? isSaved,
     bool? isRepost,
     String? repostId,
     String? repostDescription,
@@ -91,6 +94,7 @@ class PostModel {
       reposts: reposts ?? this.reposts,
       isLiked: isLiked ?? this.isLiked,
       isMine: isMine ?? this.isMine,
+      isSaved: isSaved ?? this.isSaved,
       isRepost: isRepost ?? this.isRepost,
       repostId: repostId ?? this.repostId,
       repostDescription: repostDescription ?? this.repostDescription,
@@ -118,6 +122,7 @@ class PostModel {
       'reposts': reposts,
       'isLiked': isLiked,
       'isMine': isMine,
+      'isSaved': isSaved,
       'isRepost': isRepost,
       'repostId': repostId,
       'repostDescription': repostDescription,

@@ -189,7 +189,9 @@ class PostDetailView extends ConsumerWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                '✅ Post saved for later',
+                                commentsState.post!.isSaved == true
+                                    ? '❌ Post removed from saved items'
+                                    : '✅ Post saved for later',
                                 style: TextStyle(color: Colors.black87),
                               ),
                               behavior: SnackBarBehavior.floating,

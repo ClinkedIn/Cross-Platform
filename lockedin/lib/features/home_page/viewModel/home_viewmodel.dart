@@ -48,22 +48,63 @@ class HomeViewModel extends StateNotifier<HomeState> {
 
   /// Save post for later reading using post ID
 
-  Future<bool> savePostById(String postId) async {
+ /// Toggle save status for a post
+  Future<bool> toggleSaveForLater(String postId) async {
     try {
-      // Set loading state
-      state = state.copyWith(isLoading: true, error: null);
+      // Find the post in the current state
+      final index = state.posts.indexWhere((post) => post.id == postId);
+      if (index == -1) {
+        // Post not found in the current state
+        return false;
+      }
 
-      // Call repository method
-      final success = await repository.savePostById(postId);
+      final post = state.posts[index];
+      final isCurrentlySaved = post.isSaved;
 
-      // Update state after operation
-      state = state.copyWith(isLoading: false);
+      // Optimistically update UI
+      final updatedPost = post.copyWith(
+        isSaved: !(isCurrentlySaved ?? false),
+      );
+      final updatedPosts = List<PostModel>.from(state.posts);
+      updatedPosts[index] = updatedPost;
+      state = state.copyWith(posts: updatedPosts);
+
+      // Make the API call based on the new state
+      bool success;
+      if (!(isCurrentlySaved ?? false)) {
+        // Save the post
+        try {
+          success = await repository.savePostById(postId);
+        } catch (e) {
+          // Check for "already saved" error
+          if (e.toString().contains("already saved this post")) {
+            // This is fine, the server state matches our optimistic update
+            return true;
+          }
+          // Rethrow other errors
+          rethrow;
+        }
+      } else {
+        // Unsave the post
+        try { 
+          success = await repository.unsavePostById(postId);
+        } catch (e) {
+          // Check for "not saved" error
+          if (e.toString().contains("not saved this post")) {
+            // This is fine, the server state matches our optimistic update
+            return true;
+          }
+          // Rethrow other errors
+          rethrow;
+        }
+      }
 
       return success;
     } catch (e) {
-      // Handle errors
-      state = state.copyWith(isLoading: false, error: e.toString());
-      return false;
+      // If there was an error, revert the optimistic update
+      await refreshFeed(); // Refresh to get the correct state
+      debugPrint('Error in toggleSaveForLater: $e');
+      throw e; // Rethrow to allow UI to handle the error
     }
   }
 

@@ -56,6 +56,12 @@ class PostApi implements PostRepository {
           debugPrint('isLiked value: ${postsJson[0]['isLiked']}');
         }
 
+        // Debug the isSaved structure if posts exist
+      if (postsJson.isNotEmpty && postsJson[0].containsKey('isSaved')) {
+        debugPrint('isSaved type: ${postsJson[0]['isSaved'].runtimeType}');
+        debugPrint('isSaved value: ${postsJson[0]['isSaved']}');
+      }
+
         return postsJson.map((postJson) {
           // Simplified isLiked handling based on your API structure
            debugPrint('🔄 Processing post ID: ${postJson['postId']}, userId: ${postJson['userId']}');
@@ -70,6 +76,22 @@ class PostApi implements PostRepository {
               // Based on your API example, the presence of this object means it's liked
               isLikedValue = true;
             }
+          }
+
+          bool isSavedValue = false;
+          if (postJson.containsKey('isSaved') && postJson['isSaved'] != null) {
+            var isSavedField = postJson['isSaved'];
+            if (isSavedField is bool) {
+              // Direct boolean value
+              isSavedValue = isSavedField;
+            } else if (isSavedField is Map) {
+              // If isSaved is a Map/object with details, the post is saved
+              isSavedValue = true;
+            } else if (isSavedField is String) {
+              // If isSaved is a string, check if it's "true" or "false"
+              isSavedValue = isSavedField.toLowerCase() == 'true';
+            }
+            debugPrint('💾 Post ${postJson['postId']} isSaved: $isSavedValue');
           }
           // *** COMPANY vs USER POST HANDLING ***
           Map<String, dynamic>? companyData;
@@ -162,6 +184,7 @@ class PostApi implements PostRepository {
           reposts: postJson['repostCount'] ?? 0,
           isLiked: isLikedValue,
           isMine: postJson['isMine'] == true,
+          isSaved: isSavedValue,
           isRepost: postJson['isRepost'] == true,
           repostId: postJson['repostId'],
           repostDescription: postJson['repostDescription'],
@@ -277,6 +300,26 @@ class PostApi implements PostRepository {
       return false;
     }
   }
+
+  @override
+    Future<bool> unsavePostById(String postId) async {
+      try {
+        final String formattedEndpoint = Constants.savePostEndpoint.replaceFirst('%s', postId);
+        final response = await RequestService.delete(
+          formattedEndpoint,
+        );
+        
+        if (response.statusCode == 200) {
+          debugPrint('✅ Post unsaved successfully: $postId');
+          return true;
+        } else {
+          throw Exception('Failed to unsave post: ${response.statusCode} - ${response.body}');
+        }
+      } catch (e) {
+        debugPrint('❌ Error unsaving post: $e');
+        rethrow;
+      }
+    }
 
   @override
   Future<bool> likePost(String postId) async {

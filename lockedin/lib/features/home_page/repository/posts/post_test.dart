@@ -128,4 +128,9 @@ class MockPostRepository implements PostRepository {
  Future<Map<String, dynamic>> getPostLikes(String postId,{int page = 1}) {
     throw UnimplementedError();
   }
+  @override
+  Future<bool> unsavePostById(String postId) async {
+    if (shouldThrow) throw Exception("Error unsaving post");
+    return true; // Simulate a successful unsave
+  }
 }
