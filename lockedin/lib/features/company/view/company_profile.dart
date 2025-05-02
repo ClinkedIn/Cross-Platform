@@ -1,14 +1,11 @@
-import 'dart:io';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/company/view/company_analytics_screen.dart';
 import 'package:lockedin/features/company/view/create_job_screen.dart';
 import 'package:lockedin/features/company/view/create_post_screen.dart';
 import 'package:lockedin/features/company/view/edit_company_profile_view.dart';
 import 'package:lockedin/features/company/viewmodel/company_viewmodel.dart';
-import 'package:lockedin/features/company/model/company_post_model.dart';
 import 'package:lockedin/features/company/widgets/post_card.dart';
-import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
 
 class CompanyProfileView extends ConsumerStatefulWidget {
@@ -25,10 +22,10 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
   @override
   void initState() {
     super.initState();
-      Future.microtask(() {
-    ref.read(companyViewModelProvider).fetchCompanyById(widget.companyId);
-    ref.read(companyViewModelProvider).fetchCompanyPosts(widget.companyId);
-  });
+    Future.microtask(() {
+      ref.read(companyViewModelProvider).fetchCompanyById(widget.companyId);
+      ref.read(companyViewModelProvider).fetchCompanyPosts(widget.companyId);
+    });
   }
 
   @override
@@ -98,6 +95,14 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                     builder:
                         (_) =>
                             EditCompanyProfileView(companyId: widget.companyId),
+                  ),
+                );
+              }
+              else if (value == 'analytics') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CompanyAnalyticsScreen(companyId: widget.companyId),
                   ),
                 );
               }
@@ -225,13 +230,6 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                     },
                     child: const Text("Post a job for free"),
                   ),
-                  Text(
-                    "Recent Jobs",
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                   SizedBox(height: 1.h),
                   ...companyViewModel.companyJobs.map((job) {
                     return Card(
@@ -242,7 +240,6 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                       ),
                     );
                   }),
-                  SizedBox(height: 2.h),
                   Text(
                     "Create New Post",
                     style: TextStyle(
@@ -273,7 +270,7 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                   ),
 
                   Text(
-                    "Recent Posts",
+                    "Recent Posts and Jobs",
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
