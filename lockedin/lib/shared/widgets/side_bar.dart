@@ -160,14 +160,31 @@ class SidebarDrawer extends ConsumerWidget {
                               ),
                             ),
                             SizedBox(height: 8),
-                            Text(
-                              "🔶 Try Premium for EGP0",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                            TextButton.icon(
+                              onPressed: () {
+                                context.pop(); // Close the drawer first
+                                context.push('/subscription'); // Navigate to subscription page
+                              },
+                              icon: Icon(
+                                Icons.workspace_premium,
+                                color: Colors.amber,
+                                size: 18,
                               ),
-                            ),
+                              label: Text(
+                                "Try Premium for EGP0",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                alignment: Alignment.centerLeft,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                            )
                           ],
                         ),
                         Positioned(
