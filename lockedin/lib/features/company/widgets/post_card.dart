@@ -20,15 +20,18 @@ class PostCard extends StatelessWidget {
 
     if (pickedImage != null) {
       avatarImage = FileImage(pickedImage!);
-    } else if (companyLogoUrl != null && companyLogoUrl!.isNotEmpty) {
+    } else if (post.companyLogoUrl.isNotEmpty) {
       avatarImage = NetworkImage(
-        companyLogoUrl!.startsWith('http')
-            ? companyLogoUrl!
-            : 'http://10.0.2.2:3000/$companyLogoUrl',
+        post.companyLogoUrl.startsWith('http')
+            ? post.companyLogoUrl
+            : 'http://10.0.2.2:3000/${post.companyLogoUrl}',
       );
     } else {
-      avatarImage = const AssetImage('assets/company_logo.png');
+      avatarImage = const AssetImage('assets/images/default_profile_photo.png');
     }
+
+    debugPrint('🟨 Building PostCard for post: ${post.id}');
+    debugPrint('📝 Description: "${post.description}"');
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -48,13 +51,14 @@ class PostCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Company Post',
-                        style: TextStyle(
+                      Text(
+                        post.companyName,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+
                       Text(
                         _formatTimeAgo(post.createdAt),
                         style: const TextStyle(color: Colors.grey),
@@ -66,17 +70,28 @@ class PostCard extends StatelessWidget {
             ),
           ),
 
-          // Description
-          if (post.description.isNotEmpty)
+          // Description with debug container
+          if (post.description.trim().isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Container(
+                color: Colors.yellow.withOpacity(0.2), // Highlight container
+                child: Text(
+                  '📝 ${post.description}',
+                  style: const TextStyle(fontSize: 14, color: Colors.black),
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(8),
               child: Text(
-                post.description,
-                style: const TextStyle(fontSize: 14),
+                '⚠️ No description provided for post "${post.id}"',
+                style: const TextStyle(fontSize: 12, color: Colors.red),
               ),
             ),
 
-          // Post Images (network)
+          // Attachments
           if (post.attachments.isNotEmpty)
             ...post.attachments.map(
               (url) => Padding(
@@ -122,11 +137,12 @@ class PostCard extends StatelessWidget {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
+    debugPrint('🟦 Time formatting for: ${post.description}');
+
     if (difference.inSeconds < 60) return '${difference.inSeconds}s ago';
     if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
     if (difference.inHours < 24) return '${difference.inHours}h ago';
     if (difference.inDays < 7) return '${difference.inDays}d ago';
-    print(post.description);
 
     return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
   }
