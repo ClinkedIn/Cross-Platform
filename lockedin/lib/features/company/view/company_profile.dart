@@ -2,11 +2,13 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/company/view/create_job_screen.dart';
 import 'package:lockedin/features/company/view/create_post_screen.dart';
 import 'package:lockedin/features/company/view/edit_company_profile_view.dart';
 import 'package:lockedin/features/company/viewmodel/company_viewmodel.dart';
 import 'package:lockedin/features/company/model/company_post_model.dart';
 import 'package:lockedin/features/company/widgets/post_card.dart';
+import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
 
 class CompanyProfileView extends ConsumerStatefulWidget {
@@ -23,10 +25,11 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      ref.read(companyViewModelProvider).fetchCompanyById(widget.companyId);
-      ref.read(companyViewModelProvider).fetchCompanyPosts(widget.companyId);
-    });
+      Future.microtask(() {
+    ref.read(companyViewModelProvider).fetchCompanyById(widget.companyId);
+    ref.read(companyViewModelProvider).fetchCompanyPosts(widget.companyId);
+    ref.read(companyViewModelProvider).fetchCompanyJobs(widget.companyId); // <-- Add this
+  });
   }
 
   @override
@@ -198,6 +201,50 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                   ),
                   SizedBox(height: 2.h),
                   Text(
+                    "Create New Job",
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 1.h),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) =>
+                                  CreateJobScreen(companyId: widget.companyId),
+                        ),
+                      ).then((_) {
+                        // Re-fetch posts after coming back
+                        ref
+                            .read(companyViewModelProvider)
+                            .fetchCompanyPosts(widget.companyId);
+                      });
+                    },
+                    child: const Text("Post a job for free"),
+                  ),
+                  Text(
+                    "Recent Jobs",
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 1.h),
+                  ...companyViewModel.companyJobs.map((job) {
+                    return Card(
+                      child: ListTile(
+                        title: Text(job.title),
+                        subtitle: Text(job.description),
+                        // Add more fields as needed
+                      ),
+                    );
+                  }),
+                  SizedBox(height: 2.h),
+                  Text(
                     "Create New Post",
                     style: TextStyle(
                       fontSize: 16.sp,
@@ -234,10 +281,10 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                     ),
                   ),
                   SizedBox(height: 1.h),
-                  ...posts.map(
-                    (post) =>
-                        PostCard(post: post, companyLogoUrl: company.logo),
-                  ),
+                  ...posts.map((post) {
+                    print("post description: ${post.description}, post time ago: ${post.createdAt}");
+                    return PostCard(post: post, companyLogoUrl: company.logo);
+                  }),
                 ],
               ),
     );

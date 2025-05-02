@@ -3,6 +3,7 @@ import 'package:lockedin/features/company/model/company_model.dart';
 import 'package:lockedin/features/company/model/company_post_model.dart';
 import 'package:lockedin/features/company/repository/company_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/jobs/model/job_model.dart'; // Import your Job model
 
 class CompanyViewModel extends ChangeNotifier {
   final CompanyRepository _companyRepository;
@@ -17,6 +18,10 @@ class CompanyViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   Company? get createdCompany => _createdCompany;
+
+  // Jobs state
+  List<JobModel> _companyJobs = [];
+  List<JobModel> get companyJobs => _companyJobs;
 
   Future<void> createCompany(Company company, {String? logoPath}) async {
     _setLoading(true);
@@ -195,6 +200,63 @@ class CompanyViewModel extends ChangeNotifier {
 
     _fetchedCompanies = companies;
 
+    _setLoading(false);
+  }
+
+    // Create a job
+  Future<bool> createJob({
+    required String companyId,
+    required String jobTitle,
+    required String description,
+    required String location,
+    required String jobType,
+    required String workplaceType,
+    String experienceLevel = "",
+    String salaryRange = "",
+    bool isRemote = false,
+    String industry = "",
+    String logoUrl = "",
+    // Add other fields as needed
+  }) async {
+    _setLoading(true);
+    _clearError();
+
+    final job = await _companyRepository.createJob(
+      companyId: companyId,
+      jobTitle: jobTitle,
+      description: description,
+      location: location,
+      jobType: jobType,
+      workplaceType: workplaceType,
+      experienceLevel: experienceLevel,
+      salaryRange: salaryRange,
+      isRemote: isRemote,
+      industry: industry,
+      logoUrl: logoUrl,
+      // Add other fields as needed
+    );
+
+    if (job != null) {
+      _companyJobs.insert(0, job);
+      notifyListeners();
+      _setLoading(false);
+      return true;
+    } else {
+      _errorMessage = "Failed to create job";
+      notifyListeners();
+      _setLoading(false);
+      return false;
+    }
+  }
+
+    // Fetch jobs for a company
+  Future<void> fetchCompanyJobs(String companyId) async {
+    _setLoading(true);
+    _clearError();
+
+    final jobs = await _companyRepository.getCompanyJobs(companyId);
+    _companyJobs = jobs;
+    notifyListeners();
     _setLoading(false);
   }
 }

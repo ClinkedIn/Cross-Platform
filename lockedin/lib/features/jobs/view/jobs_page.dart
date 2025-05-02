@@ -29,22 +29,29 @@ class JobsPage extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Find your next opportunity',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontSize: 18.sp,
+                Expanded(
+                  child: Text(
+                    'Find your next opportunity',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontSize: 18.sp,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CompanyView(),
-                      ),
-                    );
-                  },
-                  child: const Text('Create Company'),
+                SizedBox(width: 2.w),
+                SizedBox(
+                  width: 30.w, // Adjust width as needed for responsiveness
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CompanyView(),
+                        ),
+                      );
+                    },
+                    child: const Text('Create Company'),
+                  ),
                 ),
               ],
             ),

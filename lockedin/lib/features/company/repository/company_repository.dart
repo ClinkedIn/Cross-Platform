@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:lockedin/features/company/model/company_post_model.dart';
 import 'package:mime/mime.dart';
+import 'package:lockedin/features/jobs/model/job_model.dart';
 
 class CompanyRepository {
   static const String _companiesEndpoint = '/api/companies';
@@ -304,6 +305,100 @@ class CompanyRepository {
       }
     } catch (e) {
       print('Error fetching companies: $e');
+      return [];
+    }
+  }
+
+  Future<JobModel?> createJob({
+    required String companyId,
+    required String jobTitle,
+    required String description,
+    required String location,
+    required String jobType,
+    required String workplaceType,
+    String experienceLevel = "",
+    String salaryRange = "",
+    bool isRemote = false,
+    String company = "",
+    String jobId = "",
+    String logoUrl = "",
+    String industry = "",
+    List<Map<String, dynamic>> screeningQuestions = const [],
+    String applicationEmail = "",
+
+  }) async {
+    final uri = Uri.parse('http://10.0.2.2:3000/api/jobs');
+    final token = await TokenService.getCookie();
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': 'application/json',
+          'Cookie': 'access_token=$token',
+        },
+        body: jsonEncode({
+          'companyId': companyId,
+          'title': jobTitle,
+          'industry': company,
+          'description': description,
+          'jobLocation': location,
+          'jobType': jobType,
+          '_id': jobId,
+          'workplaceType': workplaceType,
+          'experienceLevel': experienceLevel,
+          'applicationEmail': applicationEmail,
+          'salaryRange': salaryRange,
+          'isRemote': isRemote,
+        }),
+      );
+
+      print('Create job response: ${response.statusCode} ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(response.body);
+        return JobModel.fromJson(data['job'] ?? data);
+      } else {
+        print('Failed to create job: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error creating job: $e');
+      return null;
+    }
+  }
+
+  Future<List<JobModel>> getCompanyJobs(String companyId) async {
+    final uri = Uri.parse('http://10.0.2.2:3000/api/companies/$companyId/jobs');
+    final token = await TokenService.getCookie();
+
+    try {
+      final response = await http.get(
+        uri,
+        headers: {
+          'accept': 'application/json',
+          'Cookie': 'access_token=$token',
+        },
+      );
+
+      print('Get company jobs response: ${response.statusCode} ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // The backend returns a List of jobs directly
+        if (data is List) {
+          return data.map((job) => JobModel.fromJson(job)).toList();
+        } else {
+          print('Unexpected jobs response format');
+          return [];
+        }
+      } else {
+        print('Failed to fetch jobs: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching jobs: $e');
       return [];
     }
   }
