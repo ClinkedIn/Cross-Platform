@@ -10,8 +10,6 @@ import 'package:lockedin/features/chat/widgets/chat_input_field_widget.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 
-
-
 class ChatConversationScreen extends ConsumerStatefulWidget {
   final Chat chat;
 
@@ -28,9 +26,8 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   @override
   void initState() {
     super.initState();
-    // Mark chat as read when opening the conversation
+    // Scroll to bottom when opening the conversation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Mark messages as read
       _scrollToBottom();
     });
   }
@@ -58,10 +55,9 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     // Get the trimmed message text and clear the input field
     final messageText = _messageController.text.trim();
     _messageController.clear();
-    // Get the current user ID and log it for debugging
-    final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
-    // Call the viewModel's sendMessage method (no participants field will be sent)
-    chatViewModel.sendMessage(messageText).then((_) {
+    // Call the viewModel's sendMessage method
+    ref.read(chatConversationProvider(widget.chat.id).notifier)
+      .sendMessage(messageText).then((_) {
       // Success! Message sent
       _scrollToBottom();
     });
@@ -72,7 +68,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
     final chatState = ref.watch(chatConversationProvider(widget.chat.id));
 
-    // Scroll to bottom when new messages are loaded
+    // Scroll to bottom when new messages arrive
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
     return Scaffold(
@@ -83,13 +79,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
-          // Add refresh button
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () {
-              ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
-            },
-          ),
           // Block/unblock button
           _buildBlockButton(),
         ],
@@ -98,29 +87,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
         children: [      
           Expanded(
             child: chatState.messages.isEmpty && chatState.messagesByDate.isEmpty
-                    ? RefreshIndicator(
-                        onRefresh: () async {
-                          await ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
-                        },
-                        child: ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.7,
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
-                                    SizedBox(height: 16),
-                                    Text('No messages yet', style: TextStyle(color: Colors.grey)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
+                    ? _buildEmptyChatView()
                     : _buildChatMessagesList(chatState),
           ),
           // Conditionally show chat input based on block status
@@ -184,6 +151,27 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       ),
     );
   }
+
+  Widget _buildEmptyChatView() {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
+                SizedBox(height: 16),
+                Text('No messages yet', style: TextStyle(color: Colors.grey)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
   
   Widget _buildChatMessagesList(ChatConversationState chatState) {
     // Check if we should display by date
@@ -191,72 +179,32 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       // Get date keys sorted from newest to oldest
       final dateKeys = chatState.messagesByDate.keys.toList();
       
-      return RefreshIndicator(
-        onRefresh: () async {
-          // Refresh the conversation
-          await ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
+      return ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.all(16),
+        itemCount: dateKeys.length,
+        itemBuilder: (context, index) {
+          final dateKey = dateKeys[index];
+          final messagesForDate = chatState.messagesByDate[dateKey]!;
+          
+          return Column(
+            children: [
+              _buildDateDivider(dateKey),
+              ...messagesForDate.map((message) => _buildMessageBubble(message)),
+            ],
+          );
         },
-        child: ListView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.all(16),
-          itemCount: dateKeys.length,
-          itemBuilder: (context, index) {
-            final dateKey = dateKeys[index];
-            final messagesForDate = chatState.messagesByDate[dateKey]!;
-            
-            // Determine if we should show the date divider
-            bool showDivider = false;
-
-            // Check if previous date exists
-            if (index > 0) {
-              final prevDateKey = dateKeys[index - 1];
-              
-              // Try to convert string dates to DateTime objects for comparison
-              final DateTime? currentDate = _parseDate(dateKey);
-              final DateTime? prevDate = _parseDate(prevDateKey);
-              
-              // Skip divider if both dates are valid and are the same day or consecutive days
-              if (currentDate != null && prevDate != null) {
-                // Calculate difference in days
-                final difference = currentDate.difference(prevDate).inDays.abs();
-                
-                // If the difference is 0 (same day), don't show divider
-                if (difference == 0) {
-                  showDivider = false;
-                }
-              } 
-              // If we can't parse dates, fall back to comparing special strings
-              else if (prevDateKey == dateKey) {
-                showDivider = false;
-              }
-            }
-            
-            return Column(
-              children: [
-                if (showDivider)
-                  _buildDateDivider(dateKey),
-                ...messagesForDate.map((message) => _buildMessageBubble(message)),
-              ],
-            );
-          },
-        ),
       );
     }
     
     // Fall back to flat list if messagesByDate is empty
-    return RefreshIndicator(
-      onRefresh: () async {
-        // Refresh the conversation
-        await ref.read(chatConversationProvider(widget.chat.id).notifier).refreshConversation();
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(16),
+      itemCount: chatState.messages.length,
+      itemBuilder: (context, index) {
+        return _buildMessageBubble(chatState.messages[index]);
       },
-      child: ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(16),
-        itemCount: chatState.messages.length,
-        itemBuilder: (context, index) {
-          return _buildMessageBubble(chatState.messages[index]);
-        },
-      ),
     );
   }
   
@@ -307,31 +255,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       attachmentUrl: attachmentUrl,
       attachmentType: message.attachmentType,
     );
-  }
-  
-  // Helper to parse date strings to DateTime objects
-  DateTime? _parseDate(String dateString) {
-    // Skip special date strings
-    if (dateString == 'Today' || dateString == 'Yesterday') {
-      return null;
-    }
-    
-    // Try to parse date formats like "March 25, 2023"
-    try {
-      return DateFormat('MMMM d, yyyy').parse(dateString);
-    } catch (_) {}
-    
-    // Try other common date formats
-    try {
-      return DateFormat('yyyy-MM-dd').parse(dateString);
-    } catch (_) {}
-    
-    try {
-      return DateFormat('MM/dd/yyyy').parse(dateString);
-    } catch (_) {}
-    
-    // Return null if date couldn't be parsed
-    return null;
   }
 
   Future<void> _pickImageFromCamera() async {
@@ -412,6 +335,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                     Navigator.pop(context);
                     _sendAttachment();
                   },
+                  icon: Icon(Icons.send),
                   label: Text('Send'),
                 ),
               ],
@@ -480,6 +404,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                     Navigator.pop(context);
                     _sendAttachment();
                   },
+                  icon: Icon(Icons.send),
                   label: Text('Send'),
                 ),
               ],
@@ -500,11 +425,25 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     }
   }
   
-  // Add this function to check the block status
+  // Keep block user functionality
   Widget _buildBlockButton() {
+    final receiverId = ref.read(chatConversationProvider(widget.chat.id).notifier).getReceiverUserId();
+    
+    // Only show block button if we have a valid receiver ID
+    if (receiverId == null || receiverId.isEmpty) {
+      return SizedBox.shrink(); // Hide button if no receiver ID
+    }
+    
     return FutureBuilder<bool>(
       future: ref.read(chatConversationProvider(widget.chat.id).notifier).isUserBlocked(),
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return IconButton(
+            icon: Icon(Icons.more_vert),
+            onPressed: null,
+          );
+        }
+        
         final isBlocked = snapshot.data ?? false;
         
         return IconButton(
@@ -545,8 +484,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
               
               // Get the view model
               final viewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
-              
-              
               
               // Call the toggle block method
               viewModel.toggleBlockUser().then((result) {

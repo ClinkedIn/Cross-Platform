@@ -1,4 +1,5 @@
 // chat_conversation_viewmodel.dart
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -70,10 +71,11 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
   final ChatConversationRepository _repository;
   final AuthService _authService;
   final Chat? chat;
+  StreamSubscription<List<ChatMessage>>? _messagesSubscription;
+  StreamSubscription<Map<String, List<ChatMessage>>>? _messagesByDateSubscription;
   
   String get currentUserId {
     final userId = _authService.currentUser?.id ?? '';
-    debugPrint('Getting currentUserId: ${userId.isEmpty ? "EMPTY" : userId}');
     return userId;
   }
 
@@ -83,116 +85,54 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
   }
 
   Future<void> _initialize() async {
-    // First ensure the current user is loaded
     try {
       // Load the current user before loading the conversation
       await _authService.fetchCurrentUser();
       
-      // Then load the conversation
-      await _loadConversation();
-
+      // Fetch the receiver ID from the conversation document
+      await _repository.fetchReceiverIdFromConversation(chatId);
+      
+      // Start listening to Firebase messages
+      _setupMessageStreams();
     } catch (e) {
       debugPrint('Error in initialization: $e');
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
   
-  Future<void> _loadConversation() async {
-    try {
-      state = state.copyWith(isLoading: true, error: null);
-      
-      final conversationData = await _repository.fetchConversation(chatId);
-      
-      // Check if the API call was successful
-      if (conversationData['success'] == false) {
+  void _setupMessageStreams() {
+    // Listen for all messages in a flat list
+    _messagesSubscription = _repository.getMessagesStream(chatId).listen(
+      (messages) {
         state = state.copyWith(
+          messages: messages,
           isLoading: false,
-          error: conversationData['error'] ?? 'Failed to load conversation'
+          error: null
         );
-        return;
-      }
-      
-      // Extract the chat data
-      final chatData = conversationData['chat'];
-      if (chatData == null) {
+      },
+      onError: (error) {
+        debugPrint('Error in messages stream: $error');
         state = state.copyWith(
-          isLoading: false,
-          error: 'No chat data received'
+          error: error.toString(),
+          isLoading: false
         );
-        return;
       }
-      
-      // Process messages from raw messages
-      List<ChatMessage> messages = [];
-      try {
-        if (chatData['rawMessages'] != null) {
-          final List<dynamic> rawMessages = chatData['rawMessages'];
-          for (var msgJson in rawMessages) {
-            try {
-              messages.add(ChatMessage.fromJson(msgJson));
-            } catch (e) {
-              debugPrint('Error parsing message: $e');
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('Error processing raw messages: $e');
+    );
+    
+    // Listen for messages grouped by date
+    _messagesByDateSubscription = _repository.getMessagesByDateStream(chatId).listen(
+      (messagesByDate) {
+        state = state.copyWith(
+          messagesByDate: messagesByDate,
+          isLoading: false,
+          error: null
+        );
+      },
+      onError: (error) {
+        debugPrint('Error in messages by date stream: $error');
+        // Don't update error state since the first stream will handle that
       }
-      
-      // Process messages by date
-      Map<String, List<ChatMessage>> messagesByDate = {};
-      try {
-        if (chatData['conversationHistory'] != null) {
-          for (var dateGroup in chatData['conversationHistory']) {
-            final date = dateGroup['date']?.toString() ?? 'Unknown Date';
-            final List<dynamic>? messagesForDate = dateGroup['messages'];
-            
-            if (messagesForDate != null && messagesForDate.isNotEmpty) {
-              messagesByDate[date] = [];
-              
-              for (var msgJson in messagesForDate) {
-                try {
-                  messagesByDate[date]!.add(ChatMessage.fromJson(msgJson));
-                } catch (e) {
-                  debugPrint('Error parsing message in date group: $e');
-                }
-              }
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('Error processing conversation history: $e');
-      }
-      
-      // Update state with the parsed data
-      state = state.copyWith(
-        isLoading: false,
-        messages: messages,
-        messagesByDate: messagesByDate,
-        error: null
-      );
-    } catch (e) {
-      debugPrint('Error in _loadConversation: $e');
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Failed to load conversation: ${e.toString()}'
-      );
-    }
-  }
-  
-  /// Manually refresh the conversation
-  Future<void> refreshConversation() async {
-    debugPrint('Manually refreshing conversation for chat ID: $chatId');
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      await _loadConversation();
-    } catch (e) {
-      debugPrint('Error refreshing conversation: $e');
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Failed to refresh: ${e.toString()}'
-      );
-    }
+    );
   }
   
   /// Sends a message to the current chat
@@ -245,11 +185,6 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         // Message sent successfully
         debugPrint('Message sent successfully');
         
-        // Refresh the conversation to get the actual message from the server
-        // Wait a moment to give the server time to process the message
-        await Future.delayed(const Duration(milliseconds: 500));
-        await refreshConversation();
-        
         // Update state to indicate sending is complete
         state = state.copyWith(isSending: false);
       } catch (e) {
@@ -271,7 +206,44 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     }
   }
   
-  /// Sends a message with an attachment to the current chat
+  /// Helper method to add a temporary message to the UI
+  void _addTemporaryMessage(ChatMessage message) {
+    // Update the flat list of messages
+    final updatedMessages = [...state.messages, message];
+    
+    // Update messages grouped by date if needed
+    final Map<String, List<ChatMessage>> updatedMessagesByDate = 
+        Map<String, List<ChatMessage>>.from(state.messagesByDate);
+    
+    // Format today's date
+    final today = DateFormat('MMMM d, yyyy').format(DateTime.now());
+    
+    // Add to today's group if it exists
+    String todayKey = 'Today';
+    
+    // Check if we have a date formatted key for today in the existing keys
+    for (final key in updatedMessagesByDate.keys) {
+      if (key == today) {
+        todayKey = key;
+        break;
+      }
+    }
+    
+    if (updatedMessagesByDate.containsKey(todayKey)) {
+      updatedMessagesByDate[todayKey] = [...updatedMessagesByDate[todayKey]!, message];
+    } else {
+      // Create today's group if it doesn't exist
+      updatedMessagesByDate[todayKey] = [message];
+    }
+    
+    // Update the state with the temporary message
+    state = state.copyWith(
+      messages: updatedMessages,
+      messagesByDate: updatedMessagesByDate,
+    );
+  }
+  
+  /// Sends a message with an attachment to the current chat - Keep REST API implementation
   Future<Map<String, dynamic>> sendMessageWithAttachment({
     String? messageText,
   }) async {
@@ -332,11 +304,6 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         // Clear the selected attachment since it was sent
         clearSelectedAttachment();
         
-        // Refresh the conversation to get the actual message from the server
-        // Wait a moment to give the server time to process the message
-        await Future.delayed(const Duration(milliseconds: 500));
-        await refreshConversation();
-        
         // Update state to indicate sending is complete
         state = state.copyWith(isSending: false);
         
@@ -368,43 +335,7 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     }
   }
   
-  /// Helper method to add a temporary message to the UI
-  void _addTemporaryMessage(ChatMessage message) {
-    // Update the flat list of messages
-    final updatedMessages = [...state.messages, message];
-    
-    // Update messages grouped by date if needed
-    final Map<String, List<ChatMessage>> updatedMessagesByDate = 
-        Map<String, List<ChatMessage>>.from(state.messagesByDate);
-    
-    // Format today's date
-    final today = DateFormat('MMMM d, yyyy').format(DateTime.now());
-    
-    // Add to today's group if it exists
-    String todayKey = 'Today';
-    
-    // Check if we have a date formatted key for today in the existing keys
-    for (final key in updatedMessagesByDate.keys) {
-      if (key == today) {
-        todayKey = key;
-        break;
-      }
-    }
-    
-    if (updatedMessagesByDate.containsKey(todayKey)) {
-      updatedMessagesByDate[todayKey] = [...updatedMessagesByDate[todayKey]!, message];
-    } else {
-      // Create today's group if it doesn't exist
-      updatedMessagesByDate[todayKey] = [message];
-    }
-    
-    // Update the state with the temporary message
-    state = state.copyWith(
-      messages: updatedMessages,
-      messagesByDate: updatedMessagesByDate,
-    );
-  }
-  
+  // Keep helper methods for selecting media and documents
   Future<ChatAttachment?> selectImageFromCamera() async {
     try {
       final picker = ImagePicker();
@@ -490,18 +421,33 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
   }
 
   String? getReceiverUserId() {
-    // First try getting from the repository (which extracts it from the API response)
+    // First try getting from the repository
     final receiverId = _repository.receiverId;
-    if (receiverId != null) {
+    if (receiverId != null && receiverId.isNotEmpty) {
       return receiverId;
+    }
+
+    // Fallback: try to extract from the chat object if available
+    if (chat != null) {
+      final currentUserId = _authService.currentUser?.id;
+      
+      // If we have participants in the chat model, find the other user
+      if (chat!.participants != null && chat!.participants!.isNotEmpty) {
+        for (final participant in chat!.participants!) {
+          if (participant.id != currentUserId) {
+            return participant.id;
+          }
+        }
+      }
     }
 
     return null;
   }
   
+  // Keep block/unblock functionality with REST API
   Future<bool> isUserBlocked() async {
     final receiverId = getReceiverUserId();
-    if (receiverId == null) {
+    if (receiverId == null || receiverId.isEmpty) {
       debugPrint('Cannot check block status: No receiver ID found');
       return false;
     }
@@ -535,12 +481,7 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         // If not blocked, block them
         result = await _repository.blockUser(receiverId);
       }
-      
-      // If successful, refresh the conversation
-      if (result['success'] == true) {
-        await refreshConversation();
-      }
-      
+            
       return result;
     } catch (e) {
       debugPrint('Error toggling block status: $e');
@@ -549,6 +490,14 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         'error': e.toString(),
       };
     }
+  }
+
+  @override
+  void dispose() {
+    // Cancel any active subscriptions
+    _messagesSubscription?.cancel();
+    _messagesByDateSubscription?.cancel();
+    super.dispose();
   }
 }
 

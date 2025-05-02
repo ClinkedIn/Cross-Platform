@@ -1,79 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
 import 'package:lockedin/core/services/auth_service.dart';
+import 'package:lockedin/features/profile/state/profile_components_state.dart';
 
 /// Repository for handling chat-related Firebase operations
 class FirebaseChatRepository {
   // Firebase instance
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
-  // User ID provided from outside - could be null if not authenticated
-  String? _providedUserId;
   
-  // Auth service for fallback if no ID is provided
-  final AuthService _authService = AuthService();
   
-  // Cache control - invalidate on new login
-  String? _cachedUserId;
-  DateTime _lastUserCheck = DateTime.now().subtract(Duration(days: 1));
+  
 
-  // Constructor with optional userId parameter
-  FirebaseChatRepository({String? userId}) : _providedUserId = userId;
-
-  /// Update user ID when user changes (e.g., after login)
-  void updateUserId(String? userId) {
-    _providedUserId = userId;
-    _cachedUserId = null; // Clear cached ID when explicitly updated
-    _lastUserCheck = DateTime.now().subtract(Duration(days: 1)); // Force refresh
-  }
-
-  // Get the current user ID from the provided ID or backend
-  Future<String> get _currentUserId async {
-    // Skip caching logic if explicitly provided
-    if (_providedUserId != null && _providedUserId!.isNotEmpty) {
-      return _providedUserId!;
-    }
-    
-    // Check if we need to refresh user data (every 30 seconds)
-    final now = DateTime.now();
-    final needsRefresh = now.difference(_lastUserCheck).inSeconds > 30;
-    
-    // Return cached ID if available and still valid
-    if (_cachedUserId != null && _cachedUserId!.isNotEmpty && !needsRefresh) {
-      return _cachedUserId!;
-    }
-    
-    // Update last check timestamp
-    _lastUserCheck = now;
-    
-    // Fallback to auth service if no ID is provided or needs refresh
-    final user = _authService.currentUser;
-    if (user == null) {
-      // Try to fetch current user if not already loaded
-      final fetchedUser = await _authService.fetchCurrentUser();
-      if (fetchedUser == null) {
-        print("WARNING: No authenticated user found in backend!");
-        _cachedUserId = ""; // Cache empty result
-        return "";
-      }
-      _cachedUserId = fetchedUser.id; // Cache the result
-      return fetchedUser.id;
-    }
-    
-    _cachedUserId = user.id; // Cache the result
-    return user.id;
-  }
-
-  /// Force refresh of user data
-  Future<String> refreshCurrentUser() async {
-    _cachedUserId = null;
-    _lastUserCheck = DateTime.now().subtract(Duration(days: 1)); // Force refresh
-    return await _currentUserId;
-  }
 
   /// Stream of all chats for the current user
-  Stream<List<Chat>> getChatStream() async* {
-    final userId = await _currentUserId;
+  Stream<List<Chat>> getChatStream(userId) async* {
+    
     print("Getting chats for user ID: $userId"); // Log user ID
     
     // Check if user is authenticated, if not return empty stream
@@ -243,8 +185,8 @@ class FirebaseChatRepository {
   }
 
   /// Mark a chat as read
-  Future<void> markChatAsRead(String chatId) async {
-    final userId = await _currentUserId;
+  Future<void> markChatAsRead(String chatId, userId) async {
+    
     if (userId.isEmpty) return;
     
     try {
@@ -259,8 +201,8 @@ class FirebaseChatRepository {
   }
   
   /// Mark a chat as unread
-  Future<void> markChatAsUnread(String chatId) async {
-    final userId = await _currentUserId;
+  Future<void> markChatAsUnread(String chatId, userId) async {
+    
     if (userId.isEmpty) return;
     
     try {
@@ -275,8 +217,8 @@ class FirebaseChatRepository {
   }
   
   /// Get the total unread count 
-  Future<int> getTotalUnreadCount() async {
-    final userId = await _currentUserId;
+  Future<int> getTotalUnreadCount(userId) async {
+    
     if (userId.isEmpty) return 0;
     
     try {
@@ -307,8 +249,8 @@ class FirebaseChatRepository {
   }
   
   /// Stream of total unread count
-  Stream<int> getTotalUnreadCountStream() async* {
-    final userId = await _currentUserId;
+  Stream<int> getTotalUnreadCountStream(userId) async* {
+    
     if (userId.isEmpty) {
       yield 0;
       return;

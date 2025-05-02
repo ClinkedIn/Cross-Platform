@@ -7,143 +7,133 @@ import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/services/auth_service.dart';
 import 'dart:io';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:lockedin/features/chat/model/chat_message_model.dart';
 
 class ChatConversationRepository {
   final AuthService _authService;
-  String? _receiverId; // Add this to store the receiver ID
+  String? _receiverId; // Store receiver ID
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
   ChatConversationRepository(this._authService);
 
   // Getter for receiverId
   String? get receiverId => _receiverId;
 
-  Future<Map<String, dynamic>> fetchConversation(String chatId) async {
+  // Stream messages from Firebase
+  Stream<List<ChatMessage>> getMessagesStream(String chatId) {
+    return _firestore
+        .collection('conversations')
+        .doc(chatId)
+        .collection('messages')
+        .orderBy('timestamp', descending: false) // Using 'timestamp' from your Firestore
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            
+            // Extract user IDs to determine receiver
+            final senderId = data['senderId'] ?? '';
+            final currentUserId = _authService.currentUser?.id;
+            
+            // If the sender is not the current user, they're the receiver (for block checks)
+            if (senderId != currentUserId && senderId.isNotEmpty) {
+              _receiverId = senderId;
+            }
+            
+            // Convert Firestore timestamp to DateTime
+            final createdAt = data['timestamp'] is Timestamp 
+                ? (data['timestamp'] as Timestamp).toDate()
+                : DateTime.now();
+                
+            final updatedAt = data['lastUpdatedAt'] is Timestamp 
+                ? (data['lastUpdatedAt'] as Timestamp).toDate() 
+                : createdAt; // Fall back to createdAt if no update time
+                
+            // Create sender object from participants map if available
+            final Map<String, dynamic> participants = 
+                data['participants'] is Map ? Map<String, dynamic>.from(data['participants']) : {};
+            
+            final sender = MessageSender(
+              id: senderId,
+              firstName: participants[senderId]?['firstName'] ?? '',
+              lastName: participants[senderId]?['lastName'] ?? '',
+              profilePicture: participants[senderId]?['profilePicture'],
+            );
+            
+            // Handle attachments
+            List<String> attachments = [];
+            AttachmentType attachmentType = AttachmentType.none;
+            
+            if (data['attachments'] != null) {
+              if (data['attachments'] is List) {
+                attachments = List<String>.from(data['attachments']);
+              } else if (data['attachments'] is String && data['attachments'].isNotEmpty) {
+                attachments = [data['attachments']];
+              }
+              
+              // Determine attachment type
+              if (data['attachmentType'] != null) {
+                switch (data['attachmentType']) {
+                  case 'image': attachmentType = AttachmentType.image; break;
+                  case 'document': attachmentType = AttachmentType.document; break;
+                  case 'video': attachmentType = AttachmentType.video; break;
+                  case 'audio': attachmentType = AttachmentType.audio; break;
+                  case 'gif': attachmentType = AttachmentType.gif; break;
+                  default: attachmentType = AttachmentType.none;
+                }
+              }
+            }
+            
+            return ChatMessage(
+              id: doc.id,
+              sender: sender,
+              messageText: data['text'] ?? '',
+              createdAt: createdAt,
+              updatedAt: updatedAt,
+              messageAttachment: attachments,
+              attachmentType: attachmentType,
+            );
+          }).toList();
+        });
+  }
+
+  // Helper method to extract receiver ID from conversation document
+  Future<void> fetchReceiverIdFromConversation(String chatId) async {
     try {
-      // Use the chat conversation endpoint from constants
-      final endpoint = Constants.chatConversationEndpoint.replaceAll('{chatId}', chatId);
+      final currentUserId = _authService.currentUser?.id;
+      if (currentUserId == null) return;
       
-      try {
-        final response = await RequestService.get(endpoint);
-
-        // If we have a valid response, process it
-        if (response.statusCode != 200) {
-          return {
-            'success': false,
-            'error': 'Server returned status code ${response.statusCode}',
-            'chat': {
-              'rawMessages': [],
-              'conversationHistory': []
-            },
-          };
-        }
-
-        // Parse the JSON response
-        try {
-          final String responseBody = response.body.trim();
-          final Map<String, dynamic> jsonData = jsonDecode(responseBody);
-          
-          // Check if response has the expected structure
-          if (jsonData['success'] == true) {
-            // Extract the receiver ID from the otherUser field at the root level
-            if (jsonData['otherUser'] != null) {
-              _receiverId = jsonData['otherUser']['_id'];
-              debugPrint('Extracted receiver ID from otherUser: $_receiverId');
-            } 
-            // Also try checking within chat.participants if that exists
-            else if (jsonData['chat'] != null && jsonData['chat']['participants'] != null) {
-              final participants = jsonData['chat']['participants'];
-              
-              // Check if otherUser exists in participants
-              if (participants['otherUser'] != null) {
-                _receiverId = participants['otherUser']['_id'];
-                debugPrint('Extracted receiver ID: $_receiverId');
-              } else if (participants is List) {
-                // If participants is a list, find the other user
-                final currentUserId = _authService.currentUser?.id;
-                for (var participant in participants) {
-                  if (participant['_id'] != currentUserId) {
-                    _receiverId = participant['_id'];
-                    debugPrint('Extracted receiver ID from list: $_receiverId');
-                    break;
-                  }
-                }
-              }
+      final docSnapshot = await _firestore.collection('conversations').doc(chatId).get();
+      
+      if (docSnapshot.exists && docSnapshot.data() != null) {
+        final data = docSnapshot.data()!;
+        
+        // Extract participants array or map from the conversation document
+        if (data['participants'] is List) {
+          final participants = List<String>.from(data['participants']);
+          for (final participantId in participants) {
+            if (participantId != currentUserId) {
+              _receiverId = participantId;
+              break;
             }
-            // Check members array in the chat object if otherUser wasn't found
-            else if (jsonData['chat'] != null && jsonData['chat']['members'] != null) {
-              final List<dynamic> members = jsonData['chat']['members'];
-              final currentUserId = _authService.currentUser?.id;
-              
-              for (var memberId in members) {
-                if (memberId != currentUserId) {
-                  _receiverId = memberId;
-                  debugPrint('Extracted receiver ID from members array: $_receiverId');
-                  break;
-                }
-              }
-            }
-            
-            // If no receiver ID was found but messages exist, try to extract from first message
-            if (_receiverId == null && 
-                jsonData['chat'] != null && 
-                jsonData['chat']['rawMessages'] != null && 
-                jsonData['chat']['rawMessages'].isNotEmpty) {
-              
-              final firstMessage = jsonData['chat']['rawMessages'][0];
-              final currentUserId = _authService.currentUser?.id;
-              
-              if (firstMessage['sender'] != null && 
-                  firstMessage['sender']['_id'] != null && 
-                  firstMessage['sender']['_id'] != currentUserId) {
-                _receiverId = firstMessage['sender']['_id'];
-                debugPrint('Extracted receiver ID from first message: $_receiverId');
-              }
-            }
-            
-            return jsonData;
           }
-          
-          // If success is false or not specified, handle the error
-          return {
-            'success': false,
-            'error': jsonData['message'] ?? 'Unknown API error',
-            'chat': {
-              'rawMessages': [],
-              'conversationHistory': []
-            },
-          };
-        } catch (e) {
-          return {
-            'success': false,
-            'error': 'Failed to parse server response: ${e.toString()}',
-            'chat': {
-              'rawMessages': [],
-              'conversationHistory': []
-            },
-          };
+        } else if (data['participants'] is Map) {
+          final participants = Map<String, dynamic>.from(data['participants']);
+          for (final participantId in participants.keys) {
+            if (participantId != currentUserId) {
+              _receiverId = participantId;
+              break;
+            }
+          }
         }
-      } catch (e) {
-        return {
-          'success': false,
-          'error': 'Network error: ${e.toString()}',
-          'chat': {
-            'rawMessages': [],
-            'conversationHistory': []
-          },
-        };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'error': 'Failed to load conversation: ${e.toString()}',
-        'chat': {
-          'rawMessages': [],
-          'conversationHistory': []
-        },
-      };
+      debugPrint('Error fetching receiver ID from conversation: $e');
     }
   }
-  
+
+  // Keep the REST API implementation for sending messages
   Future<Map<String, dynamic>> sendMessage({
     required String chatId,
     required String messageText,
@@ -228,6 +218,7 @@ class ChatConversationRepository {
     }
   }
 
+  // Keep all original methods for attachment, block/unblock functionality
   Future<Map<String, dynamic>> sendMessageWithAttachment({
     required String chatId,
     required String messageText,
@@ -237,6 +228,7 @@ class ChatConversationRepository {
     String? fileName,
     String? replyTo,
   }) async {
+    // Same implementation as original
     try {
       // Make sure user data is loaded before trying to send a message
       await _authService.fetchCurrentUser();
@@ -319,6 +311,7 @@ class ChatConversationRepository {
   }
 
   Future<Map<String, dynamic>> blockUser(String? userId) async {
+    // Keep original implementation
     if (userId == null) {
       return {
         'success': false,
@@ -371,6 +364,7 @@ class ChatConversationRepository {
   }
 
   Future<Map<String, dynamic>> unblockUser(String? userId) async {
+    // Keep original implementation
     if (userId == null) {
       return {
         'success': false,
@@ -422,6 +416,7 @@ class ChatConversationRepository {
   }
 
   Future<bool> isUserBlocked(String? userId) async {
+    // Keep original implementation
     if (userId == null) {
       debugPrint('Cannot check if user is blocked: No user ID provided');
       return false;
@@ -450,6 +445,8 @@ class ChatConversationRepository {
       return false;
     }
   }
+
+  getMessagesByDateStream(String chatId) {}
 }
 
 final authServiceProvider = Provider<AuthService>((ref) {

@@ -131,7 +131,7 @@ class ChatListScreen extends ConsumerWidget {
                 
                 final user = snapshot.data;
                 return Text(
-                  user != null ? "Signed in as: ${user.email}" : "User info not available",
+                  user != null ? "Signed in as: ${user.email} ${user.id}" : "User info not available",
                   style: TextStyle(fontSize: 12, color: Colors.grey)
                 );
               },
