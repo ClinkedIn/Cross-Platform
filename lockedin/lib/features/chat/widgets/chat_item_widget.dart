@@ -8,16 +8,23 @@ import 'package:lockedin/core/utils/date_utils.dart' as custom_date_utils;
 
 class ChatItem extends ConsumerWidget {
   final Chat chat;
+  final Function(BuildContext, Chat) onTap;
+  final Function(BuildContext, Chat) onLongPress;
 
-  const ChatItem({Key? key, required this.chat}) : super(key: key);
+  const ChatItem({
+    Key? key, 
+    required this.chat,
+    required this.onTap,
+    required this.onLongPress,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatViewModel = ref.read(chatProvider.notifier);
+    final chatViewModel = ref.read(firebaseChatProvider.notifier);
     
     return InkWell(
-      onTap: () => chatViewModel.onChatItemTapped(context, chat),
-      onLongPress: () => chatViewModel.showChatOptionsMenu(context, chat),
+      onTap: () => onTap(context, chat),
+      onLongPress: () => onLongPress(context, chat),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(

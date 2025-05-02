@@ -557,7 +557,7 @@ final chatConversationProvider = StateNotifierProvider.family<ChatConversationNo
   (ref, chatId) {
     final repository = ref.watch(chatConversationRepositoryProvider);
     final authService = ref.watch(authServiceProvider);
-    final chatState = ref.watch(chatProvider);
+    final chatState = ref.watch(firebaseChatProvider);
     
     // Find the chat to get its type
     Chat? chat;
