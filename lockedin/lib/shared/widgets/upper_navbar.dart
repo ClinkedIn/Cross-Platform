@@ -155,7 +155,7 @@ class _UpperNavbarState extends ConsumerState<UpperNavbar> {
               hintText:
                   _getCurrentRoute(context) == "/home"
                       ? "Search posts"
-                      : _getCurrentRoute(context) == "/users"
+                      : _getCurrentRoute(context) == "/network"
                       ? "Search users"
                       : _getCurrentRoute(context) == "/jobs"
                       ? "Search jobs"
@@ -173,9 +173,14 @@ class _UpperNavbarState extends ConsumerState<UpperNavbar> {
                         ),
                         onPressed: () {
                           _searchController.clear();
-                          ref
-                              .read(searchViewModelProvider.notifier)
-                              .clearSearch();
+                          if(_getCurrentRoute(context) == "/home") {
+                            ref.read(searchViewModelProvider.notifier).clearSearch();
+                          } else if (_getCurrentRoute(context) ==  "/network") {
+                            
+                          } else if (_getCurrentRoute(context) == "/jobs") {
+                            ref.read(searchViewModelProvider.notifier).clearSearch();
+                          }
+                          
                         },
                       )
                       : null,
