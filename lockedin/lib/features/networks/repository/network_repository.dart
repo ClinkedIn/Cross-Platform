@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:lockedin/features/networks/model/connection_model.dart';
 import 'package:lockedin/features/networks/model/suggestion_model.dart';
-import '../model/user_search_model.dart';
 import '../model/company_list_model.dart';
+import '../model/message_request_model.dart';
 import 'package:lockedin/core/services/request_services.dart';
 import '../model/request_list_model.dart';
 
@@ -255,40 +255,110 @@ class CompanyService {
   }
 }
 
-class UserSearchService {
-  static Future<List<User>> searchUsers(String query) async {
+class MessageRequestService {
+  final http.Client _httpClient;
+
+  MessageRequestService({http.Client? httpClient})
+    : _httpClient = httpClient ?? http.Client();
+
+  Future<List<MessageRequest>> fetchMessageRequests() async {
     try {
-      // Use the existing RequestService to make the HTTP request
-      final response = await RequestService.get("/user/search/users?query=$query");
-      
-      // Parse the response body
+      final response = await RequestService.get("/user/message-requests");
+
+      if (kDebugMode) {
+        print('Response status: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+
       if (response.statusCode == 200) {
-        Map<String, dynamic> data = json.decode(response.body);
-        List<User> users = (data['users'] as List)
-            .map((userData) => User.fromJson(userData))
-            .toList();
-        return users;
+        // Parse and return the messageRequests array
+        final MessageRequestList requestList = messageRequestListFromJson(
+          response.body,
+        );
+        return requestList.requests;
       } else {
-        throw Exception('Failed to search users: ${response.statusCode}');
+        throw Exception('Failed to load requests: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error searching users: $e');
-      throw Exception('Error searching users: $e');
+      if (kDebugMode) {
+        print('Error in fetchMessageRequests: $e');
+      }
+      throw Exception('Error fetching requests: $e');
+    }
+  }
+
+  Future<bool> sendMessageRequest(String recipientUserId, String message, {String? targetUserId}) async {
+    try {
+      if (kDebugMode) {
+        print('Sending message request to user ID: $recipientUserId');
+      }
+      
+      // Create the request body with the correct structure
+      final Map<String, dynamic> requestBody = {
+        "recipientUserId": recipientUserId,
+        "message": message,
+      };
+      
+      // Add targetUserId if provided
+      if (targetUserId != null) {
+        requestBody["targetUserId"] = targetUserId;
+      }
+      
+      final response = await RequestService.post(
+        "/user/message-requests",
+        body: requestBody,
+      );
+      
+      if (kDebugMode) {
+        print('Response status: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      } else {
+        throw Exception('Failed to send message request: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error sending message request: $e');
+      }
+      throw Exception('Error sending message request: $e');
+    }
+  }
+
+
+  // Update request status - using same action format as your example
+  Future<bool> updateRequestStatus(
+    String requestId,
+    RequestStatus status,
+  ) async {
+    final String action =
+        status == RequestStatus.accepted ? 'accept' : 'decline';
+
+    if (kDebugMode) {
+      print('Updating request status for ID: $requestId with action: $action');
+    }
+
+    try {
+      final body = {"action": action};
+      final response = await RequestService.patch(
+        "/api/user/message-requests/$requestId",
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        throw Exception(
+          'Failed to update request status: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating request status: $e');
+      }
+      throw Exception('Error updating request status: $e');
     }
   }
 }
-
-// Provider for search query
-final searchQueryProvider = StateProvider<String>((ref) => '');
-
-// Provider for search results
-final searchResultsProvider = FutureProvider<List<User>>((ref) async {
-  final query = ref.watch(searchQueryProvider);
-  
-  if (query.isEmpty || query.length < 2) {
-    return [];
-  }
-  
-  // Call API with the search query using the UserSearchService
-  return await UserSearchService.searchUsers(query);
-});
