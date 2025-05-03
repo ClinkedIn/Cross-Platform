@@ -137,4 +137,15 @@ class Constants {
   // Add this constant to the Constants class
   static const String getPostLikesEndpoint = '/posts/%s/like'; // %s will be replaced with the postId
   static const String getsavedendpoint = '/user/saved-posts';
+  // some Company endpoints
+  static const String getCompanyFollowersEndpoint = '/companies/%s/follow'; // %s will be replaced with the companyId
+  static String getCompanyAnalyticsEndpointFormatted({
+    required String companyId,
+    required String startDate,
+    required String endDate,
+    required String interval,
+  }) {
+    return '/companies/$companyId/analytics?startDate=$startDate&endDate=$endDate&interval=$interval';
+  }
+
 }

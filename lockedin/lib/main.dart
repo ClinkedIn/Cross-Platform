@@ -23,10 +23,10 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Helper file for showing notifications
-  //await NotificationHelper.init();
+  await NotificationHelper.init();
 
   // Initialize push notification logic
- // await _initializeFCM();
+  await _initializeFCM();
 
 
   runApp(
@@ -41,35 +41,35 @@ void main() async {
 }
 
 // Setup push notification logic
-// Future<void> _initializeFCM() async {
-//   FirebaseMessaging messaging = FirebaseMessaging.instance;
+Future<void> _initializeFCM() async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-//   // Request user permission
-//   NotificationSettings settings = await messaging.requestPermission();
+  // Request user permission
+  NotificationSettings settings = await messaging.requestPermission();
 
-//   if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-//     print('✅ Push notifications authorized');
-//   } else {
-//     print('❌ Push notifications not authorized');
-//   }
+  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+    print('✅ Push notifications authorized');
+  } else {
+    print('❌ Push notifications not authorized');
+  }
 
-//   // Get FCM token
-//   String? token = await messaging.getToken();
-//   print('🔑 FCM Token: $token');
+  // Get FCM token
+  String? token = await messaging.getToken();
+  print('🔑 FCM Token: $token');
 
-//   // Listen for foreground messages
-//   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-//     print('📩 Foreground message: ${message.notification?.title}');
-//     final title = message.notification?.title ?? 'No title';
-//     final body = message.notification?.body ?? 'No body';
-//     NotificationHelper.showNotification(title, body);
-//   });
+  // Listen for foreground messages
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print('📩 Foreground message: ${message.notification?.title}');
+    final title = message.notification?.title ?? 'No title';
+    final body = message.notification?.body ?? 'No body';
+    NotificationHelper.showNotification(title, body);
+  });
 
-//   // App opened from background notification
-//   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-//     print('📬 Notification opened app: ${message.notification?.title}');
-//   });
-// }
+  // App opened from background notification
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    print('📬 Notification opened app: ${message.notification?.title}');
+  });
+}
 
 class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});

@@ -1,8 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:lockedin/core/services/request_services.dart';
+import 'package:lockedin/features/company/model/company_job_model.dart';
 import 'package:lockedin/features/company/model/company_model.dart';
 import 'package:lockedin/features/company/model/company_post_model.dart';
 import 'package:lockedin/features/company/repository/company_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/jobs/model/job_model.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import your Job model
 
 class CompanyViewModel extends ChangeNotifier {
   final CompanyRepository _companyRepository;
@@ -17,6 +23,10 @@ class CompanyViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   Company? get createdCompany => _createdCompany;
+
+  // Jobs state
+  List<CompanyJob> _companyJobs = [];
+  List<CompanyJob> get companyJobs => _companyJobs;
 
   Future<void> createCompany(Company company, {String? logoPath}) async {
     _setLoading(true);
@@ -71,7 +81,11 @@ class CompanyViewModel extends ChangeNotifier {
 
     final result = await _companyRepository.getCompanyById(companyId);
     if (result != null) {
-      _fetchedCompany = result;
+      final localIsFollowing = await loadIsFollowing(companyId);
+      _fetchedCompany = localIsFollowing != null
+          ? result.copyWith(isFollowing: localIsFollowing)
+          : result;
+      notifyListeners();
     } else {
       _errorMessage = 'Failed to fetch company details.';
     }
@@ -151,6 +165,50 @@ class CompanyViewModel extends ChangeNotifier {
     return true;
   }
 
+  Future<bool> createJob({
+    required String companyId,
+    required String title,
+    required String industry,
+    required String workplaceType,
+    required String jobLocation,
+    required String jobType,
+    required String description,
+    required String applicationEmail,
+    required List<Map<String, dynamic>> screeningQuestions,
+    required bool autoRejectMustHave,
+    required String rejectPreview,
+
+  }) async {
+    _setLoading(true);
+    _clearError();
+
+    final success = await _companyRepository.createCompanyJob(
+      companyId: companyId,
+      description: description,
+      title: title,
+      industry: industry,
+      workplaceType: workplaceType,
+      jobLocation: jobLocation,
+      jobType: jobType,
+      applicationEmail: applicationEmail,
+      screeningQuestions: screeningQuestions,
+      autoRejectMustHave: autoRejectMustHave,
+      rejectPreview: rejectPreview,
+    );
+
+    if (!success) {
+      _errorMessage = 'Failed to create post.';
+      _setLoading(false);
+      return false;
+    }
+
+    // Fetch the latest posts after successful creation
+    await fetchCompanyPosts(companyId);
+
+    _setLoading(false);
+    return true;
+  }
+
   List<CompanyPost> _companyPosts = [];
   List<CompanyPost> get companyPosts => _companyPosts;
 
@@ -168,6 +226,22 @@ class CompanyViewModel extends ChangeNotifier {
       limit: limit,
     );
     _companyPosts = posts;
+
+    _setLoading(false);
+  }
+
+    Future<void> fetchCompanyJobs(
+    String companyId, {
+    int page = 1,
+    int limit = 10,
+  }) async {
+    _setLoading(true);
+    _clearError();
+
+    final jobs = await _companyRepository.fetchCompanyJobs(
+      companyId,
+    );
+    _companyJobs = jobs;
 
     _setLoading(false);
   }
@@ -196,6 +270,50 @@ class CompanyViewModel extends ChangeNotifier {
     _fetchedCompanies = companies;
 
     _setLoading(false);
+  }
+
+  Future<void> toggleFollowCompany(String companyId) async {
+    _setLoading(true);
+    try {
+      final isCurrentlyFollowing = _fetchedCompany?.isFollowing ?? false;
+      final endpoint = '/companies/$companyId/follow';
+
+      final response = isCurrentlyFollowing
+          ? await RequestService.delete(endpoint)
+          : await RequestService.post(endpoint, body: {'companyId': companyId});
+
+      final body = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        // Toggle success
+        _fetchedCompany = _fetchedCompany?.copyWith(isFollowing: !isCurrentlyFollowing);
+        await saveIsFollowing(companyId, !isCurrentlyFollowing);
+        notifyListeners();
+      } else if (response.statusCode == 400 && body['message']?.toLowerCase().contains('already following') == true) {
+        // Already following, assume true
+        _fetchedCompany = _fetchedCompany?.copyWith(isFollowing: true);
+        await saveIsFollowing(companyId, true);
+        notifyListeners();
+      } else {
+        debugPrint("❌ Failed to toggle follow. Status: ${response.statusCode}");
+      }
+    } catch (e) {
+      debugPrint("❌ Error toggling follow: $e");
+    }
+
+    _setLoading(false);
+  }
+
+  // Save isFollowing state
+  Future<void> saveIsFollowing(String companyId, bool isFollowing) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isFollowing_$companyId', isFollowing);
+  }
+
+  // Load isFollowing state
+  Future<bool?> loadIsFollowing(String companyId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isFollowing_$companyId');
   }
 }
 
