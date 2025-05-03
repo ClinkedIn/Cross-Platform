@@ -8,158 +8,171 @@ import 'post_repository.dart';
 
 class PostApi implements PostRepository {
    @override
-  Future<List<PostModel>> fetchHomeFeed() async {
-    try {
-        debugPrint('🔍 Starting to fetch home feed...');
-        final response = await RequestService.get(Constants.feedEndpoint);
-        debugPrint('📊 API response status: ${response.statusCode}');
+Future<Map<String, dynamic>> fetchHomeFeed({int page = 1, int limit = 10}) async {
+  try {
+    debugPrint('🔍 Starting to fetch home feed...');
+    final response = await RequestService.get('${Constants.feedEndpoint}?page=$page&limit=$limit');
+    debugPrint('📊 API response status: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
-        // Debug the raw response
-        debugPrint(
-          'Raw API response: ${response.body.substring(0, min(100, response.body.length))}...',
-        );
+    if (response.statusCode == 200) {
+      // Debug the raw response
+      debugPrint(
+        'Raw API response: ${response.body.substring(0, min(100, response.body.length))}...',
+      );
 
-        // Try to extract JSON from the response
-        String jsonContent = response.body;
+      // Try to extract JSON from the response
+      String jsonContent = response.body;
 
-        // Check if the response starts with text that isn't JSON
-        if (jsonContent.trim().startsWith('Posts retrieved successfully')) {
-          // Find the beginning of the JSON object (usually starts with '{')
-          final jsonStart = jsonContent.indexOf('{');
-          if (jsonStart >= 0) {
-            jsonContent = jsonContent.substring(jsonStart);
-            debugPrint(
-              'Extracted JSON content starting with: ${jsonContent.substring(0, min(50, jsonContent.length))}...',
-            );
-          } else {
-            throw FormatException('Could not find JSON data in response');
-          }
-        }
-
-        // Parse the JSON content
-        final Map<String, dynamic> data = json.decode(jsonContent);
-
-        // Check if the posts field exists
-        if (!data.containsKey('posts')) {
+      // Check if the response starts with text that isn't JSON
+      if (jsonContent.trim().startsWith('Posts retrieved successfully')) {
+        // Find the beginning of the JSON object (usually starts with '{')
+        final jsonStart = jsonContent.indexOf('{');
+        if (jsonStart >= 0) {
+          jsonContent = jsonContent.substring(jsonStart);
           debugPrint(
-            'API response missing "posts" field: ${data.keys.join(', ')}',
+            'Extracted JSON content starting with: ${jsonContent.substring(0, min(50, jsonContent.length))}...',
           );
-          return [];
+        } else {
+          throw FormatException('Could not find JSON data in response');
         }
+      }
 
-        final List<dynamic> postsJson = data['posts'];
-        
-        // Debug the isLiked structure if posts exist
-        if (postsJson.isNotEmpty && postsJson[0].containsKey('isLiked')) {
-          debugPrint('isLiked type: ${postsJson[0]['isLiked'].runtimeType}');
-          debugPrint('isLiked value: ${postsJson[0]['isLiked']}');
-        }
+      // Parse the JSON content
+      final Map<String, dynamic> data = json.decode(jsonContent);
 
-        // Debug the isSaved structure if posts exist
+      // Check if the posts field exists
+      if (!data.containsKey('posts')) {
+        debugPrint(
+          'API response missing "posts" field: ${data.keys.join(', ')}',
+        );
+        // Return empty results with pagination structure
+        return {
+          'posts': <PostModel>[],
+          'pagination': {
+            'total': 0,
+            'page': page,
+            'limit': limit,
+            'pages': 1,
+            'hasNextPage': false,
+            'hasPrevPage': false
+          }
+        };
+      }
+
+      final List<dynamic> postsJson = data['posts'];
+      
+      // Debug the isLiked structure if posts exist
+      if (postsJson.isNotEmpty && postsJson[0].containsKey('isLiked')) {
+        debugPrint('isLiked type: ${postsJson[0]['isLiked'].runtimeType}');
+        debugPrint('isLiked value: ${postsJson[0]['isLiked']}');
+      }
+
+      // Debug the isSaved structure if posts exist
       if (postsJson.isNotEmpty && postsJson[0].containsKey('isSaved')) {
         debugPrint('isSaved type: ${postsJson[0]['isSaved'].runtimeType}');
         debugPrint('isSaved value: ${postsJson[0]['isSaved']}');
       }
 
-        return postsJson.map((postJson) {
-          // Simplified isLiked handling based on your API structure
-           debugPrint('🔄 Processing post ID: ${postJson['postId']}, userId: ${postJson['userId']}');
-          bool isLikedValue = false;
-          if (postJson.containsKey('isLiked') && postJson['isLiked'] != null) {
-            var isLikedField = postJson['isLiked'];
-            if (isLikedField is bool) {
-              // Direct boolean value
-              isLikedValue = isLikedField;
-            } else if (isLikedField is Map) {
-              // If isLiked is a Map/object with details, the post is liked
-              // Based on your API example, the presence of this object means it's liked
-              isLikedValue = true;
-            }
+      // Convert posts JSON to PostModel objects
+      final List<PostModel> postsList = postsJson.map<PostModel>((postJson) {
+        // Simplified isLiked handling based on your API structure
+        debugPrint('🔄 Processing post ID: ${postJson['postId']}, userId: ${postJson['userId']}');
+        bool isLikedValue = false;
+        if (postJson.containsKey('isLiked') && postJson['isLiked'] != null) {
+          var isLikedField = postJson['isLiked'];
+          if (isLikedField is bool) {
+            // Direct boolean value
+            isLikedValue = isLikedField;
+          } else if (isLikedField is Map) {
+            // If isLiked is a Map/object with details, the post is liked
+            // Based on your API example, the presence of this object means it's liked
+            isLikedValue = true;
           }
+        }
 
-          bool isSavedValue = false;
-          if (postJson.containsKey('isSaved') && postJson['isSaved'] != null) {
-            var isSavedField = postJson['isSaved'];
-            if (isSavedField is bool) {
-              // Direct boolean value
-              isSavedValue = isSavedField;
-            } else if (isSavedField is Map) {
-              // If isSaved is a Map/object with details, the post is saved
-              isSavedValue = true;
-            } else if (isSavedField is String) {
-              // If isSaved is a string, check if it's "true" or "false"
-              isSavedValue = isSavedField.toLowerCase() == 'true';
-            }
-            debugPrint('💾 Post ${postJson['postId']} isSaved: $isSavedValue');
+        bool isSavedValue = false;
+        if (postJson.containsKey('isSaved') && postJson['isSaved'] != null) {
+          var isSavedField = postJson['isSaved'];
+          if (isSavedField is bool) {
+            // Direct boolean value
+            isSavedValue = isSavedField;
+          } else if (isSavedField is Map) {
+            // If isSaved is a Map/object with details, the post is saved
+            isSavedValue = true;
+          } else if (isSavedField is String) {
+            // If isSaved is a string, check if it's "true" or "false"
+            isSavedValue = isSavedField.toLowerCase() == 'true';
           }
-          // *** COMPANY vs USER POST HANDLING ***
-          Map<String, dynamic>? companyData;
-          String username;
-          String profilePic;
+          debugPrint('💾 Post ${postJson['postId']} isSaved: $isSavedValue');
+        }
+        
+        // *** COMPANY vs USER POST HANDLING ***
+        Map<String, dynamic>? companyData;
+        String username;
+        String profilePic;
 
-         // Replace the company post handling code with this better parser
-          if (postJson['userId'] == null) {
-            debugPrint('🏢 Company post detected');
-            
-            // Check the actual type of companyId
-            if (postJson['companyId'] is Map) {
-              // It's already a Map, use it directly
-              debugPrint('💼 Company data is a map');
-              companyData = Map<String, dynamic>.from(postJson['companyId']);
-            } else if (postJson['companyId'] is String && postJson['companyId'].toString().startsWith('{')) {
-              // It's a string that looks like JSON, try to parse it
-              debugPrint('💼 Company data is a string that looks like JSON');
-              try {
-                // Try to parse the string as JSON
-                final String jsonStr = postJson['companyId'].toString()
-                    .replaceAll("'", '"');  // Replace single quotes with double quotes
-                companyData = json.decode(jsonStr);
-              } catch (e) {
-                debugPrint('❌ Error parsing company JSON: $e');
-                // If parsing fails, extract data using regex
-                final String companyIdStr = postJson['companyId'].toString();
-                
-                final RegExp idRegex = RegExp(r'_id: ([^,}]+)');
-                final RegExp nameRegex = RegExp(r'name: ([^,}]+)');
-                final RegExp addressRegex = RegExp(r'address: ([^,}]+)');
-                final RegExp industryRegex = RegExp(r'industry: ([^,}]+)');
-                final RegExp sizeRegex = RegExp(r'organizationSize: ([^,}]+)');
-                final RegExp typeRegex = RegExp(r'organizationType: ([^,}]+)');
-                
-                companyData = {
-                  "_id": _extractRegexMatch(idRegex, companyIdStr),
-                  "name": _extractRegexMatch(nameRegex, companyIdStr) ?? "Company",
-                  "address": _extractRegexMatch(addressRegex, companyIdStr),
-                  "industry": _extractRegexMatch(industryRegex, companyIdStr),
-                  "organizationSize": _extractRegexMatch(sizeRegex, companyIdStr),
-                  "organizationType": _extractRegexMatch(typeRegex, companyIdStr),
-                  "logo": postJson['companyLogo'],
-                  "tagLine": null,
-                };
-              }
-            } else {
-              // It's a simple string ID or null
-              debugPrint('💼 Company ID is simple string: ${postJson['companyId']}');
+        // Replace the company post handling code with this better parser
+        if (postJson['userId'] == null) {
+          debugPrint('🏢 Company post detected');
+          
+          // Check the actual type of companyId
+          if (postJson['companyId'] is Map) {
+            // It's already a Map, use it directly
+            debugPrint('💼 Company data is a map');
+            companyData = Map<String, dynamic>.from(postJson['companyId']);
+          } else if (postJson['companyId'] is String && postJson['companyId'].toString().startsWith('{')) {
+            // It's a string that looks like JSON, try to parse it
+            debugPrint('💼 Company data is a string that looks like JSON');
+            try {
+              // Try to parse the string as JSON
+              final String jsonStr = postJson['companyId'].toString()
+                  .replaceAll("'", '"');  // Replace single quotes with double quotes
+              companyData = json.decode(jsonStr);
+            } catch (e) {
+              debugPrint('❌ Error parsing company JSON: $e');
+              // If parsing fails, extract data using regex
+              final String companyIdStr = postJson['companyId'].toString();
+              
+              final RegExp idRegex = RegExp(r'_id: ([^,}]+)');
+              final RegExp nameRegex = RegExp(r'name: ([^,}]+)');
+              final RegExp addressRegex = RegExp(r'address: ([^,}]+)');
+              final RegExp industryRegex = RegExp(r'industry: ([^,}]+)');
+              final RegExp sizeRegex = RegExp(r'organizationSize: ([^,}]+)');
+              final RegExp typeRegex = RegExp(r'organizationType: ([^,}]+)');
+              
               companyData = {
-                "_id": postJson['companyId'],
-                "name": postJson['companyName'] ?? "Company",
-                "address": postJson['companyAddress'] ?? "",
-                "industry": postJson['companyIndustry'] ?? "",
-                "organizationSize": postJson['companySize'] ?? "",
-                "organizationType": postJson['companyType'] ?? "",
+                "_id": _extractRegexMatch(idRegex, companyIdStr),
+                "name": _extractRegexMatch(nameRegex, companyIdStr) ?? "Company",
+                "address": _extractRegexMatch(addressRegex, companyIdStr),
+                "industry": _extractRegexMatch(industryRegex, companyIdStr),
+                "organizationSize": _extractRegexMatch(sizeRegex, companyIdStr),
+                "organizationType": _extractRegexMatch(typeRegex, companyIdStr),
                 "logo": postJson['companyLogo'],
-                "tagLine": postJson['companyTagLine'] ?? "",
+                "tagLine": null,
               };
             }
-            
-            // Use company name and logo for username and profile picture
-            username = companyData?['name'] ?? 'Company';
-            profilePic = companyData?['logo'] ?? '';
-            
-            // Add debug output for the parsed company data
-            debugPrint('📊 Parsed company data: name=${companyData?["name"]}, industry=${companyData?["industry"]}, size=${companyData?["organizationSize"]}');
-          }else {
+          } else {
+            // It's a simple string ID or null
+            debugPrint('💼 Company ID is simple string: ${postJson['companyId']}');
+            companyData = {
+              "_id": postJson['companyId'],
+              "name": postJson['companyName'] ?? "Company",
+              "address": postJson['companyAddress'] ?? "",
+              "industry": postJson['companyIndustry'] ?? "",
+              "organizationSize": postJson['companySize'] ?? "",
+              "organizationType": postJson['companyType'] ?? "",
+              "logo": postJson['companyLogo'],
+              "tagLine": postJson['companyTagLine'] ?? "",
+            };
+          }
+          
+          // Use company name and logo for username and profile picture
+          username = companyData?['name'] ?? 'Company';
+          profilePic = companyData?['logo'] ?? '';
+          
+          // Add debug output for the parsed company data
+          debugPrint('📊 Parsed company data: name=${companyData?["name"]}, industry=${companyData?["industry"]}, size=${companyData?["organizationSize"]}');
+        } else {
           // This is a user post, set user data
           debugPrint('👤 User post detected');
           companyData = null; // Company data is null for user posts
@@ -168,7 +181,8 @@ class PostApi implements PostRepository {
           debugPrint('👤 User data: name=$username, profilePic=$profilePic');
           debugPrint('Post ID: ${postJson['postId']}, isMine: ${postJson['isMine']}');
         }
-         return PostModel(
+        
+        return PostModel(
           id: postJson['postId'] ?? '',
           userId: postJson['userId'] ?? '',
           companyId: companyData, // Set to the extracted company data or null
@@ -195,18 +209,44 @@ class PostApi implements PostRepository {
           reposterProfilePicture: postJson['reposterProfilePicture'],
           taggedUsers: _extractTaggedUsers(postJson),
         );
-        }).toList();
-      } else {
-        throw Exception(
-          'Failed to load posts: ${response.statusCode} - ${response.reasonPhrase}',
-        );
-      }
-    } catch (e) {
-      debugPrint('Error fetching posts: $e');
-      // Return empty list on error
-      return [];
+      }).toList();
+
+      // Extract pagination information from the response
+      final Map<String, dynamic> paginationData = data['pagination'] ?? {
+        'total': postsJson.length,
+        'page': page,
+        'limit': limit,
+        'pages': 1,
+        'hasNextPage': false,
+        'hasPrevPage': false
+      };
+
+      // Return both posts and pagination information
+      return {
+        'posts': postsList,
+        'pagination': paginationData
+      };
+    } else {
+      throw Exception(
+        'Failed to load posts: ${response.statusCode} - ${response.reasonPhrase}',
+      );
     }
+  } catch (e) {
+    debugPrint('Error fetching posts: $e');
+    // Return empty results with default pagination on error
+    return {
+      'posts': <PostModel>[],
+      'pagination': {
+        'total': 0,
+        'page': page,
+        'limit': limit,
+        'pages': 1,
+        'hasNextPage': false,
+        'hasPrevPage': false
+      }
+    };
   }
+}
 
 
   /// Helper method to safely extract comment count from various API formats

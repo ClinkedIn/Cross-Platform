@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:sizer/sizer.dart';
 import '../../home_page/model/post_model.dart';
 import 'package:lockedin/shared/theme/colors.dart';
@@ -160,6 +161,85 @@ class PostCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+             // reposter information
+              if (post.isRepost == true) ...[
+                Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Reposter's profile image
+                  if (post.reposterProfilePicture != null && post.reposterProfilePicture!.isNotEmpty) 
+                    CircleAvatar(
+                      backgroundImage: NetworkImage(post.reposterProfilePicture!),
+                      radius: 1.7.h,
+                      onBackgroundImageError: (exception, stackTrace) {
+                        debugPrint('Error loading reposter profile image: $exception');
+                      },
+                      child: post.reposterProfilePicture!.isEmpty
+                          ? Icon(Icons.person, size: 2.5.h)
+                          : null,
+                    )
+                  else
+                    CircleAvatar(
+                      radius: 1.h,
+                      child: Icon(Icons.person, size: 2.5.h),
+                    ),
+                  SizedBox(width: 1.5.w),
+                   Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: post.reposterName ?? 'Someone',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.black,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    // Navigate to reposter's profile
+                                    if (post.reposterId != null && post.reposterId!.isNotEmpty) {
+                                      context.push('/other-profile/${post.reposterId}');
+                                    }
+                                  },
+                              ),
+                              TextSpan(
+                                text: ' reposted this',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontSize: 15.sp,
+                                  color: AppColors.gray,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                         // Show repost description if available
+                        if (post.repostDescription != null && post.repostDescription!.isNotEmpty) ...[
+                          SizedBox(height: 0.5.h),
+                          Text(
+                            post.repostDescription!,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontSize: 15.sp,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 1.h),
+              Divider(
+                height: 0.1.h,
+                thickness: 0.1.h,
+                color: AppColors.gray.withOpacity(0.3),
+              ),
+              SizedBox(height: 1.h),
+            ],
+
               /// User Info Row with Three-Dot Menu
               Row(
                 children: [
@@ -466,11 +546,27 @@ class PostCard extends StatelessWidget {
                   ],
 
                   if (post.reposts > 0) ...[
-                    Text(
-                      '${post.reposts} reposts',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.gray,
-                        fontSize: 15.sp,
+                   
+                    TextButton(
+                      onPressed: () {
+                        // If there are reposts, navigate to the repost list
+                        if (post.reposts > 0) {
+                          context.go('/post-reposts/${post.id}');
+                        } else {
+                          // If no reposts, just call the regular onRepost callback
+                          onRepost();
+                        }
+                      },
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 2.w),
+                        minimumSize: Size(0, 4.h),
+                      ),
+                      child:  Text(
+                        '${post.reposts} Reposts ',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.gray,
+                          fontSize: 15.sp,
+                        ),
                       ),
                     ),
                   ],

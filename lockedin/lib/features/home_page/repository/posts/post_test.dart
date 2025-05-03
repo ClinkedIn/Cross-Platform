@@ -39,9 +39,8 @@ class MockPostRepository implements PostRepository {
   ];
 
   @override
-  Future<List<PostModel>> fetchHomeFeed() async {
-    if (shouldThrow) throw Exception("Error fetching posts");
-    return _mockPosts;
+  Future<Map<String, dynamic>> fetchHomeFeed({int page = 1, int limit = 10}) async {
+     throw UnimplementedError();
   }
 
   @override
