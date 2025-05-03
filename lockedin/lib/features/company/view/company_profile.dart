@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/company/view/company_analytics_screen.dart';
+import 'package:lockedin/features/company/view/company_job_details.dart';
 import 'package:lockedin/features/company/view/create_job_screen.dart';
 import 'package:lockedin/features/company/view/create_post_screen.dart';
 import 'package:lockedin/features/company/view/edit_company_profile_view.dart';
@@ -297,7 +298,17 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                   SizedBox(height: 1.h),
                   ...jobs.map((job) {
                     print("job description: ${job.description}, job time ago: ${job.createdAt}");
-                    return JobCard(job: job);
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => JobDetailsScreen(jobId: job.id),
+                          ),
+                        );
+                      },
+                      child: JobCard(job: job),
+                    );
                   }),
                 ],
               ),

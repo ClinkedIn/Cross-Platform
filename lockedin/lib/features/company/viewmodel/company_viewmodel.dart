@@ -5,6 +5,7 @@ import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/features/company/model/company_job_model.dart';
 import 'package:lockedin/features/company/model/company_model.dart';
 import 'package:lockedin/features/company/model/company_post_model.dart';
+import 'package:lockedin/features/company/model/job_application_model.dart';
 import 'package:lockedin/features/company/repository/company_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/jobs/model/job_model.dart';
@@ -27,6 +28,12 @@ class CompanyViewModel extends ChangeNotifier {
   // Jobs state
   List<CompanyJob> _companyJobs = [];
   List<CompanyJob> get companyJobs => _companyJobs;
+
+  List<JobApplication> _jobApplications = [];
+  List<JobApplication> get jobApplications => _jobApplications;  
+
+  CompanyJob? _fetchedJob;
+  CompanyJob? get fetchedJob => _fetchedJob;
 
   Future<void> createCompany(Company company, {String? logoPath}) async {
     _setLoading(true);
@@ -246,6 +253,34 @@ class CompanyViewModel extends ChangeNotifier {
     _setLoading(false);
   }
 
+    Future<void> fetchJobApplications(
+    String jobId 
+    ) async {
+    _setLoading(true);
+    _clearError();
+
+    final applications = await _companyRepository.fetchJobApplications(
+      jobId,
+    );
+    _jobApplications = applications;
+
+    _setLoading(false);
+  }
+
+    Future<void> getSpecificJob(
+    String jobId 
+    ) async {
+    _setLoading(true);
+    _clearError();
+
+    final job = await _companyRepository.getSpecificJob(
+      jobId,
+    );
+    _fetchedJob = job;
+
+    _setLoading(false);
+  }
+
   List<Company> _fetchedCompanies = [];
   List<Company> get fetchedCompanies => _fetchedCompanies;
 
@@ -304,6 +339,8 @@ class CompanyViewModel extends ChangeNotifier {
     _setLoading(false);
   }
 
+
+
   // Save isFollowing state
   Future<void> saveIsFollowing(String companyId, bool isFollowing) async {
     final prefs = await SharedPreferences.getInstance();
@@ -314,6 +351,45 @@ class CompanyViewModel extends ChangeNotifier {
   Future<bool?> loadIsFollowing(String companyId) async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('isFollowing_$companyId');
+  }
+
+    Future<void> acceptJobApplication({
+    required String jobId,
+    required String userId,
+  }) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      await _companyRepository.acceptJobApplication(jobId: jobId, userId: userId);
+    } catch (e) {
+      debugPrint('Error accepting application: $e');
+      _errorMessage = 'Failed to accept application';
+    }
+
+    _setLoading(false);
+  }
+
+    Future<void> rejectJobApplication({
+    required String jobId,
+    required String userId,
+  }) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      await _companyRepository.rejectJobApplication(jobId:jobId, userId:userId);
+    } catch (e) {
+      debugPrint('Error rejecting application: $e');
+      _errorMessage = 'Failed to reject application';
+    }
+
+    _setLoading(false);
+  }
+
+    void removeApplicationFromList(String applicationId) {
+    _jobApplications.removeWhere((app) => app.applicationId == applicationId);
+    notifyListeners();
   }
 }
 

@@ -6,6 +6,7 @@ import 'package:lockedin/features/company/model/company_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:lockedin/features/company/model/company_post_model.dart';
+import 'package:lockedin/features/company/model/job_application_model.dart';
 import 'package:mime/mime.dart';
 import 'package:lockedin/features/jobs/model/job_model.dart';
 
@@ -302,12 +303,8 @@ class CompanyRepository {
     }
   }
 
-    Future<List<CompanyJob>> fetchCompanyJobs(
-    String companyId
-  ) async {
-    final response = await RequestService.get(
-      'jobs/company/$companyId',
-    );
+  Future<List<CompanyJob>> fetchCompanyJobs(String companyId) async {
+    final response = await RequestService.get('jobs/company/$companyId');
     print('Jobbb Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
     if (response.statusCode == 200) {
@@ -317,6 +314,80 @@ class CompanyRepository {
     } else {
       print('Failed to fetch jobs: ${response.statusCode}');
       return [];
+    }
+  }
+
+  Future<List<JobApplication>> fetchJobApplications(String jobId) async {
+    final response = await RequestService.get('jobs/$jobId/apply');
+    print('applicationsss Response status: ${response.statusCode}');
+    if (response.statusCode == 200) {
+      print('applicationsss Response body: ${response.body}');
+      final data = json.decode(response.body);
+      final jobsJson = data['applications'] as List;
+      return jobsJson
+          .map((application) => JobApplication.fromJson(application))
+          .toList();
+    } else {
+      print('Failed to fetch jobs: ${response.statusCode}');
+      return [];
+    }
+  }
+
+  Future<bool> acceptJobApplication({
+    required String jobId,
+    required String userId,
+  }) async {
+    final response = await RequestService.put(
+      'jobs/$jobId/applications/$userId/accept',
+      body: {},
+    );
+
+    print('✅ Accept Application Status: ${response.statusCode}');
+    print('✅ Accept Application Response: ${response.body}');
+
+    return response.statusCode == 200;
+  }
+
+  Future<bool> rejectJobApplication({
+    required String jobId,
+    required String userId,
+  }) async {
+    final response = await RequestService.put(
+      'jobs/$jobId/applications/$userId/reject',
+      body: {},
+    );
+
+    print('❌ Reject Application Status: ${response.statusCode}');
+    print('❌ Reject Application Response: ${response.body}');
+
+    return response.statusCode == 200;
+  }
+
+  Future<CompanyJob> getSpecificJob(String jobId) async {
+    final response = await RequestService.get('jobs/$jobId');
+    print('Job application Response status: ${response.statusCode}');
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return CompanyJob.fromJson(data); // this is correct
+    } else {
+      print('Failed to fetch jobs: ${response.statusCode}');
+      return CompanyJob(
+        companyId: '0',
+        workplaceType: 'Error',
+        jobLocation: 'Error',
+        jobType: 'Error',
+        description: 'Error',
+        applicationEmail: 'Error',
+        screeningQuestions: [],
+        autoRejectMustHave: false,
+        rejectPreview: 'Error',
+        id: 'Error',
+        applicants: [],
+        accepted: [],
+        rejected: [],
+        updatedAt: DateTime.now(),
+        createdAt: DateTime.now(),
+      );
     }
   }
 
