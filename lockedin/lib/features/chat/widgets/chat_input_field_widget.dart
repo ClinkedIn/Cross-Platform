@@ -24,38 +24,63 @@ class ChatInputField extends ConsumerStatefulWidget {
 
 class _ChatInputFieldState extends ConsumerState<ChatInputField> {
   Timer? _debounceTimer;
-  bool _wasEmpty = true;
-
+  bool _isTyping = false;
+  
   @override
   void initState() {
     super.initState();
+    // Add listener to text controller
     widget.messageController.addListener(_onTextChanged);
   }
-
+  
   @override
   void dispose() {
     _debounceTimer?.cancel();
     widget.messageController.removeListener(_onTextChanged);
     super.dispose();
   }
-
+  
   void _onTextChanged() {
+    // Get current text
     final text = widget.messageController.text;
     final isEmpty = text.isEmpty;
-
-    if (isEmpty != _wasEmpty) {
-      _wasEmpty = isEmpty;
-
-      _debounceTimer?.cancel();
-
-      _debounceTimer = Timer(Duration(milliseconds: 300), () {
-        final chatId = ref.read(chatIdProvider);
-        ref.read(chatConversationProvider(chatId).notifier)
-          .setUserTyping(!isEmpty);
+    
+    // Cancel any existing timer
+    _debounceTimer?.cancel();
+    
+    // If text is empty and we were typing, stop typing immediately
+    if (isEmpty && _isTyping) {
+      _isTyping = false;
+      _updateTypingStatus(false);
+      return;
+    }
+    
+    // If text is not empty, we're typing
+    if (!isEmpty) {
+      // If we weren't already marked as typing, update status
+      if (!_isTyping) {
+        _isTyping = true;
+        _updateTypingStatus(true);
+      }
+      
+      // Set a timer to automatically stop typing after inactivity
+      _debounceTimer = Timer(Duration(seconds: 3), () {
+        if (_isTyping) {
+          _isTyping = false;
+          _updateTypingStatus(false);
+        }
       });
     }
   }
-
+  
+  void _updateTypingStatus(bool isTyping) {
+    final chatId = ref.read(chatIdProvider);
+    if (chatId.isNotEmpty) {
+      ref.read(chatConversationProvider(chatId).notifier)
+        .setUserTyping(isTyping);
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Container(

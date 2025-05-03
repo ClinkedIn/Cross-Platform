@@ -350,7 +350,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
 
   // Add this method to build the typing indicator
   Widget _buildTypingIndicator() {
-    final chatState = ref.watch(chatConversationProvider(widget.chat.id));
+    ref.watch(chatConversationProvider(widget.chat.id));
     final chatNotifier = ref.read(chatConversationProvider(widget.chat.id).notifier);
     
     // Check if someone other than the current user is typing

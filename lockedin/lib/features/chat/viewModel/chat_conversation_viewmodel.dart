@@ -616,24 +616,13 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
 
   // Call this when user starts typing
   void setUserTyping(bool isTyping) {
-    // Cancel any existing timer
-    _typingTimer?.cancel();
+    // No need to check state, just update Firebase directly
+    _repository.setTypingStatus(chatId, isTyping);
     
-    // Only update if state changed
-    if (state.isCurrentUserTyping != isTyping) {
-      // Update local state
-      state = state.copyWith(isCurrentUserTyping: isTyping);
-      
-      // Update in Firebase
-      _repository.setTypingStatus(chatId, isTyping);
-    }
+    // Update the local state
+    state = state.copyWith(isCurrentUserTyping: isTyping);
     
-    // If user is typing, set a timer to automatically stop after 5 seconds
-    if (isTyping) {
-      _typingTimer = Timer(Duration(seconds: 5), () {
-        setUserTyping(false);
-      });
-    }
+    // No need for timer here since the input field handles that
   }
   
   // Check if any other user is typing
