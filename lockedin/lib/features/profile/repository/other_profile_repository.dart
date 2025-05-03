@@ -65,6 +65,32 @@ class OtherProfileRepository {
     }
   }
 
+  Future<bool> unConnectUser(String userId) async {
+    final response = await RequestService.delete("/user/connections/$userId");
+    if (response.statusCode == 200) {
+      print("User unconnected successfully.");
+      return true;
+    } else {
+      print("Error unconnecting user: ${response.body}");
+      return false;
+    }
+  }
+
+  Future<bool> handleConnectionRequest(String userId, String action) async {
+    final response = await RequestService.patch(
+      "/user/connections/requests/$userId",
+      body: {"action": action},
+    );
+
+    if (response.statusCode == 200) {
+      print("Connection request ${action}d successfully.");
+      return true;
+    } else {
+      print("Error ${action}ing connection request: ${response.body}");
+      return false;
+    }
+  }
+
   Future<void> cancelConnectionRequest(String userId) async {
     final response = await RequestService.delete("/user/connect/$userId");
 
