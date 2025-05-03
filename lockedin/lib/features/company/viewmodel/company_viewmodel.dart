@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/features/company/model/company_model.dart';
 import 'package:lockedin/features/company/model/company_post_model.dart';
 import 'package:lockedin/features/company/repository/company_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/jobs/model/job_model.dart'; // Import your Job model
+import 'package:lockedin/features/jobs/model/job_model.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import your Job model
 
 class CompanyViewModel extends ChangeNotifier {
   final CompanyRepository _companyRepository;
@@ -76,7 +80,11 @@ class CompanyViewModel extends ChangeNotifier {
 
     final result = await _companyRepository.getCompanyById(companyId);
     if (result != null) {
-      _fetchedCompany = result;
+      final localIsFollowing = await loadIsFollowing(companyId);
+      _fetchedCompany = localIsFollowing != null
+          ? result.copyWith(isFollowing: localIsFollowing)
+          : result;
+      notifyListeners();
     } else {
       _errorMessage = 'Failed to fetch company details.';
     }
@@ -201,6 +209,50 @@ class CompanyViewModel extends ChangeNotifier {
     _fetchedCompanies = companies;
 
     _setLoading(false);
+  }
+
+  Future<void> toggleFollowCompany(String companyId) async {
+    _setLoading(true);
+    try {
+      final isCurrentlyFollowing = _fetchedCompany?.isFollowing ?? false;
+      final endpoint = '/companies/$companyId/follow';
+
+      final response = isCurrentlyFollowing
+          ? await RequestService.delete(endpoint)
+          : await RequestService.post(endpoint, body: {'companyId': companyId});
+
+      final body = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        // Toggle success
+        _fetchedCompany = _fetchedCompany?.copyWith(isFollowing: !isCurrentlyFollowing);
+        await saveIsFollowing(companyId, !isCurrentlyFollowing);
+        notifyListeners();
+      } else if (response.statusCode == 400 && body['message']?.toLowerCase().contains('already following') == true) {
+        // Already following, assume true
+        _fetchedCompany = _fetchedCompany?.copyWith(isFollowing: true);
+        await saveIsFollowing(companyId, true);
+        notifyListeners();
+      } else {
+        debugPrint("❌ Failed to toggle follow. Status: ${response.statusCode}");
+      }
+    } catch (e) {
+      debugPrint("❌ Error toggling follow: $e");
+    }
+
+    _setLoading(false);
+  }
+
+  // Save isFollowing state
+  Future<void> saveIsFollowing(String companyId, bool isFollowing) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isFollowing_$companyId', isFollowing);
+  }
+
+  // Load isFollowing state
+  Future<bool?> loadIsFollowing(String companyId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isFollowing_$companyId');
   }
 }
 

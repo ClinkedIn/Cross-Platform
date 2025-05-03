@@ -56,6 +56,11 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                           height: 8.w,
                           width: 8.w,
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.business,
+                            size: 8.w,
+                            color: Colors.grey[400],
+                          ),
                         ),
                       )
                     else
@@ -167,6 +172,12 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                                 width: double.infinity,
                                 height: 20.h,
                                 fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    width: double.infinity,
+                                    height: 20.h,
+                                    color: Colors.grey[300],
+                                    child: Icon(Icons.business, size: 10.h, color: Colors.white),
+                                  ),
                               ),
                             )
                           else
