@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
-import 'package:lockedin/core/services/auth_service.dart';
-import 'package:lockedin/features/profile/state/profile_components_state.dart';
+
 
 /// Repository for handling chat-related Firebase operations
 class FirebaseChatRepository {
