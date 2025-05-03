@@ -113,9 +113,11 @@ class RequestService {
           contentType = MediaType('application', 'octet-stream');
       }
 
+      // Based on the server error, we need to use exactly 'files' as the field name
+      // without any array notation since multer is configured to expect this field name
       request.files.add(
         await http.MultipartFile.fromPath(
-          fileFieldName,
+          fileFieldName, // Keep this as-is without adding any brackets
           file.path,
           contentType: contentType,
           filename: fileName,
@@ -433,6 +435,7 @@ class RequestService {
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(loginBody),
+
       );
 
       debugPrint('LOGIN Response Status: ${response.statusCode}');
@@ -508,4 +511,5 @@ class RequestService {
         body.contains('<html>') ||
         (body.isNotEmpty && !body.startsWith('{') && !body.startsWith('['));
   }
+    
 }

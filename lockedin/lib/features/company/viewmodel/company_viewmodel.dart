@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/features/company/model/company_job_model.dart';
@@ -8,8 +7,7 @@ import 'package:lockedin/features/company/model/company_post_model.dart';
 import 'package:lockedin/features/company/model/job_application_model.dart';
 import 'package:lockedin/features/company/repository/company_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/features/jobs/model/job_model.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Import your Job model
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CompanyViewModel extends ChangeNotifier {
   final CompanyRepository _companyRepository;
@@ -30,7 +28,7 @@ class CompanyViewModel extends ChangeNotifier {
   List<CompanyJob> get companyJobs => _companyJobs;
 
   List<JobApplication> _jobApplications = [];
-  List<JobApplication> get jobApplications => _jobApplications;  
+  List<JobApplication> get jobApplications => _jobApplications;
 
   CompanyJob? _fetchedJob;
   CompanyJob? get fetchedJob => _fetchedJob;
@@ -89,9 +87,10 @@ class CompanyViewModel extends ChangeNotifier {
     final result = await _companyRepository.getCompanyById(companyId);
     if (result != null) {
       final localIsFollowing = await loadIsFollowing(companyId);
-      _fetchedCompany = localIsFollowing != null
-          ? result.copyWith(isFollowing: localIsFollowing)
-          : result;
+      _fetchedCompany =
+          localIsFollowing != null
+              ? result.copyWith(isFollowing: localIsFollowing)
+              : result;
       notifyListeners();
     } else {
       _errorMessage = 'Failed to fetch company details.';
@@ -184,7 +183,6 @@ class CompanyViewModel extends ChangeNotifier {
     required List<Map<String, dynamic>> screeningQuestions,
     required bool autoRejectMustHave,
     required String rejectPreview,
-
   }) async {
     _setLoading(true);
     _clearError();
@@ -237,7 +235,7 @@ class CompanyViewModel extends ChangeNotifier {
     _setLoading(false);
   }
 
-    Future<void> fetchCompanyJobs(
+  Future<void> fetchCompanyJobs(
     String companyId, {
     int page = 1,
     int limit = 10,
@@ -245,37 +243,27 @@ class CompanyViewModel extends ChangeNotifier {
     _setLoading(true);
     _clearError();
 
-    final jobs = await _companyRepository.fetchCompanyJobs(
-      companyId,
-    );
+    final jobs = await _companyRepository.fetchCompanyJobs(companyId);
     _companyJobs = jobs;
 
     _setLoading(false);
   }
 
-    Future<void> fetchJobApplications(
-    String jobId 
-    ) async {
+  Future<void> fetchJobApplications(String jobId) async {
     _setLoading(true);
     _clearError();
 
-    final applications = await _companyRepository.fetchJobApplications(
-      jobId,
-    );
+    final applications = await _companyRepository.fetchJobApplications(jobId);
     _jobApplications = applications;
 
     _setLoading(false);
   }
 
-    Future<void> getSpecificJob(
-    String jobId 
-    ) async {
+  Future<void> getSpecificJob(String jobId) async {
     _setLoading(true);
     _clearError();
 
-    final job = await _companyRepository.getSpecificJob(
-      jobId,
-    );
+    final job = await _companyRepository.getSpecificJob(jobId);
     _fetchedJob = job;
 
     _setLoading(false);
@@ -313,18 +301,26 @@ class CompanyViewModel extends ChangeNotifier {
       final isCurrentlyFollowing = _fetchedCompany?.isFollowing ?? false;
       final endpoint = '/companies/$companyId/follow';
 
-      final response = isCurrentlyFollowing
-          ? await RequestService.delete(endpoint)
-          : await RequestService.post(endpoint, body: {'companyId': companyId});
+      final response =
+          isCurrentlyFollowing
+              ? await RequestService.delete(endpoint)
+              : await RequestService.post(
+                endpoint,
+                body: {'companyId': companyId},
+              );
 
       final body = json.decode(response.body);
 
       if (response.statusCode == 200) {
         // Toggle success
-        _fetchedCompany = _fetchedCompany?.copyWith(isFollowing: !isCurrentlyFollowing);
+        _fetchedCompany = _fetchedCompany?.copyWith(
+          isFollowing: !isCurrentlyFollowing,
+        );
         await saveIsFollowing(companyId, !isCurrentlyFollowing);
         notifyListeners();
-      } else if (response.statusCode == 400 && body['message']?.toLowerCase().contains('already following') == true) {
+      } else if (response.statusCode == 400 &&
+          body['message']?.toLowerCase().contains('already following') ==
+              true) {
         // Already following, assume true
         _fetchedCompany = _fetchedCompany?.copyWith(isFollowing: true);
         await saveIsFollowing(companyId, true);
@@ -339,8 +335,6 @@ class CompanyViewModel extends ChangeNotifier {
     _setLoading(false);
   }
 
-
-
   // Save isFollowing state
   Future<void> saveIsFollowing(String companyId, bool isFollowing) async {
     final prefs = await SharedPreferences.getInstance();
@@ -353,7 +347,7 @@ class CompanyViewModel extends ChangeNotifier {
     return prefs.getBool('isFollowing_$companyId');
   }
 
-    Future<void> acceptJobApplication({
+  Future<void> acceptJobApplication({
     required String jobId,
     required String userId,
   }) async {
@@ -361,7 +355,10 @@ class CompanyViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      await _companyRepository.acceptJobApplication(jobId: jobId, userId: userId);
+      await _companyRepository.acceptJobApplication(
+        jobId: jobId,
+        userId: userId,
+      );
     } catch (e) {
       debugPrint('Error accepting application: $e');
       _errorMessage = 'Failed to accept application';
@@ -370,7 +367,7 @@ class CompanyViewModel extends ChangeNotifier {
     _setLoading(false);
   }
 
-    Future<void> rejectJobApplication({
+  Future<void> rejectJobApplication({
     required String jobId,
     required String userId,
   }) async {
@@ -378,7 +375,10 @@ class CompanyViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      await _companyRepository.rejectJobApplication(jobId:jobId, userId:userId);
+      await _companyRepository.rejectJobApplication(
+        jobId: jobId,
+        userId: userId,
+      );
     } catch (e) {
       debugPrint('Error rejecting application: $e');
       _errorMessage = 'Failed to reject application';
@@ -387,7 +387,7 @@ class CompanyViewModel extends ChangeNotifier {
     _setLoading(false);
   }
 
-    void removeApplicationFromList(String applicationId) {
+  void removeApplicationFromList(String applicationId) {
     _jobApplications.removeWhere((app) => app.applicationId == applicationId);
     notifyListeners();
   }

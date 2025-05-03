@@ -111,6 +111,7 @@ class NotificationsViewModel
 
   /// Navigates the user to the post related to a notification.
   // will deep link with the home page later to navigate to the post
+
   void navigateToPost(
     BuildContext context,
     String id,
@@ -120,6 +121,7 @@ class NotificationsViewModel
       'other-profile',
       pathParameters: {'userId': notification.from},
     );
+
   }
 
   /// Marks all notifications as seen (for UI highlighting).

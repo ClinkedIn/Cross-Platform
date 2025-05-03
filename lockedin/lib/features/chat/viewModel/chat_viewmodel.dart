@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
 import 'package:lockedin/features/chat/repository/chat_repository.dart';
+import 'package:lockedin/features/chat/view/chat_conversation_page.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 

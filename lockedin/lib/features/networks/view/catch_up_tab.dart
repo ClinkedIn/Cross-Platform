@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:lockedin/features/networks/view/message_request_list.dart';
+import 'package:lockedin/features/networks/viewmodel/message_view_model.dart';
+import 'package:provider/provider.dart';
 
 class CatchUpPage extends StatelessWidget {
+
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Catch Up Page',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
+    return ChangeNotifierProvider(
+      create: (_) => MessageRequestViewModel(),
+      child: MessageRequestListScreen(),
     );
   }
 }

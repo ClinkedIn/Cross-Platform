@@ -240,6 +240,7 @@ class NotificationsPageState extends ConsumerState<NotificationsPage> {
                 child: GestureDetector(
                   onTap: () {
                     if (notification.isPlaceholder) return;
+
                     ref
                         .read(notificationsProvider.notifier)
                         .markAsRead(notification.id);

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../model/company_list_model.dart';
 import '../repository/network_repository.dart';
 
