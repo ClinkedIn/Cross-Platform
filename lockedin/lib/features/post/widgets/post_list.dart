@@ -160,32 +160,30 @@ class PostList extends ConsumerWidget {
           onFollow: () {
             print("Followed ${posts[index].username}");
           },
-          onSaveForLater: () {
+          onSaveForLater: () async{
             // Call the savePostById function with the post's ID
-            ref
-                .read(homeViewModelProvider.notifier)
-                .savePostById(posts[index].id);
-            // Show a confirmation to the user
+           try {
+            final success = await ref.read(homeViewModelProvider.notifier).toggleSaveForLater(posts[index].id);
+            if (success) {
+              // Optionally show success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(posts[index].isSaved == true 
+                      ? 'Post removed from saved items'
+                      : 'Post saved for later'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          } catch (e) {
+            // Show error message
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                  '✅ Post saved for later',
-                  style: TextStyle(color: Colors.black87),
-                ),
-                duration: Duration(seconds: 3),
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: Colors.white,
-                margin: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).size.height - 200,
-                  left: 10,
-                  right: 10,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  side: BorderSide(color: Colors.grey.shade300),
-                ),
+                content: Text('Error: ${e.toString()}'),
+                backgroundColor: Colors.red,
               ),
             );
+          }
             print("Saved post: ${posts[index].id}");
           },
           // Replace the onReport and onNotInterested callbacks in your PostList's PostCard creation

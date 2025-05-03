@@ -4,6 +4,7 @@ import '../repository/posts/post_repository.dart';
 import '../repository/posts/post_api.dart';
 import 'package:flutter/foundation.dart';
 import '../state/home_state.dart';
+import '../model/taggeduser_model.dart';
 
 /// Provider for the HomeViewModel
 final homeViewModelProvider = StateNotifierProvider<HomeViewModel, HomeState>((
@@ -47,65 +48,126 @@ class HomeViewModel extends StateNotifier<HomeState> {
 
   /// Save post for later reading using post ID
 
-  Future<bool> savePostById(String postId) async {
+ /// Toggle save status for a post
+  Future<bool> toggleSaveForLater(String postId) async {
     try {
-      // Set loading state
-      state = state.copyWith(isLoading: true, error: null);
+      // Find the post in the current state
+      final index = state.posts.indexWhere((post) => post.id == postId);
+      if (index == -1) {
+        // Post not found in the current state
+        return false;
+      }
 
-      // Call repository method
-      final success = await repository.savePostById(postId);
+      final post = state.posts[index];
+      final isCurrentlySaved = post.isSaved;
 
-      // Update state after operation
-      state = state.copyWith(isLoading: false);
+      // Optimistically update UI
+      final updatedPost = post.copyWith(
+        isSaved: !(isCurrentlySaved ?? false),
+      );
+      final updatedPosts = List<PostModel>.from(state.posts);
+      updatedPosts[index] = updatedPost;
+      state = state.copyWith(posts: updatedPosts);
+
+      // Make the API call based on the new state
+      bool success;
+      if (!(isCurrentlySaved ?? false)) {
+        // Save the post
+        try {
+          success = await repository.savePostById(postId);
+        } catch (e) {
+          // Check for "already saved" error
+          if (e.toString().contains("already saved this post")) {
+            // This is fine, the server state matches our optimistic update
+            return true;
+          }
+          // Rethrow other errors
+          rethrow;
+        }
+      } else {
+        // Unsave the post
+        try { 
+          success = await repository.unsavePostById(postId);
+        } catch (e) {
+          // Check for "not saved" error
+          if (e.toString().contains("not saved this post")) {
+            // This is fine, the server state matches our optimistic update
+            return true;
+          }
+          // Rethrow other errors
+          rethrow;
+        }
+      }
 
       return success;
     } catch (e) {
-      // Handle errors
-      state = state.copyWith(isLoading: false, error: e.toString());
-      return false;
+      // If there was an error, revert the optimistic update
+      await refreshFeed(); // Refresh to get the correct state
+      debugPrint('Error in toggleSaveForLater: $e');
+      throw e; // Rethrow to allow UI to handle the error
     }
   }
 
-  /// Toggle like status for a post
-  Future<bool> toggleLike(String postId) async {
-    try {
-      // Find the current post
-      final postIndex = state.posts.indexWhere((post) => post.id == postId);
-      if (postIndex == -1) return false;
+    /// Toggle like status for a post
+    Future<bool> toggleLike(String postId) async {
+      try {
+        // Find the post in the current state
+        final index = state.posts.indexWhere((post) => post.id == postId);
+        if (index == -1) {
+          // Post not found in the current state
+          return false;
+        }
 
-      final post = state.posts[postIndex];
-      final currentlyLiked = post.isLiked;
+        final post = state.posts[index];
+        final isCurrentlyLiked = post.isLiked;
 
-      // Call the appropriate API method
-      bool success;
-      if (currentlyLiked) {
-        success = await repository.unlikePost(postId); // Unlike
-      } else {
-        success = await repository.likePost(postId); // Like
-      }
-
-      if (success) {
-        // Create a new list with the updated post
-        final updatedPosts = List<PostModel>.from(state.posts);
+        // Optimistically update UI
         final updatedPost = post.copyWith(
-          isLiked: !currentlyLiked,
-          likes: currentlyLiked ? post.likes - 1 : post.likes + 1,
+          isLiked: !isCurrentlyLiked,
+          likes: isCurrentlyLiked ? post.likes - 1 : post.likes + 1,
         );
-
-        // Replace the old post with the updated one
-        updatedPosts[postIndex] = updatedPost;
-
-        // Update the state with the new list
+        final updatedPosts = List<PostModel>.from(state.posts);
+        updatedPosts[index] = updatedPost;
         state = state.copyWith(posts: updatedPosts);
-        return true;
-      }
 
-      return false;
-    } catch (e) {
-      debugPrint('Error in toggleLike: $e');
-      rethrow;
+        // Make the API call based on the new state
+        bool success;
+        if (!isCurrentlyLiked) {
+          // Like the post
+          try {
+            success = await repository.likePost(postId);
+          } catch (e) {
+            // Check for "already liked" error
+            if (e.toString().contains("already liked this post")) {
+              // This is fine, the server state matches our optimistic update
+              return true;
+            }
+            // Rethrow other errors
+            rethrow;
+          }
+        } else {
+          // Unlike the post
+          try { 
+            success = await repository.unlikePost(postId);
+          } catch (e) {
+            // Check for "not liked" error
+            if (e.toString().contains("not liked this post")) {
+              // This is fine, the server state matches our optimistic update
+              return true;
+            }
+            // Rethrow other errors
+            rethrow;
+          }
+        }
+
+        return success;
+      } catch (e) {
+        // If there was an error, revert the optimistic update
+        await refreshFeed(); // Refresh to get the correct state
+        debugPrint('Error in toggleLike: $e');
+        throw e; // Rethrow to allow UI to handle the error
+      }
     }
-  }
 
   /// Toggle repost for a post
   Future<bool> toggleRepost(String postId, {String? description}) async {
@@ -191,41 +253,39 @@ class HomeViewModel extends StateNotifier<HomeState> {
           }
         }
       /// Edit a post
-      Future<bool> editPost(String postId, String content) async {
+      Future<bool> editPost(String postId, String content, {List<TaggedUser>? taggedUsers}) async {
         try {
-          // Find the post index
-          final postIndex = state.posts.indexWhere((post) => post.id == postId);
-          if (postIndex == -1) return false;
-          
-          // Set loading state
-          state = state.copyWith(isLoading: true, error: null);
-          
-          // Call repository method
-          final success = await repository.editPost(postId, content: content);
-          
-          if (success) {
-            // Update the post in the list
-            final updatedPosts = List<PostModel>.from(state.posts);
-            final updatedPost = updatedPosts[postIndex].copyWith(
-              content: content,
-              isEdited: true,
-            );
-            
-            // Replace the old post with the updated one
-            updatedPosts[postIndex] = updatedPost;
-            
-            // Update state
-            state = state.copyWith(posts: updatedPosts, isLoading: false);
-            return true;
+          debugPrint('📝 Editing post: $postId');
+          if (taggedUsers != null && taggedUsers.isNotEmpty) {
+            debugPrint('👥 With ${taggedUsers.length} tagged users');
           }
           
-          // Reset loading state if unsuccessful
-          state = state.copyWith(isLoading: false);
-          return false;
+          // Use the updated API method that now accepts TaggedUser objects
+          final success = await repository.editPost(
+            postId,
+            content: content,
+            taggedUsers: taggedUsers,
+          );
+          
+          if (success) {
+            // Update the post in the local posts list
+            state = state.copyWith(
+              posts: state.posts.map((post) {
+                if (post.id == postId) {
+                  return post.copyWith(
+                    content: content,
+                    taggedUsers: taggedUsers ?? post.taggedUsers,
+                  );
+                }
+                return post;
+              }).toList(),
+            );
+          }
+          
+          return success;
         } catch (e) {
-          debugPrint('Error in editPost: $e');
-          state = state.copyWith(isLoading: false, error: e.toString());
-          rethrow;
+          debugPrint('❌ Error editing post: $e');
+          return false;
         }
       }
       

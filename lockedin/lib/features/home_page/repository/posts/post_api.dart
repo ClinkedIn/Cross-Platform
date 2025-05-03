@@ -56,6 +56,12 @@ class PostApi implements PostRepository {
           debugPrint('isLiked value: ${postsJson[0]['isLiked']}');
         }
 
+        // Debug the isSaved structure if posts exist
+      if (postsJson.isNotEmpty && postsJson[0].containsKey('isSaved')) {
+        debugPrint('isSaved type: ${postsJson[0]['isSaved'].runtimeType}');
+        debugPrint('isSaved value: ${postsJson[0]['isSaved']}');
+      }
+
         return postsJson.map((postJson) {
           // Simplified isLiked handling based on your API structure
            debugPrint('🔄 Processing post ID: ${postJson['postId']}, userId: ${postJson['userId']}');
@@ -70,6 +76,22 @@ class PostApi implements PostRepository {
               // Based on your API example, the presence of this object means it's liked
               isLikedValue = true;
             }
+          }
+
+          bool isSavedValue = false;
+          if (postJson.containsKey('isSaved') && postJson['isSaved'] != null) {
+            var isSavedField = postJson['isSaved'];
+            if (isSavedField is bool) {
+              // Direct boolean value
+              isSavedValue = isSavedField;
+            } else if (isSavedField is Map) {
+              // If isSaved is a Map/object with details, the post is saved
+              isSavedValue = true;
+            } else if (isSavedField is String) {
+              // If isSaved is a string, check if it's "true" or "false"
+              isSavedValue = isSavedField.toLowerCase() == 'true';
+            }
+            debugPrint('💾 Post ${postJson['postId']} isSaved: $isSavedValue');
           }
           // *** COMPANY vs USER POST HANDLING ***
           Map<String, dynamic>? companyData;
@@ -162,6 +184,7 @@ class PostApi implements PostRepository {
           reposts: postJson['repostCount'] ?? 0,
           isLiked: isLikedValue,
           isMine: postJson['isMine'] == true,
+          isSaved: isSavedValue,
           isRepost: postJson['isRepost'] == true,
           repostId: postJson['repostId'],
           repostDescription: postJson['repostDescription'],
@@ -170,6 +193,7 @@ class PostApi implements PostRepository {
               ? '${postJson['reposterFirstName']} ${postJson['reposterLastName'] ?? ''}'.trim()
               : null,
           reposterProfilePicture: postJson['reposterProfilePicture'],
+          taggedUsers: _extractTaggedUsers(postJson),
         );
         }).toList();
       } else {
@@ -276,6 +300,26 @@ class PostApi implements PostRepository {
       return false;
     }
   }
+
+  @override
+    Future<bool> unsavePostById(String postId) async {
+      try {
+        final String formattedEndpoint = Constants.savePostEndpoint.replaceFirst('%s', postId);
+        final response = await RequestService.delete(
+          formattedEndpoint,
+        );
+        
+        if (response.statusCode == 200) {
+          debugPrint('✅ Post unsaved successfully: $postId');
+          return true;
+        } else {
+          throw Exception('Failed to unsave post: ${response.statusCode} - ${response.body}');
+        }
+      } catch (e) {
+        debugPrint('❌ Error unsaving post: $e');
+        rethrow;
+      }
+    }
 
   @override
   Future<bool> likePost(String postId) async {
@@ -398,40 +442,46 @@ class PostApi implements PostRepository {
         rethrow;
       }
     }
-    @override
-      Future<bool> editPost(String postId, {required String content, List<Map<String, dynamic>>? taggedUsers}) async {
-        try {
-          final String formattedEndpoint = Constants.editPostEndpoint.replaceFirst('%s', postId);
+   @override
+    Future<bool> editPost(String postId, {required String content, List<TaggedUser>? taggedUsers}) async {
+      try {
+        final String formattedEndpoint = Constants.editPostEndpoint.replaceFirst('%s', postId);
+        
+        // Create request body
+        final Map<String, dynamic> body = {
+          "description": content,
+        };
+        
+        // Add tagged users if provided - USE THE SAME FORMAT AS COMMENTS API
+        if (taggedUsers != null && taggedUsers.isNotEmpty) {
+          debugPrint('👥 Including ${taggedUsers.length} tagged users in post edit');
           
-          // Create request body
-          final Map<String, dynamic> body = {
-            "description": content,
-          };
-          
-          // Add tagged users if provided
-          if (taggedUsers != null && taggedUsers.isNotEmpty) {
-            body["taggedUsers"] = taggedUsers;
-          }
-          
-          final response = await RequestService.put(
-            formattedEndpoint,
-            body: body,
+          // Convert tagged users to JSON string - same as comment API
+          final taggedUsersJson = jsonEncode(
+            taggedUsers.map((user) => user.toJson()).toList()
           );
-          
-          debugPrint('📥 Edit post response status: ${response.statusCode}');
-          debugPrint('📥 Edit post response body: ${response.body}');
-          
-          if (response.statusCode == 200) {
-            debugPrint('✅ Post edited successfully: $postId');
-            return true;
-          } else {
-            throw Exception('Failed to edit post: ${response.statusCode} - ${response.body}');
-          }
-        } catch (e) {
-          debugPrint('❌ Error editing post: $e');
-          rethrow;
+          body["taggedUsers"] = taggedUsersJson;
         }
+        
+        final response = await RequestService.put(
+          formattedEndpoint,
+          body: body,
+        );
+        
+        debugPrint('📥 Edit post response status: ${response.statusCode}');
+        debugPrint('📥 Edit post response body: ${response.body}');
+        
+        if (response.statusCode == 200) {
+          debugPrint('✅ Post edited successfully: $postId');
+          return true;
+        } else {
+          throw Exception('Failed to edit post: ${response.statusCode} - ${response.body}');
+        }
+      } catch (e) {
+        debugPrint('❌ Error editing post: $e');
+        rethrow;
       }
+    }
       // Implement the methods at the end of your class
       @override
       Future<bool> reportPost(String postId, String policy, {String? dontWantToSee}) async {
@@ -623,6 +673,25 @@ class PostApi implements PostRepository {
         };
       }
     }
+
+      List<TaggedUser> _extractTaggedUsers(Map<String, dynamic> postJson) {
+        List<TaggedUser> taggedUsers = [];
+        
+        if (postJson.containsKey('taggedUsers') && postJson['taggedUsers'] is List) {
+          final List<dynamic> taggedUsersJson = postJson['taggedUsers'];
+          debugPrint('📌 Found ${taggedUsersJson.length} tagged users in post: ${postJson['postId']}');
+          
+          try {
+            taggedUsers = taggedUsersJson
+                .map((user) => TaggedUser.fromJson(user))
+                .toList();
+          } catch (e) {
+            debugPrint('❌ Error parsing tagged users: $e');
+          }
+        }
+        
+        return taggedUsers;
+      }
 
 }
 
