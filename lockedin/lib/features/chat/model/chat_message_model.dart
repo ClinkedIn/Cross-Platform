@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 
 class ChatMessage {
@@ -30,6 +31,88 @@ class ChatMessage {
           ? List<String>.from(json['messageAttachment'])
           : [],
       attachmentType: _determineAttachmentType(json['messageAttachment']),
+    );
+  }
+
+  factory ChatMessage.fromFirestore(Map<String, dynamic> data, String id) {
+    // Extract user IDs
+    final senderId = data['senderId'] ?? '';
+    
+    // Convert Firestore timestamp to DateTime
+    final createdAt = data['timestamp'] is Timestamp 
+        ? (data['timestamp'] as Timestamp).toDate()
+        : DateTime.now();
+        
+    final updatedAt = data['lastUpdatedAt'] is Timestamp 
+        ? (data['lastUpdatedAt'] as Timestamp).toDate() 
+        : createdAt;
+        
+    // Create sender object from participants map if available
+    final Map<String, dynamic> participants = 
+        data['participants'] is Map ? Map<String, dynamic>.from(data['participants']) : {};
+    
+    final sender = MessageSender(
+      id: senderId,
+      firstName: participants[senderId]?['firstName'] ?? '',
+      lastName: participants[senderId]?['lastName'] ?? '',
+      profilePicture: participants[senderId]?['profilePicture'],
+    );
+    
+    // Handle attachments - check for mediaUrl first
+    List<String> attachments = [];
+    AttachmentType attachmentType = AttachmentType.none;
+    
+    // Check for mediaUrl and mediaType first (Firestore format)
+    if (data['mediaUrl'] != null && data['mediaUrl'].toString().isNotEmpty) {
+      attachments = [data['mediaUrl'].toString()];
+      
+      // Determine attachment type from mediaType
+      if (data['mediaType'] != null) {
+        final mediaType = data['mediaType'].toString().toLowerCase();
+        if (mediaType == 'image') {
+          attachmentType = AttachmentType.image;
+        } else if (mediaType == 'document') {
+          attachmentType = AttachmentType.document;
+        } else if (mediaType == 'video') {
+          attachmentType = AttachmentType.video;
+        } else if (mediaType == 'audio') {
+          attachmentType = AttachmentType.audio;
+        } else if (mediaType == 'gif') {
+          attachmentType = AttachmentType.gif;
+        }
+      }
+    }
+    // Fall back to the original attachments field
+    else if (data['attachments'] != null) {
+      if (data['attachments'] is List) {
+        attachments = List<String>.from(data['attachments']);
+      } else if (data['attachments'] is String && data['attachments'].isNotEmpty) {
+        attachments = [data['attachments']];
+      }
+      
+      // Get attachment type
+      final type = data['attachmentType'];
+      if (type == 'image') {
+        attachmentType = AttachmentType.image;
+      } else if (type == 'document') {
+        attachmentType = AttachmentType.document;
+      } else if (type == 'video') {
+        attachmentType = AttachmentType.video;
+      } else if (type == 'audio') {
+        attachmentType = AttachmentType.audio;
+      } else if (type == 'gif') {
+        attachmentType = AttachmentType.gif;
+      }
+    }
+    
+    return ChatMessage(
+      id: id,
+      sender: sender,
+      messageText: data['text'] ?? '',
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      messageAttachment: attachments,
+      attachmentType: attachmentType,
     );
   }
 

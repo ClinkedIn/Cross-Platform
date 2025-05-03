@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
-import 'package:lockedin/features/chat/viewModel/chat_viewmodel.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/core/utils/date_utils.dart' as custom_date_utils;
 
@@ -20,7 +19,6 @@ class ChatItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatViewModel = ref.read(firebaseChatProvider.notifier);
     
     return InkWell(
       onTap: () => onTap(context, chat),

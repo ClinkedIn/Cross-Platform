@@ -34,6 +34,9 @@ class ChatConversationState {
   final bool isSending;
   final ChatAttachment? selectedAttachment;
   final Map<String, ChatMessage> temporaryMessages; // Track temporary messages by ID
+  final bool isBlocked; // Add this field
+  final Map<String, bool> typingUsers; // Who is typing (userId -> isTyping)
+  final bool isCurrentUserTyping; // If the current user is typing
 
   ChatConversationState({
     this.messages = const [],
@@ -44,6 +47,9 @@ class ChatConversationState {
     this.isSending = false,
     this.selectedAttachment,
     this.temporaryMessages = const {},
+    this.isBlocked = false, // Default to not blocked
+    this.typingUsers = const {},
+    this.isCurrentUserTyping = false,
   });
 
   ChatConversationState copyWith({
@@ -55,6 +61,9 @@ class ChatConversationState {
     bool? isSending,
     ChatAttachment? selectedAttachment,
     Map<String, ChatMessage>? temporaryMessages,
+    bool? isBlocked,
+    Map<String, bool>? typingUsers,
+    bool? isCurrentUserTyping,
   }) {
     return ChatConversationState(
       messages: messages ?? this.messages,
@@ -65,6 +74,9 @@ class ChatConversationState {
       isSending: isSending ?? this.isSending,
       selectedAttachment: selectedAttachment,
       temporaryMessages: temporaryMessages ?? this.temporaryMessages,
+      isBlocked: isBlocked ?? this.isBlocked, // Include in copyWith
+      typingUsers: typingUsers ?? this.typingUsers,
+      isCurrentUserTyping: isCurrentUserTyping ?? this.isCurrentUserTyping,
     );
   }
 }
@@ -77,7 +89,9 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
   final Chat? chat;
   StreamSubscription<List<ChatMessage>>? _messagesSubscription;
   StreamSubscription<Map<String, List<ChatMessage>>>? _messagesByDateSubscription;
-  
+  StreamSubscription<Map<String, bool>>? _typingSubscription;
+  Timer? _typingTimer;
+
   String get currentUserId {
     final userId = _authService.currentUser?.id ?? '';
     return userId;
@@ -96,8 +110,14 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       // Fetch the receiver ID from the conversation document
       await _repository.fetchReceiverIdFromConversation(chatId);
       
+      // Check if the user is blocked
+      final isBlocked = await isUserBlocked();
+      
       // Start listening to Firebase messages
       _setupMessageStreams();
+      
+      // Update state with block status
+      state = state.copyWith(isBlocked: isBlocked);
     } catch (e) {
       debugPrint('Error in initialization: $e');
       state = state.copyWith(error: e.toString(), isLoading: false);
@@ -112,7 +132,6 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         final allMessages = [...messages];
         
         // Filter temporary messages that don't have server counterparts
-        final serverMessageIds = messages.map((m) => m.id).toSet();
         final tempMessages = state.temporaryMessages.values.where((tempMsg) {
           // Check if we have a server message with matching text and sender
           for (final serverMsg in messages) {
@@ -145,7 +164,6 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         final List<ChatMessage> allMessages = [...serverMessages];
         
         // Remove any temporary messages that have matching server messages
-        final serverMessageIds = serverMessages.map((m) => m.id).toSet();
         tempMsgs.removeWhere((tempId, _) {
           // Check if we have a server message with matching text and sender
           // This is a heuristic to match temp messages with their server counterparts
@@ -233,6 +251,17 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       onError: (error) {
         debugPrint('Error in messages by date stream: $error');
         // Don't update error state since the first stream will handle that
+      }
+    );
+
+    // Also listen for typing status
+    _typingSubscription = _repository.getTypingStatusStream(chatId).listen(
+      (typingStatus) {
+        // Update state with typing users
+        state = state.copyWith(typingUsers: typingStatus);
+      },
+      onError: (error) {
+        debugPrint('Error in typing status stream: $error');
       }
     );
   }
@@ -520,13 +549,13 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       final currentUserId = _authService.currentUser?.id;
       
       // If we have participants in the chat model, find the other user
-      if (chat!.participants != null && chat!.participants!.isNotEmpty) {
-        for (final participant in chat!.participants!) {
-          if (participant.id != currentUserId) {
+      
+      for (final participant in chat!.participants) {
+        if (participant.id != currentUserId) {
             return participant.id;
-          }
         }
       }
+      
     }
 
     return null;
@@ -569,6 +598,11 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         // If not blocked, block them
         result = await _repository.blockUser(receiverId);
       }
+      
+      // Update the state with the new block status if successful
+      if (result['success'] == true) {
+        state = state.copyWith(isBlocked: !isBlocked);
+      }
             
       return result;
     } catch (e) {
@@ -580,11 +614,41 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     }
   }
 
+  // Call this when user starts typing
+  void setUserTyping(bool isTyping) {
+    // No need to check state, just update Firebase directly
+    _repository.setTypingStatus(chatId, isTyping);
+    
+    // Update the local state
+    state = state.copyWith(isCurrentUserTyping: isTyping);
+    
+    // No need for timer here since the input field handles that
+  }
+  
+  // Check if any other user is typing
+  bool isOtherUserTyping() {
+    final currentUserId = _authService.currentUser?.id;
+    if (currentUserId == null) return false;
+    
+    // Check if any other user is typing
+    for (final entry in state.typingUsers.entries) {
+      if (entry.key != currentUserId && entry.value == true) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @override
   void dispose() {
     // Cancel any active subscriptions
     _messagesSubscription?.cancel();
     _messagesByDateSubscription?.cancel();
+    _typingSubscription?.cancel();
+    _typingTimer?.cancel();
+    
+    // Make sure typing status is set to false when leaving the chat
+    _repository.setTypingStatus(chatId, false);
     super.dispose();
   }
 }

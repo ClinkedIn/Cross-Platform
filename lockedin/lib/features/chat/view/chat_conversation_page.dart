@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
@@ -29,7 +30,10 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   @override
   void initState() {
     super.initState();
-    // Initial scroll to bottom will be handled when data is available
+    // Set the chat ID for the input field to use
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(chatIdProvider.notifier).state = widget.chat.id;
+    });
   }
 
   @override
@@ -75,7 +79,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
         title: Text(widget.chat.name),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(), // Navigate back to chat list
         ),
         actions: [
           // Block/unblock button
@@ -88,11 +92,12 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
             // Show the messages list - always use the same implementation
             child: _buildChatMessagesList(chatState),
           ),
+          // Add typing indicator before the input field
+          _buildTypingIndicator(),
           // Conditionally show chat input based on block status
-          FutureBuilder<bool>(
-            future: ref.read(chatConversationProvider(widget.chat.id).notifier).isUserBlocked(),
-            builder: (context, snapshot) {
-              final isBlocked = snapshot.data ?? false;
+          Builder(
+            builder: (context) {
+              final isBlocked = chatState.isBlocked;
               
               if (isBlocked) {
                 // Show a message instead of input field when blocked
@@ -157,11 +162,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
         if (snapshot.hasError) {
           return Center(child: Text('Error loading messages'));
         }
-
-        if (snapshot.connectionState == ConnectionState.waiting && chatState.messages.isEmpty) {
-          return Center(child: CircularProgressIndicator());
-        }
-
+        
         // Use data from stream if available, otherwise fall back to state
         final messages = snapshot.hasData ? snapshot.data! : chatState.messages;
         
@@ -243,29 +244,28 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     );
   }
   
-  Widget _buildMessageBubble(message) {
+  Widget _buildMessageBubble(ChatMessage message) {
     final currentUserId = ref.read(chatConversationProvider(widget.chat.id).notifier).currentUserId;
     
     // Normal mode: check if the message sender is the current user
-    // Handle empty current user ID case
     final isMe = currentUserId.isNotEmpty && message.sender.id == currentUserId;
     
     // Default to empty string for messageText if null
-    final messageText = message.messageText ?? '';
+    final messageText = message.messageText;
     
-    // Handle attachments safely
+    // Extract first attachment URL
     final String? attachmentUrl = message.messageAttachment.isNotEmpty 
         ? message.messageAttachment.first 
         : null;
-    
+
     return ChatBubble(
       message: messageText,
       isMe: isMe,
       time: DateFormat('hh:mm a').format(message.createdAt),
       senderImageUrl: isMe ? null : message.sender.profilePicture,
-      isRead: true, // Always considered read in the conversation
-      attachmentUrl: attachmentUrl,
-      attachmentType: message.attachmentType,
+      isRead: true,
+      attachmentUrl: attachmentUrl,  // Use the extracted URL
+      attachmentType: message.attachmentType, 
     );
   }
 
@@ -347,5 +347,73 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
         _scrollToBottom();
       });
     }
+  }
+
+  // Add this method to build the typing indicator
+  Widget _buildTypingIndicator() {
+    ref.watch(chatConversationProvider(widget.chat.id));
+    final chatNotifier = ref.read(chatConversationProvider(widget.chat.id).notifier);
+    
+    // Check if someone other than the current user is typing
+    final isTyping = chatNotifier.isOtherUserTyping();
+    
+    if (!isTyping) return SizedBox.shrink();
+    
+    return Container(
+      padding: EdgeInsets.only(left: 16, bottom: 8),
+      child: Row(
+        children: [
+          // Animated typing indicator
+          _buildTypingAnimation(),
+          SizedBox(width: 8),
+          Text(
+            'Typing...',
+            style: TextStyle(
+              fontStyle: FontStyle.italic,
+              color: Colors.grey[600],
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildTypingAnimation() {
+    return SizedBox(
+      width: 40,
+      child: Row(
+        children: [
+          _buildDot(300),
+          _buildDot(600),
+          _buildDot(900),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildDot(int milliseconds) {
+    return Expanded(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: Duration(milliseconds: milliseconds),
+        builder: (context, value, child) {
+          return Opacity(
+            opacity: (value < 0.5) ? value * 2 : (1 - value) * 2,
+            child: Container(
+              height: 6,
+              width: 6,
+              margin: EdgeInsets.symmetric(horizontal: 1),
+              decoration: BoxDecoration(
+                color: Colors.grey,
+                shape: BoxShape.circle,
+              ),
+            ),
+          );
+        },
+        // Make animation repeat
+        onEnd: () => setState(() {}),
+      ),
+    );
   }
 }

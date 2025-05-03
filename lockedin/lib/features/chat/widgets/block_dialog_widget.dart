@@ -37,6 +37,8 @@ class BlockDialogWidget extends ConsumerWidget {
             // Call the toggle block method
             viewModel.toggleBlockUser().then((result) {
               if (result['success'] == true) {
+                // Trigger a rebuild of the UI
+              
                 // Show success message
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
