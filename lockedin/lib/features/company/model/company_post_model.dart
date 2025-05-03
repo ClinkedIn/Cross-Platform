@@ -6,6 +6,8 @@ class CompanyPost {
   final int commentCount;
   final int repostCount;
   final Map<String, dynamic> impressionCounts;
+  final String companyName;
+  final String companyLogoUrl;
 
   CompanyPost({
     required this.id,
@@ -15,12 +17,13 @@ class CompanyPost {
     required this.commentCount,
     required this.repostCount,
     required this.impressionCounts,
+    required this.companyName,
+    required this.companyLogoUrl,
   });
-
   factory CompanyPost.fromJson(Map<String, dynamic> json) {
     return CompanyPost(
       id: json['postId'],
-      description: json['postDescription'] ?? '',
+      description: json['description'] ?? '',
       attachments: List<String>.from(json['attachments'] ?? []),
       createdAt: DateTime.parse(json['createdAt']),
       commentCount: json['commentCount'] ?? 0,
@@ -28,6 +31,11 @@ class CompanyPost {
       impressionCounts: Map<String, dynamic>.from(
         json['impressionCounts'] ?? {},
       ),
+      companyName: (json['companyId']?['name'] as String?) ?? 'Unknown Company',
+      companyLogoUrl:
+          json['companyId'] != null && json['companyId']['logo'] is String
+              ? json['companyId']['logo']
+              : '',
     );
   }
 }
