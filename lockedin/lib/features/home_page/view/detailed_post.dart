@@ -148,10 +148,8 @@ class PostDetailView extends ConsumerWidget {
                       postDetailState.commentFocusNode.requestFocus();
                     },
                     onShare: () async {
-                      print("Shared post: ${commentsState.post!.id}");
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Opening share options...')),
-                      );
+                 // Navigate to create repost view
+                       context.push('/create-repost', extra: commentsState.post);
                     },
                     onRepost: () async {
                       try {

@@ -47,6 +47,8 @@ import 'package:lockedin/features/home_page/view/post_likes_view.dart';
 import 'package:lockedin/features/home_page/view/saved_posts_view.dart';
 import 'package:lockedin/features/jobs/view/application_status.dart';
 import 'package:lockedin/features/payment/view/subescription_view.dart';
+import 'package:lockedin/features/home_page/view/repost_view.dart';
+import 'package:lockedin/features/home_page/view/create_repost_view.dart';
 
 // Use this to control drawer state
 final scaffoldKeyProvider = Provider((ref) => GlobalKey<ScaffoldState>());
@@ -218,6 +220,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return ViewOtherProfilePage(userId: userId);
         },
       ),
+
+      GoRoute(
+        path: '/post-reposts/:postId',
+        name: 'post-reposts',
+        builder: (context, state) {
+          final postId = state.pathParameters['postId']!;
+          return RepostPage(postId: postId);
+        }
+        ),
+      
+
       GoRoute(
         path: '/admin-dashboard',
         name: 'admin-dashboard',
@@ -229,6 +242,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final post = state.extra as PostModel;
           return EditPostPage(post: post);
+        },
+      ),
+
+      GoRoute(
+        path: '/create-repost',
+        name: 'create-repost',
+        builder: (context, state) {
+          final post = state.extra as PostModel;
+          return CreateRepostView(post: post);
         },
       ),
 

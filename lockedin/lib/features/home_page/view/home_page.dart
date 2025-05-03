@@ -21,25 +21,30 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final homeState = ref.watch(homeViewModelProvider);
+    Widget build(BuildContext context) {
+      final homeState = ref.watch(homeViewModelProvider);
 
-    return Scaffold(
-      body:
-          homeState.isLoading
-              ? Center(
+      return Scaffold(
+        body: homeState.isLoading && homeState.posts.isEmpty
+            ? Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
               )
-              : homeState.error != null
-              ? _buildErrorView(context, homeState.error!, ref)
-              : RefreshIndicator(
-                onRefresh: () async {
-                  await ref.read(homeViewModelProvider.notifier).refreshFeed();
-                },
-                child: PostList(posts: homeState.posts),
-              ),
-    );
-  }
+            : homeState.error != null && homeState.posts.isEmpty
+                ? _buildErrorView(context, homeState.error!, ref)
+                : // This part in your HomePage's build method stays the same
+                  RefreshIndicator(
+                    onRefresh: () => ref.read(homeViewModelProvider.notifier).refreshFeed(),
+                    child: PostList(
+                      posts: homeState.posts,
+                      isLoadingMore: homeState.isLoadingMore,
+                      hasMorePages: homeState.hasNextPage,
+                      onLoadMore: () {
+                        ref.read(homeViewModelProvider.notifier).loadMorePosts();
+                      },
+                    ),
+                  )
+      );
+    }
 
   Widget _buildErrorView(BuildContext context, String error, WidgetRef ref) {
     final theme = Theme.of(context);
