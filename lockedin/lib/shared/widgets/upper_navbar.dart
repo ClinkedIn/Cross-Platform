@@ -222,10 +222,7 @@ class _UpperNavbarState extends ConsumerState<UpperNavbar> {
           ),
           onPressed: () {
             ref.read(navigationProvider.notifier).state = '/chats';
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ChatListScreen()),
-            );
+            context.push("/chat-list"); // Navigate to the chat list page
           },
         ),
       ],

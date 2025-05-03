@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/profile/model/user_model.dart';
 import 'package:lockedin/features/profile/repository/blocked_repository.dart';
+import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:lockedin/features/profile/viewmodel/other_profile_view_model.dart';
 
 // Import widgets
@@ -41,6 +43,7 @@ class _ViewOtherProfilePageState extends ConsumerState<ViewOtherProfilePage> {
     final result = await ref
         .read(profileStateProvider.notifier)
         .loadUserProfile(widget.userId);
+
     setState(() {
       canView = result;
     });
@@ -62,10 +65,41 @@ class _ViewOtherProfilePageState extends ConsumerState<ViewOtherProfilePage> {
 
     final profileState = ref.watch(profileStateProvider);
     final user = profileState.user;
-    final canSendConnectionRequest = profileState.canSendConnectionRequest;
+    final userState = ref.watch(userProvider);
+    var connected = false;
+    var pending = false;
+    var sentConnectionRequest = false;
+    userState.when(
+      data: (user) {
+        user.sentConnectionRequests.forEach((element) {
+          if (element == widget.userId) {
+            pending = true;
+          }
+        });
+        user.receivedConnectionRequests.forEach((element) {
+          if (element == widget.userId) {
+            sentConnectionRequest = true;
+          }
+        });
+        user.connectionList.forEach((element) {
+          if (element == widget.userId) {
+            connected = true;
+          }
+        });
+      },
+      loading: () {},
+      error: (error, stack) {
+        context.pop();
+      },
+    );
+    final connectionStatus = {
+      'connected': connected,
+      'pending': pending,
+      'sentConnectionRequest': sentConnectionRequest,
+    };
 
     return Scaffold(
-      body: _buildProfile(context, user, theme, canSendConnectionRequest),
+      body: _buildProfile(context, user, theme, connectionStatus),
     );
   }
 
@@ -119,7 +153,7 @@ class _ViewOtherProfilePageState extends ConsumerState<ViewOtherProfilePage> {
     BuildContext context,
     UserModel user,
     ThemeData theme,
-    bool canSendConnectionRequest,
+    Map<String, bool> connectionStatus,
   ) {
     return CustomScrollView(
       slivers: [
@@ -161,7 +195,7 @@ class _ViewOtherProfilePageState extends ConsumerState<ViewOtherProfilePage> {
                   children: [
                     ProfileHeader(
                       user: user,
-                      canconnect: canSendConnectionRequest,
+                      connectionStatus: connectionStatus,
                     ),
                     AboutSection(user: user),
                     ExperienceSection(experiences: user.workExperience),

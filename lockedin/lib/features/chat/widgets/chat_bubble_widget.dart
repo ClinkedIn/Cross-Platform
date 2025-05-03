@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/colors.dart';
@@ -64,13 +66,14 @@ class ChatBubble extends ConsumerWidget {
                 if (attachmentType != AttachmentType.none && attachmentUrl != null)
                   _buildAttachmentWidget(context),
                   
-                Text(
-                  message,
-                  style: TextStyle(
-                    color: isMe ? Colors.white : (isDarkMode ? Colors.white : Colors.black87),
-                    fontSize: 16,
+                if (message.isNotEmpty)
+                  Text(
+                    message,
+                    style: TextStyle(
+                      color: isMe ? Colors.white : (isDarkMode ? Colors.white : Colors.black87),
+                      fontSize: 16,
+                    ),
                   ),
-                ),
                 const SizedBox(height: 4),
                 Text(
                   time,
@@ -96,32 +99,83 @@ class ChatBubble extends ConsumerWidget {
   }
   
   Widget _buildAttachmentWidget(BuildContext context) {
+    
     switch (attachmentType) {
       case AttachmentType.image:
+        if (attachmentUrl == null || attachmentUrl!.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        
+        // Clean the URL from brackets if they exist
+        String cleanUrl = attachmentUrl!;
+        if (cleanUrl.startsWith('[') && cleanUrl.endsWith(']')) {
+          cleanUrl = cleanUrl.substring(1, cleanUrl.length - 1);
+        }
+        
+        // Validate URL before passing to Image.network
+        bool isValidUrl = false;
+        try {
+          final uri = Uri.parse(cleanUrl);
+          isValidUrl = uri.hasScheme && uri.scheme.startsWith(RegExp(r'[a-zA-Z]'));
+        } catch (e) {
+          debugPrint('Invalid URL format: $e');
+        }
+        
+        if (!isValidUrl) {
+          // Show placeholder for invalid URLs
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                height: 150,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.image_not_supported, size: 40),
+                    SizedBox(height: 8),
+                    Text('Invalid image URL format', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          );
+        }
+        
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                attachmentUrl!,
+              child: Container(
                 width: double.infinity,
                 height: 150,
-                fit: BoxFit.cover,
-                errorBuilder: (ctx, error, _) => Container(
-                  width: double.infinity,
-                  height: 150,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.image_not_supported, size: 50),
+                child: Image.network(
+                  cleanUrl,  // Use the cleaned URL here
+                  fit: BoxFit.cover,
+                  errorBuilder: (ctx, error, _) {
+                    debugPrint('Error loading image: $error');
+                    return Container(
+                      width: double.infinity,
+                      height: 150,
+                      color: Colors.grey[300],
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.image_not_supported, size: 40),
+                          const SizedBox(height: 8),
+                          Text('Failed to load image: ${error.toString().substring(0, min(30, error.toString().length))}...', 
+                               style: const TextStyle(fontSize: 12))
+                        ],
+                      ),
+                    );
+                  },
                 ),
-                loadingBuilder: (ctx, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    width: double.infinity,
-                    height: 150,
-                    color: Colors.grey[300],
-                    child: const Center(child: CircularProgressIndicator()),
-                  );
-                },
               ),
             ),
             const SizedBox(height: 8),
@@ -129,6 +183,7 @@ class ChatBubble extends ConsumerWidget {
         );
         
       case AttachmentType.document:
+        // Document handler remains the same
         return Column(
           children: [
             Container(
@@ -158,29 +213,7 @@ class ChatBubble extends ConsumerWidget {
             const SizedBox(height: 8),
           ],
         );
-        
-      case AttachmentType.gif:
-        return Column(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                attachmentUrl!,
-                width: double.infinity,
-                height: 150,
-                fit: BoxFit.cover,
-                errorBuilder: (ctx, error, _) => Container(
-                  width: double.infinity,
-                  height: 150,
-                  color: Colors.grey[300],
-                  child: const Center(child: Text("GIF")),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        );
-        
+       
       default:
         return const SizedBox.shrink();
     }
