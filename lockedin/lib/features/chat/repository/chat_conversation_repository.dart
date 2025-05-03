@@ -351,6 +351,11 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService();
 });
 
+final firebaseChatServicesProvider = Provider<FirebaseChatServices>((ref) {
+  final authService = ref.read(authServiceProvider);
+  return FirebaseChatServices(authService);
+});
+
 final chatConversationRepositoryProvider = Provider<ChatConversationRepository>((ref) {
   final authService = ref.read(authServiceProvider);
   final firebaseService = ref.read(firebaseChatServicesProvider);

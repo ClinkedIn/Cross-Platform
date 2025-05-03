@@ -103,6 +103,38 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
+
+  // Expose the messages stream directly for StreamBuilder
+  Stream<List<ChatMessage>> getMessagesStream() {
+    return _repository.getMessagesStream(chatId).map((messages) {
+      // Add any temporary messages to the stream result
+      if (state.temporaryMessages.isNotEmpty) {
+        final allMessages = [...messages];
+        
+        // Filter temporary messages that don't have server counterparts
+        final serverMessageIds = messages.map((m) => m.id).toSet();
+        final tempMessages = state.temporaryMessages.values.where((tempMsg) {
+          // Check if we have a server message with matching text and sender
+          for (final serverMsg in messages) {
+            if (tempMsg.messageText == serverMsg.messageText &&
+                tempMsg.sender.id == serverMsg.sender.id) {
+              return false;
+            }
+          }
+          return true;
+        });
+        
+        // Add filtered temporary messages
+        allMessages.addAll(tempMessages);
+        
+        // Sort messages by creation time
+        allMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        
+        return allMessages;
+      }
+      return messages;
+    });
+  }
   
   void _setupMessageStreams() {
     // Listen for all messages in a flat list
@@ -210,8 +242,7 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     if (messageText.isEmpty) return;
     
     try {
-      // Update state to indicate sending in progress, but KEEP existing messages
-      // Don't set isSending to true immediately to avoid unnecessary UI flicker
+      // Create a temporary message with a unique ID
       final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
       final temporaryMessage = ChatMessage(
         id: tempId,
@@ -224,55 +255,39 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         messageText: messageText,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        messageAttachment: const [], // Initialize as empty list
+        messageAttachment: const [],
         attachmentType: AttachmentType.none,
       );
       
-      // Add the temporary message to the state FIRST before setting isSending
+      // Add the temporary message to the state before sending
       _addTemporaryMessage(tempId, temporaryMessage);
       
-      // Only after adding the message to UI, update sending state
+      // Update sending state after message appears in UI
       state = state.copyWith(isSending: true, error: null);
       
-      // Determine chat type from the chat object if available
+      // Determine chat type
       String chatType = chat?.chatType ?? 'direct';
-      
-      // Get receiver ID for direct messages
       String? receiverId = getReceiverUserId();
       
-      try {
-        // Send the message to the server using the repository
-        final result = await _repository.sendMessage(
-          chatId: chatId,
-          messageText: messageText,
-          chatType: chatType,
-          receiverId: receiverId,
-        );
-        
-        // Check if the message was sent successfully
-        if (result['success'] != true) {
-          throw Exception(result['error'] ?? 'Failed to send message');
-        }
-        
-        // Message sent successfully, but don't set isSending to false immediately
-        // We'll let the Firebase stream update trigger that
-        debugPrint('Message sent successfully');
-        
-      } catch (e) {
-        // Set detailed error state with the specific API error - KEEP messages
-        debugPrint('Error sending message: ${e.toString()}');
-        state = state.copyWith(
-          error: 'Failed to send message: ${e.toString()}',
-          isSending: false, // Only reset on error
-        );
-        
-        // Rethrow to allow the UI to show a toast/snackbar
-        rethrow;
+      // Send the message to the server
+      final result = await _repository.sendMessage(
+        chatId: chatId,
+        messageText: messageText,
+        chatType: chatType,
+        receiverId: receiverId,
+      );
+      
+      // Check result
+      if (result['success'] != true) {
+        throw Exception(result['error'] ?? 'Failed to send message');
       }
+      
     } catch (e) {
-      // Handle errors - but keep the temporary message in UI
       debugPrint('Error sending message: ${e.toString()}');
-      state = state.copyWith(isSending: false); // Only reset on error
+      state = state.copyWith(
+        error: 'Failed to send message: ${e.toString()}',
+        isSending: false,
+      );
       rethrow;
     }
   }
@@ -289,10 +304,29 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     // Sort by timestamp
     allMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
     
-    // Update the state with the new message
+    // Update state with the new message
     state = state.copyWith(
       messages: allMessages,
       temporaryMessages: updatedTempMessages,
+    );
+    
+    // Also update messagesByDate for UI consistency
+    final updatedMessagesByDate = Map<String, List<ChatMessage>>.from(state.messagesByDate);
+    final dateKey = DateFormat('MMMM d, yyyy').format(message.createdAt);
+    
+    if (updatedMessagesByDate.containsKey(dateKey)) {
+      final messagesForDate = List<ChatMessage>.from(updatedMessagesByDate[dateKey]!);
+      messagesForDate.add(message);
+      messagesForDate.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      updatedMessagesByDate[dateKey] = messagesForDate;
+    } else {
+      updatedMessagesByDate[dateKey] = [message];
+    }
+    
+    state = state.copyWith(
+      messages: allMessages,
+      temporaryMessages: updatedTempMessages,
+      messagesByDate: updatedMessagesByDate,
     );
   }
   
