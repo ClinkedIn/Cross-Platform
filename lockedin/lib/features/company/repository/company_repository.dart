@@ -216,8 +216,17 @@ class CompanyRepository {
     print("Status: ${streamedResponse.statusCode}");
     print("Response: $responseBody");
 
-    return streamedResponse.statusCode == 200 ||
-        streamedResponse.statusCode == 201;
+    // Check if the post was created successfully
+    if (streamedResponse.statusCode == 200 ||
+        streamedResponse.statusCode == 201) {
+      // Trigger a refresh of the posts list
+      await fetchCompanyPosts(
+        companyId,
+      ); // Ensure the posts are reloaded after creation
+      return true;
+    } else {
+      return false;
+    }
   }
 
   Future<List<CompanyPost>> fetchCompanyPosts(
@@ -249,6 +258,52 @@ class CompanyRepository {
       }
     } catch (e) {
       print('Error fetching posts: $e');
+      return [];
+    }
+  }
+
+  Future<List<Company>> fetchCompanies({
+    int page = 1,
+    int limit = 10,
+    String? sort,
+    String? fields,
+    String? industry,
+  }) async {
+    final queryParams = {
+      'page': '$page',
+      'limit': '$limit',
+      if (sort != null) 'sort': sort,
+      if (fields != null) 'fields': fields,
+      if (industry != null) 'industry': industry,
+    };
+
+    final uri = Uri.http('10.0.2.2:3000', _companiesEndpoint, queryParams);
+
+    print('Fetching companies from: $uri');
+
+    try {
+      final token = await TokenService.getCookie();
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'accept': 'application/json',
+          'Cookie': 'access_token=$token',
+        },
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as List;
+        return data.map((item) => Company.fromJson(item['company'])).toList();
+      } else {
+        print('Failed to fetch companies: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching companies: $e');
       return [];
     }
   }

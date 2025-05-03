@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -307,9 +308,23 @@ class SettingsPage extends ConsumerWidget {
                 icon: Icons.logout,
                 label: 'Sign Out',
                 onTap: () async {
-                  RequestService.post("/user/logout", body: {});
+                  final capturedContext = context; // capture context before async gap
+                  
+                  try{
+                    final fcmToken = await FirebaseMessaging.instance.getToken();
+                    await RequestService.post("/user/logout", body: {if (fcmToken != null) 'fcmToken': fcmToken,});
+                    print('✅ Logout request sent with FCM token: $fcmToken');
+                  } catch(e) {
+                    print('❌ Error during logout: $e');
+                  }
                   await TokenService.deleteCookie();
-                  context.go('/');
+
+                  // Delay one frame to ensure safety (avoids stale context usage)
+                  Future.microtask(() {
+                    if (capturedContext.mounted) {
+                      capturedContext.go('/');
+                    }
+                  });
                 },
               ),
               _SettingsTile(

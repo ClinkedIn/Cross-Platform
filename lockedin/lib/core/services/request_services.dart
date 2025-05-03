@@ -326,6 +326,7 @@ class RequestService {
   static Future<http.Response> login({
     required String email,
     required String password,
+    String? fcmToken,
   }) async {
     final String url = '$_baseUrl${Constants.loginEndpoint}';
     debugPrint('LOGIN Request: $url');
@@ -335,7 +336,7 @@ class RequestService {
       final response = await _client.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
+        body: jsonEncode({'email': email, 'password': password, if (fcmToken != null) 'fcmToken': fcmToken}),
       );
       debugPrint('LOGIN Response: ${response.body}');
       debugPrint('LOGIN Response Headers: ${response.headers}');
