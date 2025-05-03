@@ -41,7 +41,6 @@ class ChatConversationRepository {
       await _authService.fetchCurrentUser();
       
       // Get current user ID and receiver ID
-      final currentUserId = _authService.currentUser?.id;
       final actualReceiverId = receiverId ?? this.receiverId;
 
       // Create the request body with all string values
