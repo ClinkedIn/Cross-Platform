@@ -14,7 +14,7 @@ class Constants {
 
   static const String _emulatorUrl = "http://10.0.2.2:3000/api";
   static const String _physicalDeviceUrl =
-      "http://192.168.1.23:3000/api"; // Your actual IP address
+      "http://192.168.1.17:3000/api"; // Your actual IP address
 
 
   // We'll use this as the baseUrl getter until we know for sure

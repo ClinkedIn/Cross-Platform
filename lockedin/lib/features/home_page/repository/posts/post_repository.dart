@@ -2,7 +2,7 @@ import 'package:lockedin/features/home_page/model/post_model.dart';
 import 'package:lockedin/features/home_page/model/taggeduser_model.dart';
 
 abstract class PostRepository {
-  Future<List<PostModel>> fetchHomeFeed();
+  Future<Map<String, dynamic>> fetchHomeFeed({int page = 1, int limit = 10});
   Future<bool> savePostById(String postId); 
   Future<bool> unsavePostById(String postId);
   Future<bool> likePost(String postId);     

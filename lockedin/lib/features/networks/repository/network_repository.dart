@@ -1,8 +1,10 @@
 import 'dart:convert';
-import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:lockedin/features/networks/model/connection_model.dart';
 import 'package:lockedin/features/networks/model/suggestion_model.dart';
+import '../model/user_search_model.dart';
+import '../model/company_list_model.dart';
 import 'package:lockedin/core/services/request_services.dart';
 import '../model/request_list_model.dart';
 
@@ -119,19 +121,174 @@ class ConnectionListService {
     }
   }
 
-  Future<void> removeConnection(String connectionId) async {
+  // Future<ConnectionList> searchConnections(String query, {int page = 1}) async {
+  //   try {
+  //     final response = await RequestService.get(
+  //       "/user/search/search",
+  //       queryParams: {
+  //         'query': query,
+  //         'page': page.toString(),
+  //       },
+  //     );
+
+  //     print('Search connections status: ${response.statusCode}');
+  //     print('Search connections body: ${response.body}');
+  //     if (response.statusCode == 200) {
+  //       return connectionListFromJson(response.body);
+  //     } else {
+  //       throw Exception('Failed to search connections: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     throw Exception('Error searching connections: $e');
+  //   }
+  // }
+
+  Future<bool> removeConnection(String connectionId) async {
     try {
       final response = await RequestService.delete(
-        'user/connections/$connectionId',
+        '/user/connections/$connectionId',
       );
 
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
-      if (response.statusCode != 200) {
-        throw Exception('Failed to delete connection: ${response.statusCode}');
-      }
+
+      return response.statusCode == 200;
     } catch (e) {
-      throw Exception('Error removing connection: $e');
+      print('Error removing connection: $e');
+      return false;
     }
   }
 }
+
+class CompanyService {
+  // static const String baseUrl = 'localhost:3000';
+  final http.Client _httpClient;
+
+  CompanyService({http.Client? httpClient})
+    : _httpClient = httpClient ?? http.Client();
+
+  // Get companies from API with improved error handling
+  Future<CompanyList> getCompanies({int limit = 10}) async {
+    try {
+      final response = await RequestService.get('/companies');
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        // Handle empty response case
+        if (response.body.isEmpty) {
+          return CompanyList(companies: []);
+        }
+
+        try {
+          // Try to parse the JSON
+          final List<dynamic> jsonData = json.decode(response.body);
+          return CompanyList.fromJson(jsonData);
+        } catch (parseError) {
+          print('JSON parsing error: $parseError');
+          print('Response body that failed to parse: ${response.body}');
+          throw Exception('Error parsing company data: $parseError');
+        }
+      } else {
+        throw Exception('Failed to load companies: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching companies: $e');
+      throw Exception('Error fetching companies: $e');
+    }
+  }
+
+  // Follow a company with improved error handling
+  Future<bool> followCompany(String companyId) async {
+    try {
+      if (companyId.isEmpty) {
+        throw Exception('Company ID cannot be empty');
+      }
+
+      final body = {"companyId": companyId};
+      final response = await RequestService.post(
+        "/companies/$companyId/follow",
+        body: body,
+      );
+
+      print('Follow company response status: ${response.statusCode}');
+      print('Follow company response body: ${response.body}');
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error following company: $e');
+      throw Exception('Error following company: $e');
+    }
+  }
+
+  // Unfollow a company with improved error handling
+  Future<bool> unfollowCompany(String companyId) async {
+    try {
+      if (companyId.isEmpty) {
+        throw Exception('Company ID cannot be empty');
+      }
+
+      final response = await RequestService.delete(
+        '/companies/$companyId/follow',
+      );
+
+      print('Unfollow company response status: ${response.statusCode}');
+      print('Unfollow company response body: ${response.body}');
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error unfollowing company: $e');
+      return false;
+    }
+  }
+
+  // Helper method to safely parse JSON
+  dynamic _safeParseJson(String text) {
+    try {
+      return json.decode(text);
+    } catch (e) {
+      print('Error parsing JSON: $e');
+      print('JSON text that failed to parse: $text');
+      return null;
+    }
+  }
+}
+
+class UserSearchService {
+  static Future<List<User>> searchUsers(String query) async {
+    try {
+      // Use the existing RequestService to make the HTTP request
+      final response = await RequestService.get("/user/search/users?query=$query");
+      
+      // Parse the response body
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = json.decode(response.body);
+        List<User> users = (data['users'] as List)
+            .map((userData) => User.fromJson(userData))
+            .toList();
+        return users;
+      } else {
+        throw Exception('Failed to search users: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error searching users: $e');
+      throw Exception('Error searching users: $e');
+    }
+  }
+}
+
+// Provider for search query
+final searchQueryProvider = StateProvider<String>((ref) => '');
+
+// Provider for search results
+final searchResultsProvider = FutureProvider<List<User>>((ref) async {
+  final query = ref.watch(searchQueryProvider);
+  
+  if (query.isEmpty || query.length < 2) {
+    return [];
+  }
+  
+  // Call API with the search query using the UserSearchService
+  return await UserSearchService.searchUsers(query);
+});

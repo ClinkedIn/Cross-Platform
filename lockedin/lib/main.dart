@@ -6,15 +6,18 @@ import 'package:lockedin/routing.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:lockedin/firebase_options.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'package:lockedin/features/notifications/notifications_helper.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize the base URL before the app starts
   await Constants.initializeBaseUrl();
+
 
   // Initialize Firebase with options
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -24,6 +27,7 @@ void main() async {
 
   // Initialize push notification logic
   await _initializeFCM();
+
 
   runApp(
     ProviderScope(

@@ -1,23 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
-import 'package:lockedin/features/chat/viewModel/chat_viewmodel.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/core/utils/date_utils.dart' as custom_date_utils;
 
 
 class ChatItem extends ConsumerWidget {
   final Chat chat;
+  final Function(BuildContext, Chat) onTap;
+  final Function(BuildContext, Chat) onLongPress;
 
-  const ChatItem({Key? key, required this.chat}) : super(key: key);
+  const ChatItem({
+    Key? key, 
+    required this.chat,
+    required this.onTap,
+    required this.onLongPress,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatViewModel = ref.read(chatProvider.notifier);
     
     return InkWell(
-      onTap: () => chatViewModel.onChatItemTapped(context, chat),
-      onLongPress: () => chatViewModel.showChatOptionsMenu(context, chat),
+      onTap: () => onTap(context, chat),
+      onLongPress: () => onLongPress(context, chat),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
@@ -149,7 +154,7 @@ class ChatItem extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              chat.unreadCount.toString(),
+              "New",
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,

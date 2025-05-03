@@ -9,6 +9,8 @@ import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_pa
 import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/features/auth/view/main_page.dart';
 import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
+import 'package:lockedin/features/chat/model/chat_model.dart';
+import 'package:lockedin/features/chat/view/chat_conversation_page.dart';
 import 'package:lockedin/features/chat/view/chat_list_page.dart';
 import 'package:lockedin/features/company/view/visitor_company_profile.dart';
 import 'package:lockedin/features/home_page/view/home_page.dart';
@@ -48,6 +50,8 @@ import 'package:lockedin/features/home_page/view/post_likes_view.dart';
 import 'package:lockedin/features/home_page/view/saved_posts_view.dart';
 import 'package:lockedin/features/jobs/view/application_status.dart';
 import 'package:lockedin/features/payment/view/subescription_view.dart';
+import 'package:lockedin/features/home_page/view/repost_view.dart';
+import 'package:lockedin/features/home_page/view/create_repost_view.dart';
 
 // Use this to control drawer state
 final scaffoldKeyProvider = Provider((ref) => GlobalKey<ScaffoldState>());
@@ -219,6 +223,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return ViewOtherProfilePage(userId: userId);
         },
       ),
+
+      GoRoute(
+        path: '/post-reposts/:postId',
+        name: 'post-reposts',
+        builder: (context, state) {
+          final postId = state.pathParameters['postId']!;
+          return RepostPage(postId: postId);
+        }
+        ),
+      
+
       GoRoute(
         path: '/admin-dashboard',
         name: 'admin-dashboard',
@@ -230,6 +245,27 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final post = state.extra as PostModel;
           return EditPostPage(post: post);
+        },
+      ),
+      GoRoute(
+        path: '/chat-list',
+        name: 'chat-list',
+        builder: (context, state) => ChatListScreen(),
+      ),
+      GoRoute(
+        path: '/chat-conversation',
+        builder: (context, state) {
+          final chat = state.extra as Chat;
+          return ChatConversationScreen(chat: chat);
+        },
+      ),
+
+      GoRoute(
+        path: '/create-repost',
+        name: 'create-repost',
+        builder: (context, state) {
+          final post = state.extra as PostModel;
+          return CreateRepostView(post: post);
         },
       ),
 
