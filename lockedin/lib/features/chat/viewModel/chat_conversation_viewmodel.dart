@@ -33,6 +33,7 @@ class ChatConversationState {
   final bool isMarkedAsRead;
   final bool isSending;
   final ChatAttachment? selectedAttachment;
+  final Map<String, ChatMessage> temporaryMessages; // Track temporary messages by ID
 
   ChatConversationState({
     this.messages = const [],
@@ -42,6 +43,7 @@ class ChatConversationState {
     this.isMarkedAsRead = false,
     this.isSending = false,
     this.selectedAttachment,
+    this.temporaryMessages = const {},
   });
 
   ChatConversationState copyWith({
@@ -52,6 +54,7 @@ class ChatConversationState {
     bool? isMarkedAsRead,
     bool? isSending,
     ChatAttachment? selectedAttachment,
+    Map<String, ChatMessage>? temporaryMessages,
   }) {
     return ChatConversationState(
       messages: messages ?? this.messages,
@@ -61,6 +64,7 @@ class ChatConversationState {
       isMarkedAsRead: isMarkedAsRead ?? this.isMarkedAsRead,
       isSending: isSending ?? this.isSending,
       selectedAttachment: selectedAttachment,
+      temporaryMessages: temporaryMessages ?? this.temporaryMessages,
     );
   }
 }
@@ -103,11 +107,39 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
   void _setupMessageStreams() {
     // Listen for all messages in a flat list
     _messagesSubscription = _repository.getMessagesStream(chatId).listen(
-      (messages) {
+      (serverMessages) {
+        // Create a new list that includes both server messages and temporary messages
+        final Map<String, ChatMessage> tempMsgs = Map.from(state.temporaryMessages);
+        final List<ChatMessage> allMessages = [...serverMessages];
+        
+        // Remove any temporary messages that have matching server messages
+        final serverMessageIds = serverMessages.map((m) => m.id).toSet();
+        tempMsgs.removeWhere((tempId, _) {
+          // Check if we have a server message with matching text and sender
+          // This is a heuristic to match temp messages with their server counterparts
+          for (final serverMsg in serverMessages) {
+            if (tempId.startsWith('temp_') && 
+                tempMsgs[tempId]?.messageText == serverMsg.messageText &&
+                tempMsgs[tempId]?.sender.id == serverMsg.sender.id) {
+              return true;
+            }
+          }
+          return false;
+        });
+        
+        // Add any remaining temporary messages
+        allMessages.addAll(tempMsgs.values);
+        
+        // Sort messages by creation time
+        allMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        
+        // Update state with merged messages and set isSending to false
         state = state.copyWith(
-          messages: messages,
+          messages: allMessages,
+          temporaryMessages: tempMsgs,
           isLoading: false,
-          error: null
+          error: null,
+          isSending: false  // Always set to false when we receive messages
         );
       },
       onError: (error) {
@@ -119,14 +151,52 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       }
     );
     
-    // Listen for messages grouped by date
+    // Similar update for messages by date stream
     _messagesByDateSubscription = _repository.getMessagesByDateStream(chatId).listen(
       (messagesByDate) {
-        state = state.copyWith(
-          messagesByDate: messagesByDate,
-          isLoading: false,
-          error: null
-        );
+        // Don't completely replace the messages by date - incorporate temporary messages
+        if (state.temporaryMessages.isNotEmpty) {
+          final updatedMessagesByDate = Map<String, List<ChatMessage>>.from(messagesByDate);
+          
+          // Add temporary messages to their respective dates
+          for (final tempMessage in state.temporaryMessages.values) {
+            // Format the date to match the keys in messagesByDate
+            final dateKey = DateFormat('MMMM d, yyyy').format(tempMessage.createdAt);
+            
+            // Add the temporary message to the appropriate date group
+            if (updatedMessagesByDate.containsKey(dateKey)) {
+              final messagesForDate = List<ChatMessage>.from(updatedMessagesByDate[dateKey]!);
+              // Check if a similar message already exists to avoid duplicates
+              final exists = messagesForDate.any((msg) => 
+                msg.messageText == tempMessage.messageText && 
+                msg.sender.id == tempMessage.sender.id);
+                
+              if (!exists) {
+                messagesForDate.add(tempMessage);
+                // Sort by timestamp within the day
+                messagesForDate.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+                updatedMessagesByDate[dateKey] = messagesForDate;
+              }
+            } else {
+              // Create a new entry for this date
+              updatedMessagesByDate[dateKey] = [tempMessage];
+            }
+          }
+          
+          // Update state with merged messagesByDate
+          state = state.copyWith(
+            messagesByDate: updatedMessagesByDate,
+            isLoading: false,
+            error: null
+          );
+        } else {
+          // No temporary messages, just use server data
+          state = state.copyWith(
+            messagesByDate: messagesByDate,
+            isLoading: false,
+            error: null
+          );
+        }
       },
       onError: (error) {
         debugPrint('Error in messages by date stream: $error');
@@ -140,12 +210,11 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     if (messageText.isEmpty) return;
     
     try {
-      // Update state to indicate sending in progress
-      state = state.copyWith(isSending: true, error: null);
-      
-      // Create a temporary message to display immediately
+      // Update state to indicate sending in progress, but KEEP existing messages
+      // Don't set isSending to true immediately to avoid unnecessary UI flicker
+      final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
       final temporaryMessage = ChatMessage(
-        id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+        id: tempId,
         sender: MessageSender(
           id: currentUserId,
           firstName: _authService.currentUser?.firstName ?? 'You',
@@ -159,8 +228,11 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         attachmentType: AttachmentType.none,
       );
       
-      // Add the temporary message to the UI for immediate feedback
-      _addTemporaryMessage(temporaryMessage);
+      // Add the temporary message to the state FIRST before setting isSending
+      _addTemporaryMessage(tempId, temporaryMessage);
+      
+      // Only after adding the message to UI, update sending state
+      state = state.copyWith(isSending: true, error: null);
       
       // Determine chat type from the chat object if available
       String chatType = chat?.chatType ?? 'direct';
@@ -182,17 +254,16 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
           throw Exception(result['error'] ?? 'Failed to send message');
         }
         
-        // Message sent successfully
+        // Message sent successfully, but don't set isSending to false immediately
+        // We'll let the Firebase stream update trigger that
         debugPrint('Message sent successfully');
         
-        // Update state to indicate sending is complete
-        state = state.copyWith(isSending: false);
       } catch (e) {
-        // Set detailed error state with the specific API error
+        // Set detailed error state with the specific API error - KEEP messages
         debugPrint('Error sending message: ${e.toString()}');
         state = state.copyWith(
           error: 'Failed to send message: ${e.toString()}',
-          isSending: false,
+          isSending: false, // Only reset on error
         );
         
         // Rethrow to allow the UI to show a toast/snackbar
@@ -201,49 +272,31 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     } catch (e) {
       // Handle errors - but keep the temporary message in UI
       debugPrint('Error sending message: ${e.toString()}');
-      state = state.copyWith(isSending: false);
+      state = state.copyWith(isSending: false); // Only reset on error
       rethrow;
     }
   }
   
   /// Helper method to add a temporary message to the UI
-  void _addTemporaryMessage(ChatMessage message) {
-    // Update the flat list of messages
-    final updatedMessages = [...state.messages, message];
+  void _addTemporaryMessage(String tempId, ChatMessage message) {
+    // Create a new map with the temporary message
+    final updatedTempMessages = Map<String, ChatMessage>.from(state.temporaryMessages)
+      ..putIfAbsent(tempId, () => message);
     
-    // Update messages grouped by date if needed
-    final Map<String, List<ChatMessage>> updatedMessagesByDate = 
-        Map<String, List<ChatMessage>>.from(state.messagesByDate);
+    // Create a new list including the temporary message
+    final allMessages = [...state.messages, message];
     
-    // Format today's date
-    final today = DateFormat('MMMM d, yyyy').format(DateTime.now());
+    // Sort by timestamp
+    allMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
     
-    // Add to today's group if it exists
-    String todayKey = 'Today';
-    
-    // Check if we have a date formatted key for today in the existing keys
-    for (final key in updatedMessagesByDate.keys) {
-      if (key == today) {
-        todayKey = key;
-        break;
-      }
-    }
-    
-    if (updatedMessagesByDate.containsKey(todayKey)) {
-      updatedMessagesByDate[todayKey] = [...updatedMessagesByDate[todayKey]!, message];
-    } else {
-      // Create today's group if it doesn't exist
-      updatedMessagesByDate[todayKey] = [message];
-    }
-    
-    // Update the state with the temporary message
+    // Update the state with the new message
     state = state.copyWith(
-      messages: updatedMessages,
-      messagesByDate: updatedMessagesByDate,
+      messages: allMessages,
+      temporaryMessages: updatedTempMessages,
     );
   }
   
-  /// Sends a message with an attachment to the current chat - Keep REST API implementation
+  /// Sends a message with an attachment to the current chat
   Future<Map<String, dynamic>> sendMessageWithAttachment({
     String? messageText,
   }) async {
@@ -261,8 +314,9 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       state = state.copyWith(isSending: true, error: null);
       
       // Create a temporary message to display immediately
+      final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
       final temporaryMessage = ChatMessage(
-        id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+        id: tempId,
         sender: MessageSender(
           id: currentUserId,
           firstName: _authService.currentUser?.firstName ?? 'You',
@@ -277,7 +331,7 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       );
       
       // Add the temporary message to the UI for immediate feedback
-      _addTemporaryMessage(temporaryMessage);
+      _addTemporaryMessage(tempId, temporaryMessage);
       
       // Determine chat type from the chat object if available
       String chatType = chat?.chatType ?? 'direct';
@@ -335,7 +389,7 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     }
   }
   
-  // Keep helper methods for selecting media and documents
+  // Rest of your methods remain the same
   Future<ChatAttachment?> selectImageFromCamera() async {
     try {
       final picker = ImagePicker();
@@ -444,7 +498,6 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     return null;
   }
   
-  // Keep block/unblock functionality with REST API
   Future<bool> isUserBlocked() async {
     final receiverId = getReceiverUserId();
     if (receiverId == null || receiverId.isEmpty) {
@@ -462,15 +515,16 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
 
   Future<Map<String, dynamic>> toggleBlockUser() async {
     final receiverId = getReceiverUserId();
-    if (receiverId == null) {
+    if (receiverId == null || receiverId.isEmpty) {
+      debugPrint('Cannot block/unblock user: No receiver ID found');
       return {
         'success': false,
-        'error': 'Cannot find the user to block/unblock',
+        'error': 'Cannot identify user to block/unblock',
       };
     }
-
+    
     try {
-      // Check if the user is already blocked
+      // Check current block status
       final isBlocked = await isUserBlocked();
       
       Map<String, dynamic> result;

@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
-import 'package:lockedin/features/chat/model/attachment_model.dart';
 import 'package:lockedin/features/chat/widgets/attachment_widget.dart';
 import 'package:lockedin/features/chat/widgets/chat_bubble_widget.dart';
 import 'package:lockedin/features/chat/widgets/chat_input_field_widget.dart';
+import 'package:lockedin/features/chat/widgets/block_button_widget.dart';
+import 'package:lockedin/features/chat/widgets/image_preview_widget.dart';
+import 'package:lockedin/features/chat/widgets/document_preview_widget.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 
@@ -22,6 +24,7 @@ class ChatConversationScreen extends ConsumerStatefulWidget {
 class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  int _previousMessageCount = 0;
 
   @override
   void initState() {
@@ -43,10 +46,23 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 1000),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     }
+  }
+  
+  // Check if message list changed and we need to scroll
+  void _checkForAutoScroll(ChatConversationState chatState) {
+    // Only run this after the first build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final int currentCount = chatState.messages.length;
+      // If we have new messages, scroll to bottom
+      if (currentCount > _previousMessageCount) {
+        _scrollToBottom();
+      }
+      _previousMessageCount = currentCount;
+    });
   }
 
   void sendMessage() {
@@ -58,8 +74,10 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     // Call the viewModel's sendMessage method
     ref.read(chatConversationProvider(widget.chat.id).notifier)
       .sendMessage(messageText).then((_) {
-      // Success! Message sent
-      _scrollToBottom();
+      // Wait a short delay to ensure the UI updates first before scrolling
+      Future.delayed(Duration(milliseconds: 300), () {
+        _scrollToBottom();
+      });
     });
   }
 
@@ -68,8 +86,8 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
     final chatState = ref.watch(chatConversationProvider(widget.chat.id));
 
-    // Scroll to bottom when new messages arrive
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    // Check for auto-scroll when chatState changes
+    _checkForAutoScroll(chatState);
 
     return Scaffold(
       appBar: AppBar(
@@ -80,15 +98,14 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
         ),
         actions: [
           // Block/unblock button
-          _buildBlockButton(),
+          BlockButtonWidget(chatId: widget.chat.id),
         ],
       ),
       body: Column(
         children: [      
           Expanded(
-            child: chatState.messages.isEmpty && chatState.messagesByDate.isEmpty
-                    ? _buildEmptyChatView()
-                    : _buildChatMessagesList(chatState),
+            // Show the messages list - always use the same implementation
+            child: _buildChatMessagesList(chatState),
           ),
           // Conditionally show chat input based on block status
           FutureBuilder<bool>(
@@ -151,32 +168,23 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       ),
     );
   }
-
-  Widget _buildEmptyChatView() {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.7,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
-                SizedBox(height: 16),
-                Text('No messages yet', style: TextStyle(color: Colors.grey)),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
   
   Widget _buildChatMessagesList(ChatConversationState chatState) {
-    // Check if we should display by date
+    // Never show an empty list if we're sending a message
+    if (chatState.isSending && chatState.messages.isNotEmpty) {
+      // Always use the flat list when sending to ensure temporary messages are shown
+      return ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.all(16),
+        itemCount: chatState.messages.length,
+        itemBuilder: (context, index) {
+          return _buildMessageBubble(chatState.messages[index]);
+        },
+      );
+    }
+    
+    // Otherwise, continue with your grouped-by-date view if available
     if (chatState.messagesByDate.isNotEmpty) {
-      // Get date keys sorted from newest to oldest
       final dateKeys = chatState.messagesByDate.keys.toList();
       
       return ListView.builder(
@@ -261,7 +269,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     try {
       final viewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
       await viewModel.selectImageFromCamera();
-      _showSelectedImagePreview();
+      _showSelectedAttachmentPreview();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error accessing camera: ${e.toString()}')),
@@ -273,7 +281,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     try {
       final viewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
       await viewModel.selectImageFromGallery();
-      _showSelectedImagePreview();
+      _showSelectedAttachmentPreview();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error accessing gallery: ${e.toString()}')),
@@ -287,7 +295,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       final attachment = await viewModel.selectDocument();
       
       if (attachment != null) {
-        _showSelectedDocumentPreview(attachment);
+        _showSelectedAttachmentPreview();
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -296,123 +304,33 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     }
   }
 
-  void _showSelectedImagePreview() {
+  void _showSelectedAttachmentPreview() {
     final chatState = ref.read(chatConversationProvider(widget.chat.id));
     final attachment = chatState.selectedAttachment;
     
     if (attachment == null) return;
     
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            SizedBox(height: 16),
-            Expanded(
-              child: Image.file(
-                attachment.file,
-                fit: BoxFit.contain,
-              ),
-            ),
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                TextButton.icon(
-                  onPressed: () {
-                    ref.read(chatConversationProvider(widget.chat.id).notifier)
-                      .clearSelectedAttachment();
-                    Navigator.pop(context);
-                  },
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  label: Text('Cancel', style: TextStyle(color: Colors.red)),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _sendAttachment();
-                  },
-                  icon: Icon(Icons.send),
-                  label: Text('Send'),
-                ),
-              ],
-            ),
-          ],
+    if (attachment.type == AttachmentType.image) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) => ImagePreviewWidget(
+          attachment: attachment,
+          chatId: widget.chat.id,
+          onSend: _sendAttachment,
         ),
-      ),
-    );
-  }
-
-  void _showSelectedDocumentPreview(ChatAttachment attachment) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.4,
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            SizedBox(height: 16),
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.description, size: 40, color: Colors.blue),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          attachment.fileName ?? 'Document',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          '${(attachment.file.lengthSync() / 1024).toStringAsFixed(2)} KB',
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                TextButton.icon(
-                  onPressed: () {
-                    ref.read(chatConversationProvider(widget.chat.id).notifier)
-                      .clearSelectedAttachment();
-                    Navigator.pop(context);
-                  },
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  label: Text('Cancel', style: TextStyle(color: Colors.red)),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _sendAttachment();
-                  },
-                  icon: Icon(Icons.send),
-                  label: Text('Send'),
-                ),
-              ],
-            ),
-          ],
+      );
+    } else if (attachment.type == AttachmentType.document) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) => DocumentPreviewWidget(
+          attachment: attachment,
+          chatId: widget.chat.id,
+          onSend: _sendAttachment,
         ),
-      ),
-    );
+      );
+    }
   }
   
   Future<void> _sendAttachment() async {
@@ -420,107 +338,10 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     final result = await chatViewModel.sendMessageWithAttachment();
       
     if (result['success'] == true) {
-      // Scroll to bottom to show the sent message
-      _scrollToBottom();
+      // Wait a short delay to ensure the UI updates first before scrolling
+      Future.delayed(Duration(milliseconds: 300), () {
+        _scrollToBottom();
+      });
     }
-  }
-  
-  // Keep block user functionality
-  Widget _buildBlockButton() {
-    final receiverId = ref.read(chatConversationProvider(widget.chat.id).notifier).getReceiverUserId();
-    
-    // Only show block button if we have a valid receiver ID
-    if (receiverId == null || receiverId.isEmpty) {
-      return SizedBox.shrink(); // Hide button if no receiver ID
-    }
-    
-    return FutureBuilder<bool>(
-      future: ref.read(chatConversationProvider(widget.chat.id).notifier).isUserBlocked(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return IconButton(
-            icon: Icon(Icons.more_vert),
-            onPressed: null,
-          );
-        }
-        
-        final isBlocked = snapshot.data ?? false;
-        
-        return IconButton(
-          icon: Icon(
-            isBlocked ? Icons.block : Icons.block_outlined,
-            color: isBlocked ? Colors.red : null,
-          ),
-          onPressed: () {
-            _showBlockUserDialog(context, isBlocked);
-          },
-        );
-      },
-    );
-  }
-
-  void _showBlockUserDialog(BuildContext context, bool isBlocked) {
-    // Store a reference to the scaffold messenger before showing dialog
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(isBlocked ? 'Unblock User' : 'Block User'),
-        content: Text(
-          isBlocked
-              ? 'Would you like to unblock this user? They will be able to send you messages again.'
-              : 'Would you like to block this user? You won\'t receive any more messages from them.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              // Close the dialog first
-              Navigator.pop(dialogContext);
-              
-              // Get the view model
-              final viewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
-              
-              // Call the toggle block method
-              viewModel.toggleBlockUser().then((result) {
-                if (result['success'] == true) {
-                  // Use the stored scaffold messenger reference
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        isBlocked
-                            ? 'User has been unblocked'
-                            : 'User has been blocked',
-                      ),
-                      backgroundColor: isBlocked ? Colors.green : Colors.red,
-                    ),
-                  );
-                  // Force a rebuild to update the block button
-                  setState(() {});
-                } else {
-                  // Use the stored scaffold messenger reference
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text('Error: ${result['error']}'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              });
-            },
-            child: Text(
-              isBlocked ? 'Unblock' : 'Block',
-              style: TextStyle(
-                color: isBlocked ? Colors.green : Colors.red,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
