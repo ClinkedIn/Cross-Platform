@@ -122,7 +122,6 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         final allMessages = [...messages];
         
         // Filter temporary messages that don't have server counterparts
-        final serverMessageIds = messages.map((m) => m.id).toSet();
         final tempMessages = state.temporaryMessages.values.where((tempMsg) {
           // Check if we have a server message with matching text and sender
           for (final serverMsg in messages) {
@@ -155,7 +154,6 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         final List<ChatMessage> allMessages = [...serverMessages];
         
         // Remove any temporary messages that have matching server messages
-        final serverMessageIds = serverMessages.map((m) => m.id).toSet();
         tempMsgs.removeWhere((tempId, _) {
           // Check if we have a server message with matching text and sender
           // This is a heuristic to match temp messages with their server counterparts
@@ -530,13 +528,13 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       final currentUserId = _authService.currentUser?.id;
       
       // If we have participants in the chat model, find the other user
-      if (chat!.participants != null && chat!.participants!.isNotEmpty) {
-        for (final participant in chat!.participants!) {
-          if (participant.id != currentUserId) {
+      
+      for (final participant in chat!.participants) {
+        if (participant.id != currentUserId) {
             return participant.id;
-          }
         }
       }
+      
     }
 
     return null;

@@ -38,8 +38,7 @@ class BlockDialogWidget extends ConsumerWidget {
             viewModel.toggleBlockUser().then((result) {
               if (result['success'] == true) {
                 // Trigger a rebuild of the UI
-                ref.refresh(chatConversationProvider(chatId));
-                
+              
                 // Show success message
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

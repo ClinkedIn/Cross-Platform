@@ -157,9 +157,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
           return Center(child: Text('Error loading messages'));
         }
 
-        if (snapshot.connectionState == ConnectionState.waiting && chatState.messages.isEmpty) {
-          return Center(child: CircularProgressIndicator());
-        }
 
         // Use data from stream if available, otherwise fall back to state
         final messages = snapshot.hasData ? snapshot.data! : chatState.messages;
