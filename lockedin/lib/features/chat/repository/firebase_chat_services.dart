@@ -230,6 +230,7 @@ class FirebaseChatServices {
       debugPrint('Error updating typing status: $e');
     }
   }
+
 }
 
 final firebaseChatServicesProvider = Provider<FirebaseChatServices>((ref) {
