@@ -7,11 +7,6 @@ import 'package:lockedin/features/profile/state/profile_components_state.dart';
 class FirebaseChatRepository {
   // Firebase instance
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
-  
-  
-  
-
 
   /// Stream of all chats for the current user
   Stream<List<Chat>> getChatStream(userId) async* {
@@ -32,7 +27,24 @@ class FirebaseChatRepository {
         .map((snapshot) {
           print("Chat snapshots received for user $userId: ${snapshot.docs.length}"); // Log number of chats
           return snapshot.docs.map((doc) {
-            return _mapDocToChat(doc, userId);
+            try {
+              return _mapDocToChat(doc, userId);
+            } catch (e) {
+              print("Error mapping doc to chat: $e");
+              // Return a placeholder chat for documents that can't be mapped
+              return Chat(
+                id: doc.id,
+                name: "Loading...",
+                chatType: 'direct',
+                unreadCount: 0,
+                imageUrl: '',
+                lastMessage: '',
+                isSentByUser: false,
+                timestamp: DateTime.now(),
+                senderName: '',
+                participants: [],
+              );
+            }
           }).toList();
         });
   }
@@ -48,7 +60,7 @@ class FirebaseChatRepository {
     List<ChatParticipant> participants = [];
     if (data['participants'] != null) {
       // First check if we have detailed participant data
-      if (data['profilePicture'] != null) {
+      if (data['profilePicture'] != null && data['profilePicture'] is Map) {
         // Extract participant IDs from the participants array
         final List<dynamic> participantIds = data['participants'] as List;
         
@@ -56,8 +68,11 @@ class FirebaseChatRepository {
         participants = participantIds.map((id) {
           // Get the fullName for this participant
           String fullName = '';
-          if (data['fullName'] != null && data['fullName'][id] != null) {
-            fullName = data['fullName'][id] as String;
+          if (data['fullName'] != null && data['fullName'] is Map && (data['fullName'] as Map).containsKey(id)) {
+            final nameValue = (data['fullName'] as Map)[id];
+            if (nameValue is String) {
+              fullName = nameValue;
+            }
           }
           
           // Split the full name into first and last name
@@ -67,8 +82,11 @@ class FirebaseChatRepository {
           
           // Get the profile picture for this participant
           String profilePicture = '';
-          if (data['profilePicture'] != null && data['profilePicture'][id] != null) {
-            profilePicture = data['profilePicture'][id] as String;
+          if (data['profilePicture'] != null && data['profilePicture'] is Map && (data['profilePicture'] as Map).containsKey(id)) {
+            final picValue = (data['profilePicture'] as Map)[id];
+            if (picValue is String) {
+              profilePicture = picValue;
+            }
           }
           
           return ChatParticipant(
@@ -78,16 +96,25 @@ class FirebaseChatRepository {
             profilePicture: profilePicture,
           );
         }).toList();
-      } else if (data['participantsData'] != null) {
+      } else if (data['participantsData'] != null && data['participantsData'] is List) {
         // Use the participantsData field if it exists
         participants = (data['participantsData'] as List)
-            .map((p) => ChatParticipant.fromJson(p))
+            .map((p) => ChatParticipant.fromJson(p as Map<String, dynamic>))
             .toList();
+      } else {
+        // Basic participants list with just IDs
+        final List<dynamic> participantIds = data['participants'] as List;
+        participants = participantIds.map((id) => ChatParticipant(
+          id: id.toString(),
+          firstName: '',
+          lastName: '',
+          profilePicture: '',
+        )).toList();
       }
     }
     
     // Calculate chat name and image for direct chats
-    String chatName = data['name'] ?? '';
+    String chatName = data['name'] != null && data['name'] is String ? data['name'] : '';
     String imageUrl = '';
     
     // For direct chats, show the other user's name and profile picture
@@ -108,15 +135,20 @@ class FirebaseChatRepository {
       imageUrl = otherParticipant.profilePicture ?? '';
       
       // If we still don't have a name, try to use fullName directly
-      if (chatName.isEmpty && data['fullName'] != null) {
-        final Map<String, dynamic> fullNames = data['fullName'] as Map<String, dynamic>;
+      if (chatName.isEmpty && data['fullName'] != null && data['fullName'] is Map) {
+        final fullNames = data['fullName'] as Map;
         if (fullNames.containsKey(otherParticipant.id)) {
-          chatName = fullNames[otherParticipant.id] as String;
+          final nameValue = fullNames[otherParticipant.id];
+          if (nameValue is String) {
+            chatName = nameValue;
+          }
         }
       }
     } else {
       // For group chats, use the provided image
-      imageUrl = data['imageUrl'] ?? '';
+      if (data['imageUrl'] != null && data['imageUrl'] is String) {
+        imageUrl = data['imageUrl'];
+      }
     }
     
     // Handle last message data
@@ -125,17 +157,23 @@ class FirebaseChatRepository {
     DateTime timestamp = DateTime.now();
     String senderName = '';
     
-    if (data['lastMessage'] != null) {
+    if (data['lastMessage'] != null && data['lastMessage'] is Map) {
       final lastMessageData = data['lastMessage'] as Map<String, dynamic>;
-      lastMessage = lastMessageData['text'] ?? '';
-      isSentByUser = lastMessageData['senderId'] == currentUserId;
       
-      if (lastMessageData['timestamp'] != null) {
+      if (lastMessageData['text'] != null && lastMessageData['text'] is String) {
+        lastMessage = lastMessageData['text'];
+      }
+      
+      if (lastMessageData['senderId'] != null) {
+        isSentByUser = lastMessageData['senderId'] == currentUserId;
+      }
+      
+      if (lastMessageData['timestamp'] != null && lastMessageData['timestamp'] is Timestamp) {
         timestamp = (lastMessageData['timestamp'] as Timestamp).toDate();
       }
       
       // Get sender name
-      if (lastMessageData['senderName'] != null) {
+      if (lastMessageData['senderName'] != null && lastMessageData['senderName'] is String) {
         senderName = lastMessageData['senderName'];
       } else if (lastMessageData['senderId'] != null) {
         final senderId = lastMessageData['senderId'];
@@ -145,14 +183,15 @@ class FirebaseChatRepository {
           (p) => p.id == senderId,
           orElse: () {
             // If not found in participants, check fullName map
-            if (data['fullName'] != null && data['fullName'][senderId] != null) {
+            if (data['fullName'] != null && data['fullName'] is Map && (data['fullName'] as Map).containsKey(senderId)) {
+              final nameValue = (data['fullName'] as Map)[senderId];
               return ChatParticipant(
-                id: senderId,
-                firstName: data['fullName'][senderId],
+                id: senderId.toString(),
+                firstName: nameValue is String ? nameValue : '',
                 lastName: '',
               );
             }
-            return ChatParticipant(id: senderId, firstName: '', lastName: '');
+            return ChatParticipant(id: senderId.toString(), firstName: '', lastName: '');
           },
         );
         senderName = '${sender.firstName} ${sender.lastName}'.trim();
@@ -163,11 +202,16 @@ class FirebaseChatRepository {
     int unreadCount = 0;
     if (data['forceUnread'] == true) {
       unreadCount = 1;
-    } else {
-      List<dynamic> unreadBy = data['unreadBy'] ?? [];
+    } else if (data['unreadBy'] != null && data['unreadBy'] is List) {
+      List<dynamic> unreadBy = data['unreadBy'];
       if (unreadBy.contains(currentUserId)) {
         unreadCount = 1; 
       }
+    }
+    
+    // Use safe default if chat name is still empty
+    if (chatName.isEmpty) {
+      chatName = "Conversation";
     }
     
     return Chat(
@@ -235,9 +279,11 @@ class FirebaseChatRepository {
           continue;
         }
         
-        final List<dynamic> unreadBy = data['unreadBy'] ?? [];
-        if (unreadBy.contains(userId)) {
-          totalUnread++;
+        if (data['unreadBy'] != null && data['unreadBy'] is List) {
+          final List<dynamic> unreadBy = data['unreadBy'];
+          if (unreadBy.contains(userId)) {
+            totalUnread++;
+          }
         }
       }
       
@@ -262,16 +308,23 @@ class FirebaseChatRepository {
         .map((snapshot) {
           int totalUnread = 0;
           for (var doc in snapshot.docs) {
-            final data = doc.data();
-            
-            if (data['forceUnread'] == true) {
-              totalUnread++;
-              continue;
-            }
-            
-            final List<dynamic> unreadBy = data['unreadBy'] ?? [];
-            if (unreadBy.contains(userId)) {
-              totalUnread++;
+            try {
+              final data = doc.data();
+              
+              if (data['forceUnread'] == true) {
+                totalUnread++;
+                continue;
+              }
+              
+              if (data['unreadBy'] != null && data['unreadBy'] is List) {
+                final List<dynamic> unreadBy = data['unreadBy'];
+                if (unreadBy.contains(userId)) {
+                  totalUnread++;
+                }
+              }
+            } catch (e) {
+              print("Error processing doc for unread count: $e");
+              // Skip this doc and continue
             }
           }
           return totalUnread;

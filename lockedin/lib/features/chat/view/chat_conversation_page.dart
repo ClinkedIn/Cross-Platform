@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
+import 'package:lockedin/features/chat/model/chat_message_model.dart';
 import 'package:lockedin/features/chat/widgets/attachment_widget.dart';
 import 'package:lockedin/features/chat/widgets/chat_bubble_widget.dart';
 import 'package:lockedin/features/chat/widgets/chat_input_field_widget.dart';
@@ -24,15 +25,11 @@ class ChatConversationScreen extends ConsumerStatefulWidget {
 class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  int _previousMessageCount = 0;
 
   @override
   void initState() {
     super.initState();
-    // Scroll to bottom when opening the conversation
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
-    });
+    // Initial scroll to bottom will be handled when data is available
   }
 
   @override
@@ -46,25 +43,12 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+        duration: Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     }
   }
   
-  // Check if message list changed and we need to scroll
-  void _checkForAutoScroll(ChatConversationState chatState) {
-    // Only run this after the first build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final int currentCount = chatState.messages.length;
-      // If we have new messages, scroll to bottom
-      if (currentCount > _previousMessageCount) {
-        _scrollToBottom();
-      }
-      _previousMessageCount = currentCount;
-    });
-  }
-
   void sendMessage() {
     // Ensure the message is not empty before sending
     if (_messageController.text.trim().isEmpty) return;
@@ -73,11 +57,11 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     _messageController.clear();
     // Call the viewModel's sendMessage method
     ref.read(chatConversationProvider(widget.chat.id).notifier)
-      .sendMessage(messageText).then((_) {
-      // Wait a short delay to ensure the UI updates first before scrolling
-      Future.delayed(Duration(milliseconds: 300), () {
-        _scrollToBottom();
-      });
+      .sendMessage(messageText);
+    
+    // Add a slight delay to ensure the message is added to the list before scrolling
+    Future.delayed(Duration(milliseconds: 100), () {
+      _scrollToBottom();
     });
   }
 
@@ -85,9 +69,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
     final chatState = ref.watch(chatConversationProvider(widget.chat.id));
-
-    // Check for auto-scroll when chatState changes
-    _checkForAutoScroll(chatState);
 
     return Scaffold(
       appBar: AppBar(
@@ -170,49 +151,72 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   }
   
   Widget _buildChatMessagesList(ChatConversationState chatState) {
-    // Never show an empty list if we're sending a message
-    if (chatState.isSending && chatState.messages.isNotEmpty) {
-      // Always use the flat list when sending to ensure temporary messages are shown
-      return ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(16),
-        itemCount: chatState.messages.length,
-        itemBuilder: (context, index) {
-          return _buildMessageBubble(chatState.messages[index]);
-        },
-      );
-    }
-    
-    // Otherwise, continue with your grouped-by-date view if available
-    if (chatState.messagesByDate.isNotEmpty) {
-      final dateKeys = chatState.messagesByDate.keys.toList();
-      
-      return ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(16),
-        itemCount: dateKeys.length,
-        itemBuilder: (context, index) {
-          final dateKey = dateKeys[index];
-          final messagesForDate = chatState.messagesByDate[dateKey]!;
-          
-          return Column(
-            children: [
-              _buildDateDivider(dateKey),
-              ...messagesForDate.map((message) => _buildMessageBubble(message)),
-            ],
-          );
-        },
-      );
-    }
-    
-    // Fall back to flat list if messagesByDate is empty
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(16),
-      itemCount: chatState.messages.length,
-      itemBuilder: (context, index) {
-        return _buildMessageBubble(chatState.messages[index]);
-      },
+    return StreamBuilder<List<ChatMessage>>(
+      stream: ref.read(chatConversationProvider(widget.chat.id).notifier).getMessagesStream(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error loading messages'));
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting && chatState.messages.isEmpty) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        // Use data from stream if available, otherwise fall back to state
+        final messages = snapshot.hasData ? snapshot.data! : chatState.messages;
+        
+        // If messages are empty, show a placeholder
+        if (messages.isEmpty) {
+          return Center(child: Text('No messages yet'));
+        }
+
+        // Create a map of messages by date if needed
+        Map<String, List<ChatMessage>> messagesByDate = {};
+        if (chatState.messagesByDate.isNotEmpty) {
+          messagesByDate = chatState.messagesByDate;
+        } else {
+          // Group messages by date
+          for (var message in messages) {
+            final dateKey = DateFormat('MMMM d, yyyy').format(message.createdAt);
+            if (!messagesByDate.containsKey(dateKey)) {
+              messagesByDate[dateKey] = [];
+            }
+            messagesByDate[dateKey]!.add(message);
+          }
+        }
+
+        // Sort date keys chronologically so newest messages are at the bottom
+        final dateKeys = messagesByDate.keys.toList()..sort((a, b) {
+          final dateA = DateFormat('MMMM d, yyyy').parse(a);
+          final dateB = DateFormat('MMMM d, yyyy').parse(b);
+          return dateA.compareTo(dateB);
+        });
+
+        // Always scroll to bottom when data changes
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+          }
+        });
+        
+        return ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.all(16),
+          // Keep standard chronological order
+          itemCount: dateKeys.length,
+          itemBuilder: (context, index) {
+            final dateKey = dateKeys[index];
+            final messagesForDate = messagesByDate[dateKey]!;
+            
+            return Column(
+              children: [
+                _buildDateDivider(dateKey),
+                ...messagesForDate.map((message) => _buildMessageBubble(message)),
+              ],
+            );
+          },
+        );
+      }
     );
   }
   
@@ -336,10 +340,10 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   Future<void> _sendAttachment() async {
     final chatViewModel = ref.read(chatConversationProvider(widget.chat.id).notifier);
     final result = await chatViewModel.sendMessageWithAttachment();
-      
+    
     if (result['success'] == true) {
-      // Wait a short delay to ensure the UI updates first before scrolling
-      Future.delayed(Duration(milliseconds: 300), () {
+      // Add a slight delay to ensure the message is added before scrolling
+      Future.delayed(Duration(milliseconds: 100), () {
         _scrollToBottom();
       });
     }

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:lockedin/core/services/auth_service.dart';
 import 'package:lockedin/features/chat/model/chat_message_model.dart';
 import 'package:lockedin/features/chat/repository/chat_conversation_repository.dart';
@@ -22,10 +23,10 @@ class FirebaseChatServices {
         .collection('conversations')
         .doc(chatId)
         .collection('messages')
-        .orderBy('timestamp', descending: false) // Using 'timestamp' from your Firestore
+        .orderBy('timestamp', descending: false)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
+          final messages = snapshot.docs.map((doc) {
             final data = doc.data();
             
             // Extract user IDs to determine receiver
@@ -44,7 +45,7 @@ class FirebaseChatServices {
                 
             final updatedAt = data['lastUpdatedAt'] is Timestamp 
                 ? (data['lastUpdatedAt'] as Timestamp).toDate() 
-                : createdAt; // Fall back to createdAt if no update time
+                : createdAt;
                 
             // Create sender object from participants map if available
             final Map<String, dynamic> participants = 
@@ -91,6 +92,10 @@ class FirebaseChatServices {
               attachmentType: attachmentType,
             );
           }).toList();
+          
+          // Sort messages by timestamp before returning
+          messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+          return messages;
         });
   }
 
@@ -130,14 +135,29 @@ class FirebaseChatServices {
   }
 
   // Method for organizing messages by date
-  Stream<Map<String, List<ChatMessage>>> getMessagesByDateStream(String chatId) {
-    // Implementation depends on how you want to organize messages by date
-    // This is a placeholder that you'll need to implement based on your needs
-    return Stream.value({});
-  }
+ Stream<Map<String, List<ChatMessage>>> getMessagesByDateStream(String chatId) {
+  return getMessagesStream(chatId).map((messages) {
+    final Map<String, List<ChatMessage>> messagesByDate = {};
+    
+    for (final message in messages) {
+      final dateKey = DateFormat('MMMM d, yyyy').format(message.createdAt);
+      if (!messagesByDate.containsKey(dateKey)) {
+        messagesByDate[dateKey] = [];
+      }
+      messagesByDate[dateKey]!.add(message);
+    }
+    
+    // Sort messages within each date
+    messagesByDate.forEach((date, msgs) {
+      msgs.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    });
+    
+    return messagesByDate;
+  });
 }
 
 final firebaseChatServicesProvider = Provider<FirebaseChatServices>((ref) {
   final authService = ref.read(authServiceProvider);
   return FirebaseChatServices(authService);
 });
+}
