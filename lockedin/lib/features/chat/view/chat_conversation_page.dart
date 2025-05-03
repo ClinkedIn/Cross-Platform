@@ -29,7 +29,10 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   @override
   void initState() {
     super.initState();
-    // Initial scroll to bottom will be handled when data is available
+    // Set the chat ID for the input field to use
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(chatIdProvider.notifier).state = widget.chat.id;
+    });
   }
 
   @override
@@ -88,6 +91,8 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
             // Show the messages list - always use the same implementation
             child: _buildChatMessagesList(chatState),
           ),
+          // Add typing indicator before the input field
+          _buildTypingIndicator(),
           // Conditionally show chat input based on block status
           Builder(
             builder: (context) {
@@ -341,5 +346,73 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
         _scrollToBottom();
       });
     }
+  }
+
+  // Add this method to build the typing indicator
+  Widget _buildTypingIndicator() {
+    final chatState = ref.watch(chatConversationProvider(widget.chat.id));
+    final chatNotifier = ref.read(chatConversationProvider(widget.chat.id).notifier);
+    
+    // Check if someone other than the current user is typing
+    final isTyping = chatNotifier.isOtherUserTyping();
+    
+    if (!isTyping) return SizedBox.shrink();
+    
+    return Container(
+      padding: EdgeInsets.only(left: 16, bottom: 8),
+      child: Row(
+        children: [
+          // Animated typing indicator
+          _buildTypingAnimation(),
+          SizedBox(width: 8),
+          Text(
+            'Typing...',
+            style: TextStyle(
+              fontStyle: FontStyle.italic,
+              color: Colors.grey[600],
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildTypingAnimation() {
+    return SizedBox(
+      width: 40,
+      child: Row(
+        children: [
+          _buildDot(300),
+          _buildDot(600),
+          _buildDot(900),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildDot(int milliseconds) {
+    return Expanded(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: Duration(milliseconds: milliseconds),
+        builder: (context, value, child) {
+          return Opacity(
+            opacity: (value < 0.5) ? value * 2 : (1 - value) * 2,
+            child: Container(
+              height: 6,
+              width: 6,
+              margin: EdgeInsets.symmetric(horizontal: 1),
+              decoration: BoxDecoration(
+                color: Colors.grey,
+                shape: BoxShape.circle,
+              ),
+            ),
+          );
+        },
+        // Make animation repeat
+        onEnd: () => setState(() {}),
+      ),
+    );
   }
 }

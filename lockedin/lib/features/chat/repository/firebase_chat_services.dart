@@ -199,8 +199,40 @@ class FirebaseChatServices {
   });
 }
 
+  // Add these methods to handle typing status
+  Stream<Map<String, bool>> getTypingStatusStream(String chatId) {
+    return _firestore
+      .collection('conversations')
+      .doc(chatId)
+      .collection('typing_indicators')
+      .snapshots()
+      .map((snapshot) {
+        final typingStatus = <String, bool>{};
+        for (final doc in snapshot.docs) {
+          typingStatus[doc.id] = doc.data()['isTyping'] ?? false;
+        }
+        return typingStatus;
+      });
+  }
+
+  Future<void> setTypingStatus(String chatId, bool isTyping) async {
+    final userId = _authService.currentUser?.id;
+    if (userId == null) return;
+    
+    try {
+      await _firestore
+        .collection('conversations')
+        .doc(chatId)
+        .collection('typing_indicators')
+        .doc(userId)
+        .set({'isTyping': isTyping}, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('Error updating typing status: $e');
+    }
+  }
+}
+
 final firebaseChatServicesProvider = Provider<FirebaseChatServices>((ref) {
   final authService = ref.read(authServiceProvider);
   return FirebaseChatServices(authService);
 });
-}

@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 import 'package:lockedin/features/chat/model/chat_message_model.dart';
 import 'package:lockedin/features/chat/repository/firebase_chat_services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatConversationRepository {
   final AuthService _authService;
@@ -344,6 +345,39 @@ class ChatConversationRepository {
   // Delegate to Firebase service
   getMessagesByDateStream(String chatId) {
     return _firebaseService.getMessagesByDateStream(chatId);
+  }
+
+  Future<void> setTypingStatus(String chatId, bool isTyping) async {
+    try {
+      final userId = _authService.currentUser?.id;
+      if (userId == null) return;
+      
+      // Update typing status in Firestore
+      await FirebaseFirestore.instance
+        .collection('conversations')
+        .doc(chatId)
+        .collection('typing_indicators')
+        .doc(userId)
+        .set({'isTyping': isTyping}, SetOptions(merge: true));
+        
+    } catch (e) {
+      debugPrint('Error updating typing status: $e');
+    }
+  }
+
+  Stream<Map<String, bool>> getTypingStatusStream(String chatId) {
+    return FirebaseFirestore.instance
+      .collection('conversations')
+      .doc(chatId)
+      .collection('typing_indicators')
+      .snapshots()
+      .map((snapshot) {
+        final typingStatus = <String, bool>{};
+        for (final doc in snapshot.docs) {
+          typingStatus[doc.id] = doc.data()['isTyping'] ?? false;
+        }
+        return typingStatus;
+      });
   }
 }
 
