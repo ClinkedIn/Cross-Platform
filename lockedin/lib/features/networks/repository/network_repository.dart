@@ -1,8 +1,9 @@
 import 'dart:convert';
-import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:lockedin/features/networks/model/connection_model.dart';
 import 'package:lockedin/features/networks/model/suggestion_model.dart';
+import '../model/user_search_model.dart';
 import '../model/company_list_model.dart';
 import 'package:lockedin/core/services/request_services.dart';
 import '../model/request_list_model.dart';
@@ -253,3 +254,41 @@ class CompanyService {
     }
   }
 }
+
+class UserSearchService {
+  static Future<List<User>> searchUsers(String query) async {
+    try {
+      // Use the existing RequestService to make the HTTP request
+      final response = await RequestService.get("/user/search/users?query=$query");
+      
+      // Parse the response body
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = json.decode(response.body);
+        List<User> users = (data['users'] as List)
+            .map((userData) => User.fromJson(userData))
+            .toList();
+        return users;
+      } else {
+        throw Exception('Failed to search users: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error searching users: $e');
+      throw Exception('Error searching users: $e');
+    }
+  }
+}
+
+// Provider for search query
+final searchQueryProvider = StateProvider<String>((ref) => '');
+
+// Provider for search results
+final searchResultsProvider = FutureProvider<List<User>>((ref) async {
+  final query = ref.watch(searchQueryProvider);
+  
+  if (query.isEmpty || query.length < 2) {
+    return [];
+  }
+  
+  // Call API with the search query using the UserSearchService
+  return await UserSearchService.searchUsers(query);
+});
