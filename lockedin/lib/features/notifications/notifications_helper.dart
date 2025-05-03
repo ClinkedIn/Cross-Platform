@@ -4,8 +4,17 @@ class NotificationHelper {
   static final _notifications = FlutterLocalNotificationsPlugin();
 
   static Future<void> init() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettings = InitializationSettings(android: androidSettings);
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
+    const DarwinInitializationSettings iosSettings =
+        DarwinInitializationSettings();
+
+    const InitializationSettings initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+
     await _notifications.initialize(initSettings);
   }
 
@@ -16,7 +25,12 @@ class NotificationHelper {
       importance: Importance.high,
       priority: Priority.high,
     );
-    const notificationDetails = NotificationDetails(android: androidDetails);
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
+
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
     await _notifications.show(0, title, body, notificationDetails);
   }
 }
