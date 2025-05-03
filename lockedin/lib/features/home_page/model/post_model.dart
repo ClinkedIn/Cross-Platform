@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'taggeduser_model.dart';
 
 class PostModel {
   final String id;
@@ -10,19 +11,20 @@ class PostModel {
   final String time;
   final bool isEdited;
   final String? imageUrl;
-  final String? mediaType; // Add this field to explicitly set media type
+  final String? mediaType;
   final int likes;
   final int comments;
   final int reposts;
   final bool isLiked;
   final bool isMine;
+  final bool? isSaved;
   final bool isRepost;
   final String? repostId;
   final String? repostDescription;
   final String? reposterId;
   final String? reposterName;
   final String? reposterProfilePicture;
-  
+  final List<TaggedUser> taggedUsers; // Added field for tagged users
 
   PostModel({
     required this.id,
@@ -38,17 +40,19 @@ class PostModel {
     required this.likes,
     required this.comments,
     required this.reposts,
-    this.isLiked = false, // Default to not liked
+    this.isLiked = false,
     required this.isMine,
+    this.isSaved,
     this.isRepost = false,
     this.repostId,
     this.repostDescription,
     this.reposterId,
     this.reposterName,
     this.reposterProfilePicture,
+    this.taggedUsers = const [], // Default to empty list
   });
 
-  // Add copyWith method for easy modification of post properties
+  // Update copyWith to include taggedUsers
   PostModel copyWith({
     String? id,
     String? userId,
@@ -65,12 +69,14 @@ class PostModel {
     int? reposts,
     bool? isLiked,
     bool? isMine,
+    bool? isSaved,
     bool? isRepost,
     String? repostId,
     String? repostDescription,
     String? reposterId,
     String? reposterName,
     String? reposterProfilePicture,
+    List<TaggedUser>? taggedUsers,
   }) {
     return PostModel(
       id: id ?? this.id,
@@ -82,21 +88,24 @@ class PostModel {
       time: time ?? this.time,
       isEdited: isEdited ?? this.isEdited,
       imageUrl: imageUrl ?? this.imageUrl,
+      mediaType: mediaType ?? this.mediaType,
       likes: likes ?? this.likes,
       comments: comments ?? this.comments,
       reposts: reposts ?? this.reposts,
-      isLiked: isLiked ?? false,
+      isLiked: isLiked ?? this.isLiked,
       isMine: isMine ?? this.isMine,
+      isSaved: isSaved ?? this.isSaved,
       isRepost: isRepost ?? this.isRepost,
       repostId: repostId ?? this.repostId,
       repostDescription: repostDescription ?? this.repostDescription,
       reposterId: reposterId ?? this.reposterId,
       reposterName: reposterName ?? this.reposterName,
       reposterProfilePicture: reposterProfilePicture ?? this.reposterProfilePicture,
+      taggedUsers: taggedUsers ?? this.taggedUsers,
     );
   }
 
-  // Convert model to map for Firestore
+  // Update toJson to include taggedUsers
   Map<String, dynamic> toJson() {
     return {
       'userId': userId,
@@ -113,24 +122,34 @@ class PostModel {
       'reposts': reposts,
       'isLiked': isLiked,
       'isMine': isMine,
+      'isSaved': isSaved,
       'isRepost': isRepost,
       'repostId': repostId,
       'repostDescription': repostDescription,
       'reposterId': reposterId,
       'reposterName': reposterName,
       'reposterProfilePicture': reposterProfilePicture,
-      'createdAt': FieldValue.serverTimestamp(), // Add server timestamp
+      'taggedUsers': taggedUsers.map((user) => user.toJson()).toList(),
+      'createdAt': FieldValue.serverTimestamp(),
     };
   }
 
-  // Create model from Firestore document
+  // Update fromFirestore to include taggedUsers
   factory PostModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    
+    // Parse tagged users if they exist
+    List<TaggedUser> parsedTaggedUsers = [];
+    if (data['taggedUsers'] != null && data['taggedUsers'] is List) {
+      parsedTaggedUsers = (data['taggedUsers'] as List)
+          .map((user) => TaggedUser.fromJson(user as Map<String, dynamic>))
+          .toList();
+    }
     
     return PostModel(
       id: doc.id,
       userId: data['userId'] ?? '',
-      companyId: data['companyId'] !=null ? Map<String,dynamic>.from(data['companyId']) : null,
+      companyId: data['companyId'] != null ? Map<String,dynamic>.from(data['companyId']) : null,
       username: data['username'] ?? '',
       profileImageUrl: data['profileImageUrl'] ?? '',
       content: data['content'] ?? '',
@@ -149,15 +168,24 @@ class PostModel {
       reposterId: data['reposterId'],
       reposterName: data['reposterName'],
       reposterProfilePicture: data['reposterProfilePicture'],
+      taggedUsers: parsedTaggedUsers,
     );
   }
 
-  // Original fromJson method for compatibility
+  // Update fromJson to include taggedUsers
   factory PostModel.fromJson(Map<String, dynamic> json) {
+    // Parse tagged users if they exist
+    List<TaggedUser> parsedTaggedUsers = [];
+    if (json['taggedUsers'] != null && json['taggedUsers'] is List) {
+      parsedTaggedUsers = (json['taggedUsers'] as List)
+          .map((user) => TaggedUser.fromJson(user as Map<String, dynamic>))
+          .toList();
+    }
+    
     return PostModel(
       id: json['id'] ?? '',
       userId: json['userId'] ?? '',
-      companyId: json['companyId'] !=null ? Map<String,dynamic>.from(json['companyId']) : null,
+      companyId: json['companyId'] != null ? Map<String,dynamic>.from(json['companyId']) : null,
       username: json['username'] ?? '',
       profileImageUrl: json['profileImageUrl'] ?? '',
       content: json['content'] ?? '',
@@ -176,6 +204,7 @@ class PostModel {
       reposterId: json['reposterId'],
       reposterName: json['reposterName'],
       reposterProfilePicture: json['reposterProfilePicture'],
+      taggedUsers: parsedTaggedUsers,
     );
   }
 }

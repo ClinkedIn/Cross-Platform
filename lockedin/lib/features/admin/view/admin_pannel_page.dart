@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'admin_dashboard_view.dart';
 import 'content_reports_view.dart';
-import 'job_management_view.dart';
+import 'job_listing_page.dart';
 
 class AdminHomePage extends StatefulWidget {
   @override
@@ -13,8 +13,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   final List<Widget> _pages = [
     AdminDashboardView(),
-    ContentReportsView(),
-    JobManagementView(),
+    ReportPage(),
+    AllJobsPage(),
   ];
 
   @override

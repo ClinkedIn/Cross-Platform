@@ -47,10 +47,7 @@ class _MainPageState extends ConsumerState<MainPage> {
           if (response.statusCode == 200 || response.statusCode == 304) {
             // Token is valid, navigate to home
             final responseBody = jsonDecode(response.body);
-            print("testst ${responseBody['user']['isSuperAdmin'] == true}");
-
             if (responseBody['user']['isSuperAdmin'] == true) {
-              print("testst2 ${responseBody['user']['isSuperAdmin'] == true}");
               context.go('/admin-dashboard');
             } else {
               context.go('/home');

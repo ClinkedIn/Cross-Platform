@@ -118,7 +118,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               Spacer(),
                               IconButton(
                                 onPressed: () {
-                                  context.push('/admin-dashboard');
+                                  context.push('/edit-profile');
                                 },
                                 icon: Icon(Icons.edit, color: AppColors.gray),
                               ),
@@ -188,7 +188,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               color: theme.iconTheme.color,
                             ),
                             title: Text(
-                              "Are you still working at Microsoft?",
+                              "Are you still working at ${user.workExperience[0].companyName}?",
                               style: theme.textTheme.bodyLarge,
                             ),
                           ),

@@ -53,7 +53,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     );
 
     if (success) {
-      Navigator.pop(context); // go back on success
+      Navigator.pop(context, true);
     } else {
       final error = viewModel.errorMessage ?? 'Failed to create post.';
       ScaffoldMessenger.of(
