@@ -27,7 +27,7 @@ class Company {
 
   factory Company.fromJson(Map<String, dynamic> json) {
     return Company(
-      id: json['id'],
+      id: json['_id'],
       name: json['name'] ?? '',
       address: json['address'] ?? '',
       website: json['website'], // nullable
@@ -56,7 +56,7 @@ class Company {
     };
   }
 
-    Company copyWith({
+  Company copyWith({
     String? id,
     String? name,
     String? address,

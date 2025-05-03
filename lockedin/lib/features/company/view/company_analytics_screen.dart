@@ -58,6 +58,7 @@ class _CompanyAnalyticsScreenState extends State<CompanyAnalyticsScreen> {
           totalFollowers = followersCount;
           isLoading = false;
         });
+        print('Follorefefwrefre: ${isLoading}');
       } else {
         setState(() => isLoading = false);
       }
@@ -68,23 +69,31 @@ class _CompanyAnalyticsScreenState extends State<CompanyAnalyticsScreen> {
 
   Future<void> fetchFollowers() async {
     setState(() => isLoading = true);
+    print('Fetching followers for company ID: ${widget.companyId}');
 
     final response = await RequestService.get(
       '/companies/${widget.companyId}/follow',
     );
+
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      print('Follodhkwebfbewers data: ${data['followers']}');
+
       setState(() {
-        totalFollowers = data['pagination']['total'];
         followers = data['followers'];
+        totalFollowers = followers.length;
         isLoading = false;
       });
-      if(followers.isEmpty)
-      print('No followers found');
+
+      print('Follorefefwrhhefre: $isLoading');
+
+      if (followers.isEmpty)
+        print('No followers found');
       else
-      print('followers length: ${followers.first}');
+        print('First follower: ${followers.first}');
     } else {
       setState(() => isLoading = false);
+      print('Failed to fetch followers: ${response.statusCode}');
     }
   }
 
@@ -186,10 +195,11 @@ class _CompanyAnalyticsScreenState extends State<CompanyAnalyticsScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => CreatePostScreen(
-                            companyId: widget.companyId,
-                            description: "", // or any default you want
-                          ),
+                          builder:
+                              (_) => CreatePostScreen(
+                                companyId: widget.companyId,
+                                description: "", // or any default you want
+                              ),
                         ),
                       );
                     },
@@ -205,26 +215,42 @@ class _CompanyAnalyticsScreenState extends State<CompanyAnalyticsScreen> {
           SizedBox(height: 3.h),
           Text(
             "Followers",
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Colors.black),
-          ),
-          SizedBox(height: 1.h),
-          ...followers.map(
-            (follower) => ListTile(
-              leading: CircleAvatar(
-                backgroundImage: NetworkImage(follower['profilePicture']),
-              ),
-              title: Text("${follower['firstName']} ${follower['lastName']}", 
-                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
-              subtitle: Text(
-                "${follower['bio']}, ${follower['industry']}", style: TextStyle(fontSize: 14.sp, color: Colors.black),
-              ),
-              trailing: Text(
-                DateFormat.yMMMd().format(
-                  DateTime.parse(follower['followedAt']),
-                ), style: TextStyle(fontSize: 15.sp, color: Colors.black),
-              ),
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
             ),
           ),
+          SizedBox(height: 1.h),
+          ...followers.map((follower) {
+            final String? firstName = follower['firstName'];
+            final String? lastName = follower['lastName'];
+            final String? profilePicture = follower['profilePicture'];
+            final String? bio = follower['bio'];
+            final String? industry = follower['industry'];
+            final String followedAt = follower['followedAt'];
+
+            // Skip followers with no profile info
+            if (firstName == null || profilePicture == null) return SizedBox();
+
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundImage: NetworkImage(profilePicture),
+              ),
+              title: Text(
+                "$firstName $lastName",
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                "${bio ?? 'No bio'}, ${industry ?? 'No industry'}",
+                style: TextStyle(fontSize: 14.sp, color: Colors.black),
+              ),
+              trailing: Text(
+                DateFormat.yMMMd().format(DateTime.parse(followedAt)),
+                style: TextStyle(fontSize: 15.sp, color: Colors.black),
+              ),
+            );
+          }).toList(),
         ],
       ),
     );

@@ -39,6 +39,7 @@ class NotificationsViewModel
             decoded
                 .map((notification) => NotificationModel.fromJson(notification))
                 .toList();
+        print("Fetched notifications: $decoded");
         state = AsyncValue.data(
           notifications,
         ); // ✅ Update state correctly so UI rebuilds
@@ -110,11 +111,15 @@ class NotificationsViewModel
 
   /// Navigates the user to the post related to a notification.
   // will deep link with the home page later to navigate to the post
-  void navigateToPost(BuildContext context, String id) {
-    //int index needed as well
-
-    //final notification = state[index]; // ✅ Navigate to the related post
-    context.push('/detailed-post/$id');
+  void navigateToPost(
+    BuildContext context,
+    String id,
+    NotificationModel notification,
+  ) {
+    context.pushNamed(
+      'other-profile',
+      pathParameters: {'userId': notification.from},
+    );
   }
 
   /// Marks all notifications as seen (for UI highlighting).

@@ -10,7 +10,8 @@ import 'dart:async';
 
 final navigationProvider = StateProvider<String>((ref) => '/');
 
-class UpperNavbar extends ConsumerStatefulWidget implements PreferredSizeWidget {
+class UpperNavbar extends ConsumerStatefulWidget
+    implements PreferredSizeWidget {
   final Widget leftIcon;
   final VoidCallback leftOnPress;
 
@@ -86,27 +87,28 @@ class _UpperNavbarState extends ConsumerState<UpperNavbar> {
     _removeOverlay();
 
     _overlayEntry = OverlayEntry(
-      builder: (context) => SearchResultsOverlay(
-        link: _layerLink,
-        searchBarKey: _searchBarKey,
-        onPostSelected: (post) {
-          _searchFocusNode.unfocus();
-          final postId = post.id;
-          if (postId != null) {
-            context.push('/detailed-post/$postId');
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error: Could not find post ID')),
-            );
-          }
-        },
-        onCompanySelected: (company) {
-          _searchFocusNode.unfocus();
-          if (company.id != null) {
-            context.push('/company/${company.id}');
-          }
-        },
-      ),
+      builder:
+          (context) => SearchResultsOverlay(
+            link: _layerLink,
+            searchBarKey: _searchBarKey,
+            onPostSelected: (post) {
+              _searchFocusNode.unfocus();
+              final postId = post.id;
+              if (postId != null) {
+                context.push('/detailed-post/$postId');
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: Could not find post ID')),
+                );
+              }
+            },
+            onCompanySelected: (company) {
+              _searchFocusNode.unfocus();
+              if (company.id != null) {
+                context.push('/company/${company.id}');
+              }
+            },
+          ),
     );
 
     if (_overlayEntry != null) {
@@ -146,24 +148,32 @@ class _UpperNavbarState extends ConsumerState<UpperNavbar> {
             focusNode: _searchFocusNode,
             decoration: InputDecoration(
               fillColor: isDarkMode ? Colors.grey[700] : Colors.grey[200],
-              hintText: _getCurrentRoute(context) == "/home"
-                  ? "Search posts"
-                  : _getCurrentRoute(context) == "/users"
+              hintText:
+                  _getCurrentRoute(context) == "/home"
+                      ? "Search posts"
+                      : _getCurrentRoute(context) == "/users"
                       ? "Search users"
                       : _getCurrentRoute(context) == "/jobs"
-                          ? "Search jobs"
-                          : "Search",
+                      ? "Search jobs"
+                      : "Search",
               hintStyle: TextStyle(color: Colors.grey[400]),
               prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(Icons.clear, color: Colors.grey[400], size: 20),
-                      onPressed: () {
-                        _searchController.clear();
-                        ref.read(searchViewModelProvider.notifier).clearSearch();
-                      },
-                    )
-                  : null,
+              suffixIcon:
+                  _searchController.text.isNotEmpty
+                      ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          color: Colors.grey[400],
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          ref
+                              .read(searchViewModelProvider.notifier)
+                              .clearSearch();
+                        },
+                      )
+                      : null,
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(vertical: 10.0),
             ),

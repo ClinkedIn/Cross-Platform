@@ -8,10 +8,9 @@ import 'package:http_parser/http_parser.dart';
 import 'package:lockedin/features/company/model/company_post_model.dart';
 import 'package:lockedin/features/company/model/job_application_model.dart';
 import 'package:mime/mime.dart';
-import 'package:lockedin/features/jobs/model/job_model.dart';
 
 class CompanyRepository {
-  static const String _companiesEndpoint = '/api/companies';
+  static const String _companiesEndpoint = '/companies';
 
   Future<Company?> getCompanyById(String companyId) async {
     final uri = Uri.parse('http://10.0.2.2:3000$_companiesEndpoint/$companyId');
@@ -19,19 +18,9 @@ class CompanyRepository {
     print('Fetching company from: $uri');
 
     try {
-      final token = await TokenService.getCookie();
-
-      final response = await http.get(
-        uri,
-        headers: {
-          'accept': 'application/json',
-          'Cookie': 'access_token=$token',
-        },
+      final response = await RequestService.get(
+        "$_companiesEndpoint/$companyId",
       );
-
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print('Fetched company data: ${jsonEncode(data)}');
@@ -52,47 +41,21 @@ class CompanyRepository {
     print('Creating company at: $uri');
 
     try {
-      final token = await TokenService.getCookie();
-
-      var request =
-          http.MultipartRequest('POST', uri)
-            ..fields['name'] = company.name
-            ..fields['address'] = company.address
-            ..fields['industry'] = company.industry
-            ..fields['organizationSize'] = company.organizationSize
-            ..fields['organizationType'] = company.organizationType;
-
-      if (company.website != null) {
-        request.fields['website'] = company.website!;
-      }
-      if (company.tagLine != null) {
-        request.fields['tagLine'] = company.tagLine!;
-      }
-      if (company.location != null) {
-        request.fields['location'] = company.location!;
-      }
-
-      if (logoPath != null) {
-        var logoFile = await http.MultipartFile.fromPath(
-          'file',
-          logoPath,
-          contentType: MediaType.parse(
-            lookupMimeType(logoPath) ?? 'application/octet-stream',
-          ),
-        );
-        request.files.add(logoFile);
-      }
-
-      request.headers.addAll({'Cookie': 'access_token=$token'});
-
-      var response = await request.send();
-      var responseBody = await response.stream.bytesToString();
-
-      print('Status code: ${response.statusCode}');
-      print('Body: $responseBody');
-
+      final response = await RequestService.post(
+        _companiesEndpoint,
+        body: {
+          'name': company.name,
+          'address': company.address,
+          'industry': company.industry,
+          'organizationSize': company.organizationSize,
+          'organizationType': company.organizationType,
+          if (company.website != null) 'website': company.website!,
+          if (company.tagLine != null) 'tagLine': company.tagLine!,
+          if (company.location != null) 'location': company.location!,
+        },
+      );
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = json.decode(responseBody);
+        final data = json.decode(response.body);
         return Company.fromJson(data['company']);
       } else {
         print('Failed to create company: ${response.statusCode}');
@@ -275,18 +238,9 @@ class CompanyRepository {
     int page = 1,
     int limit = 10,
   }) async {
-    final uri = Uri.parse(
-      'http://10.0.2.2:3000/api/companies/$companyId/post?page=$page&limit=$limit',
-    );
-
     try {
-      final token = await TokenService.getCookie();
-      final response = await http.get(
-        uri,
-        headers: {
-          'Cookie': 'access_token=$token',
-          'Accept': 'application/json',
-        },
+      final response = await RequestService.get(
+        '/companies/$companyId/post?page=$page&limit=$limit',
       );
 
       if (response.statusCode == 200) {
@@ -398,41 +352,20 @@ class CompanyRepository {
     String? fields,
     String? industry,
   }) async {
-    final queryParams = {
-      'page': '$page',
-      'limit': '$limit',
-      if (sort != null) 'sort': sort,
-      if (fields != null) 'fields': fields,
-      if (industry != null) 'industry': industry,
-    };
-
-    final uri = Uri.http('10.0.2.2:3000', _companiesEndpoint, queryParams);
-
-    print('Fetching companies from: $uri');
-
     try {
-      final token = await TokenService.getCookie();
-
-      final response = await http.get(
-        uri,
-        headers: {
-          'accept': 'application/json',
-          'Cookie': 'access_token=$token',
-        },
-      );
-
+      final response = await RequestService.get("/user/companies");
       print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
+      print('Respondhefdie3fse body: ${response.body}');
       if (response.statusCode == 200) {
-        final data = json.decode(response.body) as List;
-        return data.map((item) => Company.fromJson(item['company'])).toList();
+        final data = json.decode(response.body);
+        print('Fetched euhidefde data: ${(data['companies'])}');
+        return (data['companies'] as List)
+            .map((item) => Company.fromJson(item))
+            .toList();
       } else {
-        print('Failed to fetch companies: ${response.statusCode}');
         return [];
       }
     } catch (e) {
-      print('Error fetching companies: $e');
       return [];
     }
   }

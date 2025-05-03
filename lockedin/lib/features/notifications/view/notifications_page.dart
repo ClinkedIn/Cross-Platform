@@ -33,27 +33,44 @@ class NotificationsPageState extends ConsumerState<NotificationsPage> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
+
     /// Watch the overall notifications provider (async state)
     final allNotifications = ref.watch(notificationsProvider);
+
     /// Currently selected notification category
     final selectedCategory = ref.watch(selectedCategoryProvider);
+
     /// Filter notifications based on selected category
     final List<NotificationModel> notifications = allNotifications.when(
       data: (notificationsData) {
         switch (selectedCategory) {
           case 'Jobs':
-            return notificationsData.where((notification) => (notificationsData.indexOf(notification)) % 3 == 0).toList();
-          case 'My posts':
-            return notificationsData.where((notification) => (notificationsData.indexOf(notification) + 2) % 3 == 0).toList();
-          case 'Mentions':
-            return notificationsData.where((notification) => (notificationsData.indexOf(notification) + 1) % 3 == 0).toList();
+            return notificationsData.where((n) => n.subject == 'job').toList();
+          case 'impression':
+            return notificationsData
+                .where((n) => n.subject == 'impression')
+                .toList();
+          case 'connection request':
+            return notificationsData
+                .where((n) => n.subject == 'connection request')
+                .toList();
+          case 'message':
+            return notificationsData
+                .where((n) => n.subject == 'message')
+                .toList();
+          case 'follow':
+            return notificationsData
+                .where((n) => n.subject == 'follow')
+                .toList();
+          case 'post':
+            return notificationsData.where((n) => n.subject == 'post').toList();
           default:
             return notificationsData;
         }
       },
       loading: () => [],
       error: (_, __) => [],
-    );  //will apply real filter later
+    ); //will apply real filter later
 
     return Scaffold(
       appBar: AppBar(
@@ -61,37 +78,67 @@ class NotificationsPageState extends ConsumerState<NotificationsPage> {
           builder: (context, ref, child) {
             final selectedCategory = ref.watch(selectedCategoryProvider);
             ///// Render category filter buttons in the app bar
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                buildCategoryButton(
-                  context,
-                  ref,
-                  "All",
-                  selectedCategory == "All",
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4.w),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    buildCategoryButton(
+                      context,
+                      ref,
+                      "All",
+                      selectedCategory == "All",
+                    ),
+                    SizedBox(width: 8),
+                    buildCategoryButton(
+                      context,
+                      ref,
+                      "Jobs",
+                      selectedCategory == "Jobs",
+                    ),
+                    SizedBox(width: 8),
+                    buildCategoryButton(
+                      context,
+                      ref,
+                      "impression",
+                      selectedCategory == "impression",
+                    ),
+                    SizedBox(width: 8),
+                    buildCategoryButton(
+                      context,
+                      ref,
+                      "connection request",
+                      selectedCategory == "connection request",
+                    ),
+                    SizedBox(width: 8),
+                    buildCategoryButton(
+                      context,
+                      ref,
+                      "message",
+                      selectedCategory == "message",
+                    ),
+                    SizedBox(width: 8),
+                    buildCategoryButton(
+                      context,
+                      ref,
+                      "follow",
+                      selectedCategory == "follow",
+                    ),
+                    SizedBox(width: 8),
+                    buildCategoryButton(
+                      context,
+                      ref,
+                      "post",
+                      selectedCategory == "post",
+                    ),
+                    // Add a bit of padding at the end for better scrolling experience
+                    SizedBox(width: 8),
+                  ],
                 ),
-                SizedBox(width: 2.w),
-                buildCategoryButton(
-                  context,
-                  ref,
-                  "Jobs",
-                  selectedCategory == "Jobs",
-                ),
-                SizedBox(width: 2.w),
-                buildCategoryButton(
-                  context,
-                  ref,
-                  "My posts",
-                  selectedCategory == "My posts",
-                ),
-                SizedBox(width: 2.w),
-                buildCategoryButton(
-                  context,
-                  ref,
-                  "Mentions",
-                  selectedCategory == "Mentions",
-                ),
-              ],
+              ),
             );
           },
         ),
@@ -101,6 +148,7 @@ class NotificationsPageState extends ConsumerState<NotificationsPage> {
           if (notificationsData.isEmpty) {
             return Center(child: Text("No notifications available"));
           }
+
           /// Display list of notifications
           return ListView.builder(
             itemCount: notifications.length,
@@ -108,7 +156,8 @@ class NotificationsPageState extends ConsumerState<NotificationsPage> {
               final notification = notifications[index];
 
               return Slidable(
-                key: ValueKey(notification.id), 
+                key: ValueKey(notification.id),
+
                 /// Define actions when swiping from right to left
                 endActionPane: ActionPane(
                   motion: const ScrollMotion(),
@@ -117,7 +166,9 @@ class NotificationsPageState extends ConsumerState<NotificationsPage> {
                     /// Action to show less of this type of notification
                     CustomSlidableAction(
                       onPressed: (_) {
-                        ref.read(notificationsProvider.notifier).showLessLikeThis(notification.id);
+                        ref
+                            .read(notificationsProvider.notifier)
+                            .showLessLikeThis(notification.id);
                       },
                       backgroundColor: Colors.grey[300]!,
                       foregroundColor: Colors.green,
@@ -126,7 +177,10 @@ class NotificationsPageState extends ConsumerState<NotificationsPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.thumb_down_alt_outlined, color: Colors.black),
+                            Icon(
+                              Icons.thumb_down_alt_outlined,
+                              color: Colors.black,
+                            ),
                             FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
@@ -142,13 +196,18 @@ class NotificationsPageState extends ConsumerState<NotificationsPage> {
                         ),
                       ),
                     ),
+
                     /// Action to delete the notification
                     CustomSlidableAction(
                       onPressed: (context) {
                         // Handle notification deletion
-                        ref.read(notificationsProvider.notifier).deleteNotification(notification.id);
+                        ref
+                            .read(notificationsProvider.notifier)
+                            .deleteNotification(notification.id);
                         showDeleteMessage(context, () {
-                          ref.read(notificationsProvider.notifier).undoDeleteNotification();
+                          ref
+                              .read(notificationsProvider.notifier)
+                              .undoDeleteNotification();
                         }, isDarkMode);
                       },
                       backgroundColor: Colors.red,
@@ -172,23 +231,37 @@ class NotificationsPageState extends ConsumerState<NotificationsPage> {
                             ),
                           ],
                         ),
-                      )
+                      ),
                     ),
                   ],
                 ),
+
                 /// When a notification is tapped
                 child: GestureDetector(
                   onTap: () {
                     if (notification.isPlaceholder) return;
-                    ref.read(notificationsProvider.notifier).markAsRead(notification.id);
-                    ref.read(notificationsProvider.notifier).navigateToPost(context, notification.relatedPostId);
+                    ref
+                        .read(notificationsProvider.notifier)
+                        .markAsRead(notification.id);
+                    ref
+                        .read(notificationsProvider.notifier)
+                        .navigateToPost(
+                          context,
+                          notification.relatedPostId,
+                          notification,
+                        );
                   },
-                  child: buildNotificationItem(notification, isDarkMode, ref, context),
+                  child: buildNotificationItem(
+                    notification,
+                    isDarkMode,
+                    ref,
+                    context,
+                  ),
                 ),
               );
             },
           );
-        }, 
+        },
         loading: () => Center(child: CircularProgressIndicator()),
         error: (error, stackTrace) => Center(child: Text("Error: $error")),
       ),
