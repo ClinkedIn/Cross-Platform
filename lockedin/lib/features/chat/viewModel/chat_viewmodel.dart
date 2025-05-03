@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
 import 'package:lockedin/features/chat/repository/chat_repository.dart';
 import 'package:lockedin/features/chat/view/chat_conversation_page.dart';
@@ -108,12 +109,7 @@ class FirebaseChatViewModel extends StateNotifier<ChatState> {
     markChatAsRead(chat);
     
     // Navigate to chat conversation screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatConversationScreen(chat: chat),
-      ),
-    );
+    context.push('/chat-conversation/', extra: chat);
   }
   
   // Show chat options menu

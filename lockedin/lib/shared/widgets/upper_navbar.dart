@@ -62,10 +62,7 @@ class UpperNavbar extends ConsumerWidget implements PreferredSizeWidget {
           icon: Icon(Icons.chat, color: Colors.grey[700]),
           onPressed: () {
             ref.read(navigationProvider.notifier).state = '/chats';
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ChatListScreen()),
-            );
+            context.push("/chat-list"); // Navigate to the chat list page
           },
         ), //Chat button
       ],
