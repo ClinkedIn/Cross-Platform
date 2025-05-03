@@ -156,8 +156,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
         if (snapshot.hasError) {
           return Center(child: Text('Error loading messages'));
         }
-
-
+        
         // Use data from stream if available, otherwise fall back to state
         final messages = snapshot.hasData ? snapshot.data! : chatState.messages;
         
@@ -239,29 +238,36 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     );
   }
   
-  Widget _buildMessageBubble(message) {
+  Widget _buildMessageBubble(ChatMessage message) {
     final currentUserId = ref.read(chatConversationProvider(widget.chat.id).notifier).currentUserId;
     
     // Normal mode: check if the message sender is the current user
-    // Handle empty current user ID case
     final isMe = currentUserId.isNotEmpty && message.sender.id == currentUserId;
     
     // Default to empty string for messageText if null
     final messageText = message.messageText ?? '';
     
-    // Handle attachments safely
+    // Debug: print attachment information
+    debugPrint('Message ID: ${message.id}');
+    debugPrint('Has attachment: ${message.messageAttachment.isNotEmpty}');
+    if (message.messageAttachment.isNotEmpty) {
+      debugPrint('Attachment URL: ${message.messageAttachment.first}');
+      debugPrint('Attachment Type: ${message.attachmentType}');
+    }
+    
+    // Extract first attachment URL
     final String? attachmentUrl = message.messageAttachment.isNotEmpty 
         ? message.messageAttachment.first 
         : null;
-    
+
     return ChatBubble(
       message: messageText,
       isMe: isMe,
       time: DateFormat('hh:mm a').format(message.createdAt),
       senderImageUrl: isMe ? null : message.sender.profilePicture,
-      isRead: true, // Always considered read in the conversation
-      attachmentUrl: attachmentUrl,
-      attachmentType: message.attachmentType,
+      isRead: true,
+      attachmentUrl: attachmentUrl,  // Use the extracted URL
+      attachmentType: message.attachmentType, 
     );
   }
 

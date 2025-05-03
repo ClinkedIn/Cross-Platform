@@ -29,6 +29,11 @@ class FirebaseChatServices {
           final messages = snapshot.docs.map((doc) {
             final data = doc.data();
             
+            // Debug: Log raw data for troubleshooting
+            debugPrint('Message ${doc.id} raw data: $data');
+            debugPrint('Media URL: ${data['mediaUrl']}');
+            debugPrint('Media Type: ${data['mediaType']}');
+            
             // Extract user IDs to determine receiver
             final senderId = data['senderId'] ?? '';
             final currentUserId = _authService.currentUser?.id;
@@ -58,26 +63,74 @@ class FirebaseChatServices {
               profilePicture: participants[senderId]?['profilePicture'],
             );
             
-            // Handle attachments
+            // Handle attachments with additional logging
             List<String> attachments = [];
             AttachmentType attachmentType = AttachmentType.none;
             
-            if (data['attachments'] != null) {
-              if (data['attachments'] is List) {
-                attachments = List<String>.from(data['attachments']);
-              } else if (data['attachments'] is String && data['attachments'].isNotEmpty) {
-                attachments = [data['attachments']];
+            // First check for mediaUrl field
+            if (data['mediaUrl'] != null && data['mediaUrl'].toString().isNotEmpty) {
+              String url = data['mediaUrl'].toString();
+              
+              // Ensure URL has a proper scheme
+              if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                // Log the malformed URL for debugging
+                debugPrint('Malformed URL detected: $url');
+                
+                // Try to fix common issues - if it starts with '//', add https:
+                if (url.startsWith('//')) {
+                  url = 'https:$url';
+                } 
+                // If it starts with '/', assume it's a relative path from your domain
+                else if (url.startsWith('/')) {
+                  // Use your base URL, for example:
+                  url = 'https://yourdomain.com$url';
+                } 
+                // Otherwise, if it doesn't have a scheme at all, add https://
+                else if (!url.contains('://')) {
+                  url = 'https://$url';
+                }
+                
+                debugPrint('Corrected URL: $url');
               }
               
-              // Determine attachment type
-              if (data['attachmentType'] != null) {
-                switch (data['attachmentType']) {
-                  case 'image': attachmentType = AttachmentType.image; break;
-                  case 'document': attachmentType = AttachmentType.document; break;
-                  case 'video': attachmentType = AttachmentType.video; break;
-                  case 'audio': attachmentType = AttachmentType.audio; break;
-                  case 'gif': attachmentType = AttachmentType.gif; break;
-                  default: attachmentType = AttachmentType.none;
+              attachments = [url];
+              debugPrint('Found mediaUrl: $url');
+              
+              // Determine attachment type from mediaType field
+              if (data['mediaType'] != null) {
+                final mediaType = data['mediaType'].toString().toLowerCase();
+                debugPrint('Found mediaType: $mediaType');
+                
+                switch (mediaType) {
+                  case 'image': 
+                    attachmentType = AttachmentType.image;
+                    break;
+                  case 'document': 
+                    attachmentType = AttachmentType.document;
+                    break;
+                  // Add other cases as needed
+                  default: 
+                    // Auto-detect image type from URL if mediaType is not specified
+                    if (url.toLowerCase().endsWith('.jpg') || 
+                        url.toLowerCase().endsWith('.jpeg') || 
+                        url.toLowerCase().endsWith('.png') || 
+                        url.toLowerCase().endsWith('.gif') || 
+                        url.contains('/image/')) {
+                      debugPrint('Auto-detected image from URL');
+                      attachmentType = AttachmentType.image;
+                    } else {
+                      attachmentType = AttachmentType.none;
+                    }
+                }
+              } else {
+                // If mediaType is not present but URL exists, try to guess from URL
+                if (url.toLowerCase().endsWith('.jpg') || 
+                    url.toLowerCase().endsWith('.jpeg') || 
+                    url.toLowerCase().endsWith('.png') || 
+                    url.toLowerCase().endsWith('.gif') || 
+                    url.contains('/image/')) {
+                  debugPrint('Auto-detected image from URL');
+                  attachmentType = AttachmentType.image;
                 }
               }
             }
@@ -88,13 +141,12 @@ class FirebaseChatServices {
               messageText: data['text'] ?? '',
               createdAt: createdAt,
               updatedAt: updatedAt,
+              // Extract first URL from attachments array rather than passing the whole array
               messageAttachment: attachments,
               attachmentType: attachmentType,
             );
           }).toList();
           
-          // Sort messages by timestamp before returning
-          messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
           return messages;
         });
   }
