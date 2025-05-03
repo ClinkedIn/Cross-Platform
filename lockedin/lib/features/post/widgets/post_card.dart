@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:lockedin/core/services/auth_service.dart';
+import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:sizer/sizer.dart';
 import '../../home_page/model/post_model.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/videoplayer_view.dart';
+import '../../home_page/repository/posts/comment_api.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+    
 //some helper functions for media handling
 // Add this at the top of the file, after your imports
     enum MediaType { image, video, document, unknown }
@@ -115,7 +120,7 @@ import '../widgets/videoplayer_view.dart';
       return MediaType.unknown;
     }
 
-class PostCard extends StatelessWidget {
+class PostCard extends ConsumerWidget {
   final PostModel post;
   final VoidCallback onLike;
   final VoidCallback onComment;
@@ -125,7 +130,6 @@ class PostCard extends StatelessWidget {
   final VoidCallback? onSaveForLater;
   final VoidCallback? onNotInterested;
   final VoidCallback? onReport;
-  // In the PostCard class definition, add these new callback properties
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
@@ -139,16 +143,15 @@ class PostCard extends StatelessWidget {
     this.onSaveForLater,
     this.onNotInterested,
     this.onReport,
-    this.onEdit, // New callback
-    this.onDelete, // New callback
+    this.onEdit,
+    this.onDelete,
     Key? key,
   }) : super(key: key);
 
-  
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final userState = ref.watch(userProvider);
 
     return Container(
       width: 100.w,
@@ -294,22 +297,6 @@ class PostCard extends StatelessWidget {
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 1.w),
-                            if (!post.isMine)
-                            TextButton(
-                              onPressed: onFollow,
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.symmetric(horizontal: 1.w),
-                                minimumSize: Size(0, 3.h),
-                              ),
-                              child: Text(
-                                "• Follow",
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontSize: 15.sp,
                                 ),
                               ),
                             ),
@@ -650,32 +637,76 @@ class PostCard extends StatelessWidget {
                       ),
                     ),
 
-                    // Repost button
+                    // Repost button - update with proper condition
                     TextButton(
-                      onPressed:  onRepost,
+                      onPressed: onRepost,
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.symmetric(horizontal: 2.w),
                         minimumSize: Size(0, 4.h),
                       ),
                       child: Column(
                         children: [
-                          Icon(
-                            (post.isRepost == true) ? Icons.repeat_one : Icons.repeat,
-                            size: 2.5.h,
-                            color: post.isRepost == true ? AppColors.green : theme.iconTheme.color,
+                          userState.when(
+                            data: (user) {
+                              // Determine if the post has been reposted by the current user
+                              final bool isMyRepost = post.isRepost == true && post.reposterId == user.id;
+                              
+                              // Determine if this is the user's own post that has been reposted
+                              final bool isMyPostReposted = post.isMine == true && post.isRepost == true;
+                              
+                              // Debug
+                              if (post.isRepost == true) {
+                                debugPrint('Post ${post.id} - isRepost: ${post.isRepost}, isMine: ${post.isMine}, reposterId: ${post.reposterId}, userId: ${user.id}, isMyRepost: $isMyRepost, isMyPostReposted: $isMyPostReposted');
+                              }
+                              
+                              return Icon(
+                                // Use either condition to show the reposted icon
+                                (isMyRepost || isMyPostReposted) ? Icons.repeat_one : Icons.repeat,
+                                size: 2.5.h,
+                                color: (isMyRepost || isMyPostReposted) ? AppColors.green : theme.iconTheme.color,
+                              );
+                            },
+                            error: (error, stackTrace) => Icon(
+                              Icons.repeat,
+                              size: 2.5.h,
+                              color: theme.iconTheme.color,
+                            ),
+                            loading: () => SizedBox(
+                              width: 2.5.h,
+                              height: 2.5.h,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: theme.iconTheme.color,
+                              ),
+                            ),
                           ),
                           SizedBox(height: 0.3.h),
-                          Text(
-                            'Repost',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                            fontSize: 15.sp,
-                            color: post.isRepost == true ? AppColors.green : theme.iconTheme.color
+                          userState.when(
+                            data: (user) {
+                              // Use the same conditions for the text
+                              final bool isMyRepost = post.isRepost == true && post.reposterId == user.id;
+                              final bool isMyPostReposted = post.isMine == true && post.isRepost == true;
+                              
+                              return Text(
+                                (isMyRepost || isMyPostReposted) ? 'Reposted' : 'Repost',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontSize: 15.sp,
+                                  color: (isMyRepost || isMyPostReposted) ? AppColors.green : theme.iconTheme.color,
+                                ),
+                              );
+                            },
+                            error: (error, stackTrace) => Text(
+                              'Repost',
+                              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 15.sp),
+                            ),
+                            loading: () => Text(
+                              'Repost',
+                              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 15.sp),
                             ),
                           ),
                         ],
                       ),
                     ),
-
                     // Share button
                     TextButton(
                       onPressed: onShare,
