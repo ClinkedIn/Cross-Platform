@@ -34,6 +34,7 @@ class ChatConversationState {
   final bool isSending;
   final ChatAttachment? selectedAttachment;
   final Map<String, ChatMessage> temporaryMessages; // Track temporary messages by ID
+  final bool isBlocked; // Add this field
 
   ChatConversationState({
     this.messages = const [],
@@ -44,6 +45,7 @@ class ChatConversationState {
     this.isSending = false,
     this.selectedAttachment,
     this.temporaryMessages = const {},
+    this.isBlocked = false, // Default to not blocked
   });
 
   ChatConversationState copyWith({
@@ -55,6 +57,7 @@ class ChatConversationState {
     bool? isSending,
     ChatAttachment? selectedAttachment,
     Map<String, ChatMessage>? temporaryMessages,
+    bool? isBlocked,
   }) {
     return ChatConversationState(
       messages: messages ?? this.messages,
@@ -65,6 +68,7 @@ class ChatConversationState {
       isSending: isSending ?? this.isSending,
       selectedAttachment: selectedAttachment,
       temporaryMessages: temporaryMessages ?? this.temporaryMessages,
+      isBlocked: isBlocked ?? this.isBlocked, // Include in copyWith
     );
   }
 }
@@ -96,8 +100,14 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       // Fetch the receiver ID from the conversation document
       await _repository.fetchReceiverIdFromConversation(chatId);
       
+      // Check if the user is blocked
+      final isBlocked = await isUserBlocked();
+      
       // Start listening to Firebase messages
       _setupMessageStreams();
+      
+      // Update state with block status
+      state = state.copyWith(isBlocked: isBlocked);
     } catch (e) {
       debugPrint('Error in initialization: $e');
       state = state.copyWith(error: e.toString(), isLoading: false);
@@ -568,6 +578,11 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
       } else {
         // If not blocked, block them
         result = await _repository.blockUser(receiverId);
+      }
+      
+      // Update the state with the new block status if successful
+      if (result['success'] == true) {
+        state = state.copyWith(isBlocked: !isBlocked);
       }
             
       return result;

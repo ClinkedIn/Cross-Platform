@@ -14,38 +14,26 @@ class BlockButtonWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final receiverId = ref.read(chatConversationProvider(chatId).notifier).getReceiverUserId();
+    final chatState = ref.watch(chatConversationProvider(chatId));
+    final isBlocked = chatState.isBlocked;
     
     // Only show block button if we have a valid receiver ID
     if (receiverId == null || receiverId.isEmpty) {
       return SizedBox.shrink(); // Hide button if no receiver ID
     }
     
-    return FutureBuilder<bool>(
-      future: ref.read(chatConversationProvider(chatId).notifier).isUserBlocked(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return IconButton(
-            icon: Icon(Icons.more_vert),
-            onPressed: null,
-          );
-        }
-        
-        final isBlocked = snapshot.data ?? false;
-        
-        return IconButton(
-          icon: Icon(
-            isBlocked ? Icons.block : Icons.block_outlined,
-            color: isBlocked ? Colors.red : null,
+    return IconButton(
+      icon: Icon(
+        isBlocked ? Icons.block : Icons.block_outlined,
+        color: isBlocked ? Colors.red : null,
+      ),
+      onPressed: () {
+        showDialog(
+          context: context,
+          builder: (dialogContext) => BlockDialogWidget(
+            chatId: chatId,
+            isBlocked: isBlocked,
           ),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (dialogContext) => BlockDialogWidget(
-                chatId: chatId,
-                isBlocked: isBlocked,
-              ),
-            );
-          },
         );
       },
     );

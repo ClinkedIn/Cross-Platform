@@ -89,10 +89,9 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
             child: _buildChatMessagesList(chatState),
           ),
           // Conditionally show chat input based on block status
-          FutureBuilder<bool>(
-            future: ref.read(chatConversationProvider(widget.chat.id).notifier).isUserBlocked(),
-            builder: (context, snapshot) {
-              final isBlocked = snapshot.data ?? false;
+          Builder(
+            builder: (context) {
+              final isBlocked = chatState.isBlocked;
               
               if (isBlocked) {
                 // Show a message instead of input field when blocked
