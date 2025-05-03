@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/core/services/auth_service.dart';
 import '../model/post_model.dart';
 import '../repository/posts/post_repository.dart';
 import '../repository/posts/post_api.dart';
@@ -243,56 +244,55 @@ class HomeViewModel extends StateNotifier<HomeState> {
   }
 
   /// Toggle repost for a post
-  Future<bool> toggleRepost(String postId, {String? description}) async {
-    // Existing implementation...
-    try {
-      // Find the current post
-      final postIndex = state.posts.indexWhere((post) => post.id == postId);
-      if (postIndex == -1) return false;
+    Future<bool> toggleRepost(String postId,String user, {String? description}) async {
+      try {
+        // Find the current post
+        final postIndex = state.posts.indexWhere((post) => post.id == postId);
+        if (postIndex == -1) return false;
 
-      final post = state.posts[postIndex];
+        final post = state.posts[postIndex];
 
-      // Check if the post is already reposted
-      final bool isCurrentlyReposted = post.isRepost;
-      bool success;
+        // Check if the post is already reposted
+        final bool isCurrentlyReposted = post.isRepost;
+        bool success;
 
-      if (isCurrentlyReposted && post.repostId != null) {
-        // Delete the repost
-        success = await repository.deleteRepost(post.repostId!);
-      } else {
-        // Create a new repost
-        success = await repository.createRepost(
-          postId,
-          description: description,
-        );
+        if (isCurrentlyReposted && post.reposterId == user) {
+          // Delete the repost
+          success = await repository.deleteRepost(post.repostId!);
+        } else {
+          // Create a new repost
+          success = await repository.createRepost(
+            postId,
+            description: description,
+          );
+        }
+
+        if (success) {
+          // For proper UI update, ideally we should refresh the feed
+          // But for immediate feedback, we can update the local state
+          final updatedPosts = List<PostModel>.from(state.posts);
+
+          // Update the repost count and status
+          final updatedPost = post.copyWith(
+            isRepost: !isCurrentlyReposted,
+            reposts: isCurrentlyReposted ? post.reposts - 1 : post.reposts + 1,
+          );
+
+          // Replace the old post with the updated one
+          updatedPosts[postIndex] = updatedPost;
+
+          // Update the state with the new list
+          state = state.copyWith(posts: updatedPosts);
+
+          return true;
+        }
+
+        return false;
+      } catch (e) {
+        debugPrint('Error in toggleRepost: $e');
+        rethrow;
       }
-
-      if (success) {
-        // For proper UI update, ideally we should refresh the feed
-        // But for immediate feedback, we can update the local state
-        final updatedPosts = List<PostModel>.from(state.posts);
-
-        // Update the repost count and status
-        final updatedPost = post.copyWith(
-          isRepost: !isCurrentlyReposted,
-          reposts: isCurrentlyReposted ? post.reposts - 1 : post.reposts + 1,
-        );
-
-        // Replace the old post with the updated one
-        updatedPosts[postIndex] = updatedPost;
-
-        // Update the state with the new list
-        state = state.copyWith(posts: updatedPosts);
-
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      debugPrint('Error in toggleRepost: $e');
-      rethrow;
     }
-  }
 
   /// Delete a post
   Future<bool> deletePost(String postId) async {

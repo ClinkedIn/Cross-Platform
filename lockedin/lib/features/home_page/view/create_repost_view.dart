@@ -209,8 +209,10 @@ class _CreateRepostViewState extends ConsumerState<CreateRepostView> {
     
     try {
       final description = _descriptionController.text.trim();
+      final userstate =ref.read(userProvider);
+      final userid =userstate.when(data: (user) => user.id, loading: () => '', error: (_, __) => '');
       final success = await ref.read(homeViewModelProvider.notifier)
-        .toggleRepost(widget.post.id, description: description.isNotEmpty ? description : null);
+        .toggleRepost(widget.post.id, userid,description: description.isNotEmpty ? description : null);
       
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

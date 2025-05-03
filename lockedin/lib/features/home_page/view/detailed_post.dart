@@ -148,8 +148,8 @@ class PostDetailView extends ConsumerWidget {
                       postDetailState.commentFocusNode.requestFocus();
                     },
                     onShare: () async {
-                 // Navigate to create repost view
-                       context.push('/create-repost', extra: commentsState.post);
+                      // Navigate to create repost view
+                      context.push('/create-repost', extra: commentsState.post);
                     },
                     onRepost: () async {
                       try {
@@ -481,9 +481,10 @@ class PostDetailView extends ConsumerWidget {
               debugPrint('Error loading profile image: $exception');
             },
             radius: 2.5.h,
+            backgroundColor: Colors.grey[300],
             child:
                 comment.profileImageUrl.isEmpty
-                    ? Icon(Icons.person, size: 3.h)
+                    ? Icon(Icons.person, size: 3.h, color: Colors.white)
                     : null,
           ),
 
@@ -772,7 +773,7 @@ class PostDetailView extends ConsumerWidget {
                 child:
                     (postDetailState.currentUserProfilePicture == null ||
                             postDetailState.currentUserProfilePicture!.isEmpty)
-                        ? Icon(Icons.person, color: Colors.grey[600])
+                        ? Icon(Icons.person, color: Colors.white)
                         : null,
               ),
               SizedBox(width: 2.w),

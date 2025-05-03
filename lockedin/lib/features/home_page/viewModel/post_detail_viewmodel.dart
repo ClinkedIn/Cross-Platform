@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import '../model/taggeduser_model.dart';
 import '../viewModel/comment_viewmodel.dart';
 import '../viewModel/home_viewmodel.dart';
@@ -287,10 +288,12 @@ class PostDetailViewModel extends StateNotifier<PostDetailState> {
 
   Future<void> repostPost() async {
     try {
+      final userstate =_ref.watch(userProvider);
+      final userid =userstate.when(data: (user) => user.id, error: (error, stackTrace) => null, loading: () => null);
       await _ref
           .read(homeViewModelProvider.notifier)
           .toggleRepost(
-            _ref.read(commentsViewModelProvider(postId)).post!.id
+            _ref.read(commentsViewModelProvider(postId)).post!.id,userid?? ''
           );
       
       // Refresh post data

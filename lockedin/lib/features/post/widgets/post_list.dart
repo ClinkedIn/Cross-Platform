@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import '../../home_page/model/post_model.dart';
 import '../../home_page/viewModel/home_viewmodel.dart';
 import 'post_card.dart';
@@ -182,17 +183,26 @@ class _PostListState extends ConsumerState<PostList> {
           },
           onRepost: () async {
             try {
+                  final userState = ref.watch(userProvider);
+                  var userid=userState.when(
+                    data: (user) => user.id,
+                    error: (error, stackTrace) => null,
+                    loading: () => null,
+                  );
               await ref
                   .read(homeViewModelProvider.notifier)
-                  .toggleRepost(widget.posts[index].id);
+                  .toggleRepost(widget.posts[index].id, userid??'');
               print("Repost button pressed for post: ${widget.posts[index].id}");
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(
-                      widget.posts[index].isRepost == true
-                          ? 'Repost removed'
-                          : 'Post reposted successfully',
+                    content: 
+                    userState.when(
+                      data: (user) => widget.posts[index].isRepost == true && widget.posts[index].repostId == user.id
+                          ? Text('Repost removed')
+                          : Text('Post reposted successfully'),
+                      error: (error, stackTrace) => Text('Error: $error'),
+                      loading: () => CircularProgressIndicator(),
                     ),
                   ),
                 );
