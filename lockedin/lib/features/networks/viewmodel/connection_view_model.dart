@@ -18,7 +18,7 @@ class ConnectionViewModel extends ChangeNotifier {
   ConnectionViewState get state => _state;
   ConnectionList? get connectionList => _connectionList;
   int get connectionCount => _connectionList?.connections.length ?? 0;
-  List<Connection> get connections => _connectionList?.connections ?? [];
+  List<ConnectionModel> get connections => _connectionList?.connections ?? [];
   String? get errorMessage => _errorMessage;
   Pagination? get pagination => _connectionList?.pagination;
 

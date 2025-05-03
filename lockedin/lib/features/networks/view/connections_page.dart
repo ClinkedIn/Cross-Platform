@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../model/connection_model.dart';
 import 'package:lockedin/features/networks/widgets/connection.dart';
 import 'package:sizer/sizer.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +16,21 @@ class ConnectionsPage extends StatefulWidget {
 class _ConnectionsPageState extends State<ConnectionsPage> {
   final ScrollController _scrollController = ScrollController();
   late final ConnectionViewModel _viewModel;
+  // Initialize filter
+  final ConnectionFilter _filter = ConnectionFilter();
+  // List of common job titles for filtering
+  final List<String> _commonJobTitles = [
+    'Software Engineer',
+    'Product Manager',
+    'Data Scientist',
+    'Designer',
+    'Marketing',
+    'Sales',
+    'HR',
+    'Founder',
+    'Student',
+    'Other',
+  ];
 
   @override
   void initState() {
@@ -46,6 +62,50 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
     }
   }
 
+  // Apply current filters to connections
+  List<ConnectionModel> _getFilteredConnections(
+    List<ConnectionModel> connections,
+  ) {
+    // Create a copy to avoid modifying the original list
+    List<ConnectionModel> filteredList = List.from(connections);
+
+    // Apply job title filter if set
+    if (_filter.jobTitleFilter != null && _filter.jobTitleFilter!.isNotEmpty) {
+      filteredList =
+          filteredList.where((connection) {
+            return connection.lastJobTitle.toLowerCase().contains(
+              _filter.jobTitleFilter!.toLowerCase(),
+            );
+          }).toList();
+    }
+
+    // Apply sorting
+    switch (_filter.sortOption) {
+      case SortOption.nameAsc:
+        filteredList.sort(
+          (a, b) => '${a.firstName} ${a.lastName}'.compareTo(
+            '${b.firstName} ${b.lastName}',
+          ),
+        );
+        break;
+      case SortOption.nameDesc:
+        filteredList.sort(
+          (a, b) => '${b.firstName} ${b.lastName}'.compareTo(
+            '${a.firstName} ${a.lastName}',
+          ),
+        );
+        break;
+      case SortOption.jobTitleAsc:
+        filteredList.sort((a, b) => a.lastJobTitle.compareTo(b.lastJobTitle));
+        break;
+      case SortOption.jobTitleDesc:
+        filteredList.sort((a, b) => b.lastJobTitle.compareTo(a.lastJobTitle));
+        break;
+    }
+
+    return filteredList;
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -61,7 +121,7 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
         iconTheme: theme.iconTheme,
       ),
       body: ChangeNotifierProvider.value(
-        value: _viewModel, // Use the existing ViewModel instance
+        value: _viewModel,
         child: SafeArea(
           minimum: EdgeInsets.all(10.px),
           child: Consumer<ConnectionViewModel>(
@@ -92,18 +152,20 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
         IconButton(
           onPressed: () {
             // Implement search functionality
-            // showSearch(
-            //   context: context,
-            //   delegate: ConnectionSearchDelegate(viewModel.connections),
-            // );
+            showSearch(
+              context: context,
+              delegate: ConnectionSearchDelegate(viewModel.connections),
+            );
           },
           icon: const Icon(Icons.search),
+          tooltip: 'Search connections',
         ),
         IconButton(
           onPressed: () {
             _showFilterBottomSheet();
           },
           icon: const Icon(Icons.tune),
+          tooltip: 'Filter connections',
         ),
       ],
     );
@@ -118,14 +180,31 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
         if (viewModel.connections.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         } else {
-          return _buildConnectionsListWithData(viewModel, isLoading: true);
+          // Apply filtering to the connections
+          final filteredConnections = _getFilteredConnections(
+            viewModel.connections,
+          );
+          return _buildConnectionsListWithData(
+            viewModel,
+            filteredConnections,
+            isLoading: true,
+          );
         }
 
       case ConnectionViewState.loaded:
         if (viewModel.connections.isEmpty) {
           return const Center(child: Text('No connections found'));
         } else {
-          return _buildConnectionsListWithData(viewModel);
+          // Apply filtering to the connections
+          final filteredConnections = _getFilteredConnections(
+            viewModel.connections,
+          );
+          if (filteredConnections.isEmpty) {
+            return const Center(
+              child: Text('No connections match your filters'),
+            );
+          }
+          return _buildConnectionsListWithData(viewModel, filteredConnections);
         }
 
       case ConnectionViewState.error:
@@ -146,15 +225,16 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
   }
 
   Widget _buildConnectionsListWithData(
-    ConnectionViewModel viewModel, {
+    ConnectionViewModel viewModel,
+    List<ConnectionModel> connections, {
     bool isLoading = false,
   }) {
     return ListView.separated(
       controller: _scrollController,
-      itemCount: viewModel.connections.length + (isLoading ? 1 : 0),
+      itemCount: connections.length + (isLoading ? 1 : 0),
       separatorBuilder: (context, index) => const Divider(),
       itemBuilder: (context, index) {
-        if (isLoading && index == viewModel.connections.length) {
+        if (isLoading && index == connections.length) {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(8.0),
@@ -163,26 +243,33 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
           );
         }
 
-        final connection = viewModel.connections[index];
+        final connectionModel = connections[index];
         return Connection(
           profileImage:
-              connection.profilePicture.isNotEmpty
-                  ? NetworkImage(connection.profilePicture)
+              connectionModel.profilePicture.isNotEmpty
+                  ? NetworkImage(connectionModel.profilePicture)
                   : const AssetImage('assets/images/default_profile.png')
                       as ImageProvider,
-          firstName: connection.firstName,
-          lastName: connection.lastName,
-          lastJobTitle: connection.lastJobTitle,
+          firstName: connectionModel.firstName,
+          lastName: connectionModel.lastName,
+          lastJobTitle: connectionModel.lastJobTitle,
           onNameTap: () {
-            context.push('/other-profile/${connection.id}');
+            context.push('/other-profile/${connectionModel.id}');
           },
-          onRemove: () => viewModel.removeConnection(connection.id),
+          onRemove:
+              () => _showRemoveConfirmationDialog(connectionModel).then((
+                confirmed,
+              ) {
+                if (confirmed == true) {
+                  viewModel.removeConnection(connectionModel.id);
+                }
+              }),
         );
       },
     );
   }
 
-  Future<bool?> _showRemoveConfirmationDialog(Connection connection) {
+  Future<bool?> _showRemoveConfirmationDialog(ConnectionModel connection) {
     return showDialog<bool>(
       context: context,
       builder:
@@ -206,49 +293,262 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
   }
 
   void _showFilterBottomSheet() {
+    // Make temporary filter to avoid applying changes until user clicks "Apply"
+    ConnectionFilter tempFilter = ConnectionFilter(
+      sortOption: _filter.sortOption,
+      jobTitleFilter: _filter.jobTitleFilter,
+    );
+
+    // Text editing controller with proper initial value
+    final TextEditingController _textController = TextEditingController(
+      text: _filter.jobTitleFilter ?? '',
+    );
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder:
-          (context) => Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Filter Connections',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          (context) => StatefulBuilder(
+            builder:
+                (context, setModalState) => Container(
+                  padding: const EdgeInsets.all(16),
+                  // Use more height for the modal
+                  height: MediaQuery.of(context).size.height * 0.70,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header with close button - Keep this outside the scrollable area
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Filter Connections',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                      const Divider(),
+
+                      // Make the content scrollable
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 8),
+                              // Sort options
+                              const Text(
+                                'Sort by',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+
+                              RadioListTile<SortOption>(
+                                title: const Text('Name (A-Z)'),
+                                value: SortOption.nameAsc,
+                                groupValue: tempFilter.sortOption,
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    tempFilter.sortOption = value!;
+                                  });
+                                },
+                              ),
+                              RadioListTile<SortOption>(
+                                title: const Text('Name (Z-A)'),
+                                value: SortOption.nameDesc,
+                                groupValue: tempFilter.sortOption,
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    tempFilter.sortOption = value!;
+                                  });
+                                },
+                              ),
+                              RadioListTile<SortOption>(
+                                title: const Text('Job Title (A-Z)'),
+                                value: SortOption.jobTitleAsc,
+                                groupValue: tempFilter.sortOption,
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    tempFilter.sortOption = value!;
+                                  });
+                                },
+                              ),
+                              RadioListTile<SortOption>(
+                                title: const Text('Job Title (Z-A)'),
+                                value: SortOption.jobTitleDesc,
+                                groupValue: tempFilter.sortOption,
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    tempFilter.sortOption = value!;
+                                  });
+                                },
+                              ),
+
+                              const Divider(),
+                              const SizedBox(height: 8),
+
+                              // Job title filter
+                              const Text(
+                                'Filter by job title',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // *** FIX FOR TEXT FIELD DIRECTION ISSUE ***
+                              // Apply Directionality at the highest level needed
+                              Directionality(
+                                textDirection: TextDirection.ltr,
+                                child: Material(
+                                  // Add Material widget to ensure proper inheritance of theme properties
+                                  color: Colors.transparent,
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextFormField(
+                                          controller: _textController,
+                                          decoration: InputDecoration(
+                                            hintText:
+                                                'Enter job title to filter',
+                                            prefixIcon: const Icon(Icons.work),
+                                            suffixIcon:
+                                                tempFilter.jobTitleFilter !=
+                                                            null &&
+                                                        tempFilter
+                                                            .jobTitleFilter!
+                                                            .isNotEmpty
+                                                    ? IconButton(
+                                                      icon: const Icon(
+                                                        Icons.clear,
+                                                      ),
+                                                      onPressed: () {
+                                                        setModalState(() {
+                                                          tempFilter
+                                                                  .jobTitleFilter =
+                                                              null;
+                                                          _textController
+                                                              .clear();
+                                                        });
+                                                      },
+                                                    )
+                                                    : null,
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          textDirection: TextDirection.ltr,
+                                          textAlign: TextAlign.left,
+                                          onChanged: (value) {
+                                            setModalState(() {
+                                              tempFilter.jobTitleFilter =
+                                                  value.isEmpty ? null : value;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Common job titles
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children:
+                                    _commonJobTitles.map((title) {
+                                      bool isSelected =
+                                          tempFilter.jobTitleFilter == title;
+                                      return FilterChip(
+                                        label: Text(title),
+                                        selected: isSelected,
+                                        onSelected: (selected) {
+                                          setModalState(() {
+                                            if (selected) {
+                                              tempFilter.jobTitleFilter = title;
+                                              _textController.text = title;
+                                            } else if (isSelected) {
+                                              tempFilter.jobTitleFilter = null;
+                                              _textController.clear();
+                                            }
+                                          });
+                                        },
+                                      );
+                                    }).toList(),
+                              ),
+
+                              // Add some padding at the bottom for better spacing
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Action buttons - Keep this outside the scrollable area
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  // Reset filters
+                                  setState(() {
+                                    _filter.sortOption = SortOption.nameAsc;
+                                    _filter.jobTitleFilter = null;
+                                  });
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('Reset'),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  // Apply filters
+                                  setState(() {
+                                    _filter.sortOption = tempFilter.sortOption;
+                                    _filter.jobTitleFilter =
+                                        tempFilter.jobTitleFilter;
+                                  });
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('Apply'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-                // TODO: Implement filter options
-                ListTile(
-                  leading: const Icon(Icons.sort),
-                  title: const Text('Sort by name'),
-                  onTap: () {
-                    // Implement sort by name
-                    Navigator.pop(context);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.work),
-                  title: const Text('Filter by job title'),
-                  onTap: () {
-                    // Implement filter by job title
-                    Navigator.pop(context);
-                  },
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Apply'),
-                ),
-              ],
-            ),
           ),
     );
   }
 }
 
 class ConnectionSearchDelegate extends SearchDelegate<String> {
-  final List<Connection> connections;
+  final List<ConnectionModel> connections;
 
   ConnectionSearchDelegate(this.connections);
 
@@ -278,6 +578,22 @@ class ConnectionSearchDelegate extends SearchDelegate<String> {
   }
 
   Widget _buildSearchResults() {
+    if (query.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.search, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'Search for connections by name or job title',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
     final filteredConnections =
         connections.where((connection) {
           final fullName =
@@ -287,6 +603,22 @@ class ConnectionSearchDelegate extends SearchDelegate<String> {
 
           return fullName.contains(queryLower) || jobTitle.contains(queryLower);
         }).toList();
+
+    if (filteredConnections.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.search_off, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              'No connections found for "$query"',
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
 
     return ListView.separated(
       itemCount: filteredConnections.length,
@@ -303,6 +635,11 @@ class ConnectionSearchDelegate extends SearchDelegate<String> {
           ),
           title: Text('${connection.firstName} ${connection.lastName}'),
           subtitle: Text(connection.lastJobTitle),
+          onTap: () {
+            // Navigate to profile when tapped
+            GoRouter.of(context).push('/other-profile/${connection.id}');
+            close(context, connection.id);
+          },
         );
       },
     );
