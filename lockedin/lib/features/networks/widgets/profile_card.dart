@@ -1,34 +1,99 @@
 import 'package:flutter/material.dart';
+import '../model/company_list_model.dart';
 
-class ProfileCard extends StatefulWidget {
-  final String name;
-  final String headline;
-  final String profileImage;
-  final String backgroundImage;
-  final int followerCount;
-  final List<String> mutualConnections;
+class CompanyProfileCard extends StatefulWidget {
+  final Company company;
+  final String userRelationship;
   final Function(bool) onFollowChanged;
 
-  const ProfileCard({
+  const CompanyProfileCard({
     super.key,
-    required this.name,
-    required this.headline,
-    required this.profileImage,
-    required this.backgroundImage,
-    this.followerCount = 0,
-    this.mutualConnections = const [],
+    required this.company,
+    required this.userRelationship,
     required this.onFollowChanged,
   });
 
   @override
-  State<ProfileCard> createState() => _ProfileCardState();
+  State<CompanyProfileCard> createState() => _CompanyProfileCardState();
 }
 
-class _ProfileCardState extends State<ProfileCard> {
-  bool _isFollowing = false;
+class _CompanyProfileCardState extends State<CompanyProfileCard> {
+  late bool _isFollowing;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize following state based on the relationship
+    _isFollowing = widget.userRelationship == "follower";
+  }
+
+  @override
+  void didUpdateWidget(CompanyProfileCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update state if the relationship changes
+    if (oldWidget.userRelationship != widget.userRelationship) {
+      setState(() {
+        _isFollowing = widget.userRelationship == "follower";
+      });
+    }
+  }
+
+  // Show confirmation dialog when unfollowing
+  void _showUnfollowConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Unfollow ${widget.company.name}?'),
+          content: Text(
+            'You will no longer receive updates from ${widget.company.name}.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Cancel', style: TextStyle(color: Colors.blue)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                setState(() {
+                  _isFollowing = false;
+                });
+                widget.onFollowChanged(false); // Call the callback with false
+              },
+              child: const Text(
+                'Unfollow',
+                style: TextStyle(color: Colors.blue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Handle follow button press
+  void _handleFollowPress() {
+    if (_isFollowing) {
+      // If already following, show confirmation dialog
+      _showUnfollowConfirmation();
+    } else {
+      // If not following, follow immediately
+      setState(() {
+        _isFollowing = true;
+      });
+      widget.onFollowChanged(true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Use a placeholder background if none is provided
+    final theme = Theme.of(context);
+    final backgroundImage = 'default_cover_photo.jpeg';
+
     return Card(
       elevation: 2,
       clipBehavior: Clip.antiAlias,
@@ -42,9 +107,9 @@ class _ProfileCardState extends State<ProfileCard> {
           Stack(
             clipBehavior: Clip.none, // Allow profile picture to overflow
             children: [
-              // Background Image
+              // Background Image - using a placeholder
               Image.network(
-                widget.backgroundImage,
+                backgroundImage,
                 height: 100,
                 width: double.infinity,
                 fit: BoxFit.cover,
@@ -58,7 +123,7 @@ class _ProfileCardState extends State<ProfileCard> {
                   );
                 },
               ),
-              // Profile Image - positioned to overlap
+              // Company Logo - positioned to overlap
               Positioned(
                 bottom: -24,
                 left: 16,
@@ -69,15 +134,15 @@ class _ProfileCardState extends State<ProfileCard> {
                   ),
                   child: CircleAvatar(
                     radius: 36,
-                    backgroundImage: NetworkImage(widget.profileImage),
+                    backgroundImage: NetworkImage(widget.company.logo),
                     onBackgroundImageError: (exception, stackTrace) {
                       // Handle profile image loading error
                     },
                     backgroundColor: Colors.grey[200],
                     child:
-                        widget.profileImage.isEmpty
+                        widget.company.logo.isEmpty
                             ? const Icon(
-                              Icons.person,
+                              Icons.business,
                               size: 36,
                               color: Colors.grey,
                             )
@@ -88,19 +153,19 @@ class _ProfileCardState extends State<ProfileCard> {
             ],
           ),
 
-          // Content section with padding for profile image
+          // Content section with padding for company logo
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Name and Follow Button Row
+                // Company Name and Follow Button Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: Text(
-                        widget.name,
+                        widget.company.name,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -110,25 +175,24 @@ class _ProfileCardState extends State<ProfileCard> {
                       ),
                     ),
                     ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _isFollowing = !_isFollowing;
-                        });
-                        widget.onFollowChanged(_isFollowing);
-                      },
+                      onPressed: _handleFollowPress,
                       style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.all(
-                          _isFollowing ? Colors.white : const Color(0xFF0A66C2),
+                        backgroundColor: MaterialStateProperty.all(
+                          _isFollowing
+                              ? theme.scaffoldBackgroundColor
+                              : const Color(0xFF0A66C2),
                         ),
-                        side: WidgetStateProperty.all(
+                        side: MaterialStateProperty.all(
                           _isFollowing
                               ? const BorderSide(color: Color(0xFF0A66C2))
                               : BorderSide.none,
                         ),
-                        padding: WidgetStateProperty.all(
+                        padding: MaterialStateProperty.all(
                           const EdgeInsets.symmetric(horizontal: 16),
                         ),
-                        minimumSize: WidgetStateProperty.all(const Size(0, 36)),
+                        minimumSize: MaterialStateProperty.all(
+                          const Size(0, 36),
+                        ),
                       ),
                       child: Text(
                         _isFollowing ? 'Following' : '+ Follow',
@@ -145,9 +209,9 @@ class _ProfileCardState extends State<ProfileCard> {
 
                 const SizedBox(height: 4),
 
-                // Headline
+                // Tagline as headline
                 Text(
-                  widget.headline,
+                  widget.company.tagLine,
                   style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -155,32 +219,53 @@ class _ProfileCardState extends State<ProfileCard> {
 
                 const SizedBox(height: 8),
 
-                // Follower count
-                if (widget.followerCount > 0)
-                  Text(
-                    '${widget.followerCount.toString()} followers',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                  ),
+                // Company details
+                Row(
+                  children: [
+                    Icon(Icons.location_on, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        widget.company.location,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
 
-                // Mutual connections
-                if (widget.mutualConnections.isNotEmpty)
+                const SizedBox(height: 4),
+
+                // Industry and org size
+                Row(
+                  children: [
+                    Icon(Icons.business, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        '${widget.company.industry} · ${widget.company.organizationSize}',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Follower count
+                if (widget.company.followersCount > 0)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Row(
                       children: [
                         Icon(Icons.people, size: 14, color: Colors.grey[600]),
                         const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            widget.mutualConnections.length == 1
-                                ? '${widget.mutualConnections[0]} is a mutual connection'
-                                : '${widget.mutualConnections.length} mutual connections',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        Text(
+                          '${widget.company.followersCount.toString()} followers',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
                           ),
                         ),
                       ],

@@ -5,6 +5,7 @@ import 'package:lockedin/features/networks/widgets/connect_section.dart';
 import 'package:lockedin/features/networks/widgets/follow_section.dart';
 import 'package:lockedin/features/networks/widgets/invitation_section.dart';
 import 'package:lockedin/features/networks/widgets/manage_network.dart';
+import '../viewmodel/company_view_model.dart';
 import 'package:provider/provider.dart';
 
 class GrowTab extends StatelessWidget {
@@ -27,7 +28,10 @@ class GrowTab extends StatelessWidget {
           child: ConnectSection(),
         ),
         Divider(),
-        FollowSection(),
+        ChangeNotifierProvider(
+          create: (_) => CompanyViewModel(),
+          child: FollowSection(),
+        ),
       ],
     );
   }
