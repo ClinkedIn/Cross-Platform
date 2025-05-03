@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/services/token_services.dart';
+import 'package:lockedin/features/company/model/company_job_model.dart';
 import 'package:lockedin/features/company/model/company_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -230,6 +231,44 @@ class CompanyRepository {
     }
   }
 
+  Future<bool> createCompanyJob({
+    required String companyId,
+    required String title,
+    required String industry,
+    required String workplaceType,
+    required String jobLocation,
+    required String jobType,
+    required String description,
+    required String applicationEmail,
+    required List<Map<String, dynamic>> screeningQuestions,
+    required bool autoRejectMustHave,
+    required String rejectPreview,
+  }) async {
+    final response = await RequestService.post(
+      'jobs',
+      body: {
+        'companyId': companyId,
+        'title': title,
+        'industry': industry,
+        'workplaceType': workplaceType,
+        'jobLocation': jobLocation,
+        'jobType': jobType,
+        'description': description,
+        'applicationEmail': applicationEmail,
+        'screeningQuestions': screeningQuestions,
+        'autoRejectMustHave': autoRejectMustHave,
+        'rejectPreview': rejectPreview,
+      },
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      print('create job : ${response.body}');
+      return true;
+    } else {
+      print('Failed to create job: ${response.body}');
+      return false;
+    }
+  }
+
   Future<List<CompanyPost>> fetchCompanyPosts(
     String companyId, {
     int page = 1,
@@ -259,6 +298,24 @@ class CompanyRepository {
       }
     } catch (e) {
       print('Error fetching posts: $e');
+      return [];
+    }
+  }
+
+    Future<List<CompanyJob>> fetchCompanyJobs(
+    String companyId
+  ) async {
+    final response = await RequestService.get(
+      'jobs/company/$companyId',
+    );
+    print('Jobbb Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final jobsJson = data as List;
+      return jobsJson.map((job) => CompanyJob.fromJson(job)).toList();
+    } else {
+      print('Failed to fetch jobs: ${response.statusCode}');
       return [];
     }
   }

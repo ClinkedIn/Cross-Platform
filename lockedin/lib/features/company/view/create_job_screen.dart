@@ -1,99 +1,194 @@
 import 'package:flutter/material.dart';
-import 'package:lockedin/features/company/view/job_details_screen.dart';
+import 'package:lockedin/features/company/viewmodel/job_creation_viewmodel.dart';
 import 'package:sizer/sizer.dart';
 
-class CreateJobScreen extends StatefulWidget {
+class JobCreationView extends StatefulWidget {
   final String companyId;
 
-  const CreateJobScreen({super.key, required this.companyId});
+  JobCreationView({required this.companyId});
 
   @override
-  State<CreateJobScreen> createState() => _CreateJobScreenState();
+  _JobCreationViewState createState() => _JobCreationViewState();
 }
 
-class _CreateJobScreenState extends State<CreateJobScreen> {
-  final TextEditingController _jobTitleController = TextEditingController();
+class _JobCreationViewState extends State<JobCreationView> {
+  late JobCreationViewModel viewModel;
 
-  void _writeOnMyOwn() {
-    final jobTitle = _jobTitleController.text.trim();
+  final List<String> screeningQuestionOptions = [
+    "Background Check",
+    "Driver's License",
+    "Drug Test",
+    "Education",
+    "Expertise with Skill",
+    "Hybrid Work",
+    "Industry Experience",
+    "Language",
+    "Location",
+    "Onsite Work",
+    "Remote Work",
+    "Urgent Hiring Need",
+    "Visa Status",
+    "Work Authorization",
+    "Work Experience",
+    "Custom Question",
+  ];
 
-    if (jobTitle.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Job title cannot be empty")),
-      );
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => JobDetailsScreen(initialJobTitle: jobTitle, companyId: widget.companyId),
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    viewModel = JobCreationViewModel(widget.companyId);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(),
-        elevation: 0,
-        title: Text("Post a Job", style: TextStyle(fontSize: 20.sp)),
-      ),
+      appBar: AppBar(title: Text('Create Job')),
       body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(16.0),
+        child: ListView(
           children: [
-            SizedBox(height: 3.h),
-            Center(
-              child: Icon(Icons.star, size: 5.h, color: Colors.blueAccent),
+            TextField(
+              controller: viewModel.titleController,
+              decoration: InputDecoration(labelText: 'Job Title'),
             ),
             SizedBox(height: 2.h),
-            Center(
-              child: Text(
-                "Post a job in minutes",
-                style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
-              ),
-            ),
-            SizedBox(height: 0.8.h),
-            Center(
-              child: Text(
-                "Increase the quality of your hire",
-                style: TextStyle(fontSize: 17.sp),
-              ),
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              "Job title",
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17.sp),
-            ),
-            SizedBox(height: 1.h),
             TextField(
-              controller: _jobTitleController,
-              decoration: InputDecoration(
-                hintText: "Add job title",
-                border: UnderlineInputBorder(),
-              ),
-              style: TextStyle(fontSize: 17.sp),
+              controller: viewModel.industryController,
+              decoration: InputDecoration(labelText: 'Industry'),
             ),
-            SizedBox(height: 6.h),
-            Center(
-              child: GestureDetector(
-                onTap: _writeOnMyOwn,
-                child: Text(
-                  "Write on my own",
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    color: Colors.blue,
-                    fontWeight: FontWeight.w500,
+            SizedBox(height: 2.h),
+            TextField(
+              controller: viewModel.jobLocationController,
+              decoration: InputDecoration(labelText: 'Job Location'),
+            ),
+            SizedBox(height: 2.h),
+            TextField(
+              controller: viewModel.descriptionController,
+              decoration: InputDecoration(labelText: 'Description'),
+            ),
+            SizedBox(height: 2.h),
+            TextField(
+              controller: viewModel.applicationEmailController,
+              decoration: InputDecoration(labelText: 'Application Email'),
+            ),
+            SizedBox(height: 2.h),
+            DropdownButtonFormField<String>(
+              value: viewModel.workplaceType,
+              items: ['Onsite', 'Hybrid', 'Remote']
+                  .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                  .toList(),
+              onChanged: (val) {
+                setState(() {
+                  viewModel.workplaceType = val!;
+                });
+              },
+              decoration: InputDecoration(labelText: 'Workplace Type'),
+            ),
+            SizedBox(height: 2.h),
+            DropdownButtonFormField<String>(
+              value: viewModel.jobType,
+              items: ['Full Time', 'Part Time', 'Contract', 'Temporary', 'Other', 'Volunteer', 'Internship']
+                  .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                  .toList(),
+              onChanged: (val) {
+                setState(() {
+                  viewModel.jobType = val!;
+                });
+              },
+              decoration: InputDecoration(labelText: 'Job Type'),
+            ),
+            SizedBox(height: 2.h),
+            SwitchListTile(
+              title: Text('Auto Reject Must Have'),
+              value: viewModel.autoRejectMustHave,
+              onChanged: (val) {
+                setState(() {
+                  viewModel.autoRejectMustHave = val;
+                });
+              },
+            ),
+            SizedBox(height: 2.h),
+            TextField(
+              controller: viewModel.rejectPreviewController,
+              decoration: InputDecoration(labelText: 'Reject Preview'),
+            ),
+            SizedBox(height: 2.h),
+            Text('Screening Questions', style: TextStyle(fontWeight: FontWeight.bold)),
+
+            if (viewModel.screeningQuestionControllers.isEmpty)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      viewModel.addScreeningQuestion();
+                    });
+                  },
+                  icon: Icon(Icons.add),
+                  label: Text('Add Screening Question'),
+                ),
+              )
+            else
+              ...[
+                ...viewModel.screeningQuestionControllers.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  var map = entry.value;
+                  return Column(
+                    children: [
+                      SizedBox(height: 2.h),
+                      DropdownButtonFormField<String>(
+                        value: screeningQuestionOptions.contains(viewModel.screeningQuestionValues[index])
+                            ? viewModel.screeningQuestionValues[index]
+                            : null,
+                        items: screeningQuestionOptions
+                            .map((option) => DropdownMenuItem(value: option, child: Text(option)))
+                            .toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            viewModel.screeningQuestionValues[index] = val;
+                          });
+                        },
+                        decoration: InputDecoration(labelText: 'Question'),
+                      ),
+                      TextField(
+                        controller: map['idealAnswer'],
+                        decoration: InputDecoration(labelText: 'Ideal Answer'),
+                      ),
+                      CheckboxListTile(
+                        title: Text("Must Have"),
+                        value: viewModel.mustHaveValues[index],
+                        onChanged: (val) {
+                          setState(() {
+                            viewModel.mustHaveValues[index] = val ?? false;
+                          });
+                        },
+                      ),
+                    ],
+                  );
+                }).toList(),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        viewModel.addScreeningQuestion();
+                      });
+                    },
+                    icon: Icon(Icons.add),
+                    label: Text('Add Screening Question'),
                   ),
                 ),
-              ),
-            ),
+              ],
+
+            SizedBox(height: 2.h),
+            ElevatedButton(
+              onPressed: () => viewModel.submitJob(context),
+              child: Text('Submit'),
+            )
           ],
         ),
       ),
     );
   }
 }
+

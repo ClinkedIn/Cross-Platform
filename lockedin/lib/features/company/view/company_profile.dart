@@ -5,6 +5,7 @@ import 'package:lockedin/features/company/view/create_job_screen.dart';
 import 'package:lockedin/features/company/view/create_post_screen.dart';
 import 'package:lockedin/features/company/view/edit_company_profile_view.dart';
 import 'package:lockedin/features/company/viewmodel/company_viewmodel.dart';
+import 'package:lockedin/features/company/widgets/job_card.dart';
 import 'package:lockedin/features/company/widgets/post_card.dart';
 import 'package:sizer/sizer.dart';
 
@@ -25,6 +26,7 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
     Future.microtask(() {
       ref.read(companyViewModelProvider).fetchCompanyById(widget.companyId);
       ref.read(companyViewModelProvider).fetchCompanyPosts(widget.companyId);
+      ref.read(companyViewModelProvider).fetchCompanyJobs(widget.companyId);
     });
   }
 
@@ -35,6 +37,7 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
     final errorMessage = companyViewModel.errorMessage;
     final company = companyViewModel.fetchedCompany;
     final posts = companyViewModel.companyPosts;
+    final jobs = companyViewModel.companyJobs;
 
     return Scaffold(
       appBar: AppBar(
@@ -230,7 +233,7 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                         MaterialPageRoute(
                           builder:
                               (context) =>
-                                  CreateJobScreen(companyId: widget.companyId),
+                                  JobCreationView(companyId: widget.companyId),
                         ),
                       ).then((_) {
                         // Re-fetch posts after coming back
@@ -242,15 +245,6 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                     child: const Text("Post a job for free"),
                   ),
                   SizedBox(height: 1.h),
-                  ...companyViewModel.companyJobs.map((job) {
-                    return Card(
-                      child: ListTile(
-                        title: Text(job.title),
-                        subtitle: Text(job.description),
-                        // Add more fields as needed
-                      ),
-                    );
-                  }),
                   Text(
                     "Create New Post",
                     style: TextStyle(
@@ -281,7 +275,7 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                   ),
 
                   Text(
-                    "Recent Posts and Jobs",
+                    "Recent Posts",
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
@@ -291,6 +285,19 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                   ...posts.map((post) {
                     print("post description: ${post.description}, post time ago: ${post.createdAt}");
                     return PostCard(post: post, companyLogoUrl: company.logo);
+                  }),
+
+                  Text(
+                    "Recent Jobs",
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 1.h),
+                  ...jobs.map((job) {
+                    print("job description: ${job.description}, job time ago: ${job.createdAt}");
+                    return JobCard(job: job);
                   }),
                 ],
               ),
