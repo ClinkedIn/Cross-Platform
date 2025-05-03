@@ -99,8 +99,6 @@ class ChatBubble extends ConsumerWidget {
   }
   
   Widget _buildAttachmentWidget(BuildContext context) {
-    // Debug: Print the attachment URL and type
-    debugPrint('Building attachment widget: $attachmentUrl, type: $attachmentType');
     
     switch (attachmentType) {
       case AttachmentType.image:
@@ -112,7 +110,6 @@ class ChatBubble extends ConsumerWidget {
         String cleanUrl = attachmentUrl!;
         if (cleanUrl.startsWith('[') && cleanUrl.endsWith(']')) {
           cleanUrl = cleanUrl.substring(1, cleanUrl.length - 1);
-          debugPrint('Cleaned URL: $cleanUrl');
         }
         
         // Validate URL before passing to Image.network
@@ -120,7 +117,6 @@ class ChatBubble extends ConsumerWidget {
         try {
           final uri = Uri.parse(cleanUrl);
           isValidUrl = uri.hasScheme && uri.scheme.startsWith(RegExp(r'[a-zA-Z]'));
-          debugPrint('URL validation: $isValidUrl, scheme: ${uri.scheme}');
         } catch (e) {
           debugPrint('Invalid URL format: $e');
         }

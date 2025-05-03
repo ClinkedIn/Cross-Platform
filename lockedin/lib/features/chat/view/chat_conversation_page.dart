@@ -245,15 +245,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     final isMe = currentUserId.isNotEmpty && message.sender.id == currentUserId;
     
     // Default to empty string for messageText if null
-    final messageText = message.messageText ?? '';
-    
-    // Debug: print attachment information
-    debugPrint('Message ID: ${message.id}');
-    debugPrint('Has attachment: ${message.messageAttachment.isNotEmpty}');
-    if (message.messageAttachment.isNotEmpty) {
-      debugPrint('Attachment URL: ${message.messageAttachment.first}');
-      debugPrint('Attachment Type: ${message.attachmentType}');
-    }
+    final messageText = message.messageText;
     
     // Extract first attachment URL
     final String? attachmentUrl = message.messageAttachment.isNotEmpty 

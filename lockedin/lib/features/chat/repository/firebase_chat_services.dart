@@ -29,11 +29,6 @@ class FirebaseChatServices {
           final messages = snapshot.docs.map((doc) {
             final data = doc.data();
             
-            // Debug: Log raw data for troubleshooting
-            debugPrint('Message ${doc.id} raw data: $data');
-            debugPrint('Media URL: ${data['mediaUrl']}');
-            debugPrint('Media Type: ${data['mediaType']}');
-            
             // Extract user IDs to determine receiver
             final senderId = data['senderId'] ?? '';
             final currentUserId = _authService.currentUser?.id;
@@ -73,8 +68,7 @@ class FirebaseChatServices {
               
               // Ensure URL has a proper scheme
               if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                // Log the malformed URL for debugging
-                debugPrint('Malformed URL detected: $url');
+
                 
                 // Try to fix common issues - if it starts with '//', add https:
                 if (url.startsWith('//')) {
@@ -89,17 +83,14 @@ class FirebaseChatServices {
                 else if (!url.contains('://')) {
                   url = 'https://$url';
                 }
-                
-                debugPrint('Corrected URL: $url');
+              
               }
               
               attachments = [url];
-              debugPrint('Found mediaUrl: $url');
               
               // Determine attachment type from mediaType field
               if (data['mediaType'] != null) {
                 final mediaType = data['mediaType'].toString().toLowerCase();
-                debugPrint('Found mediaType: $mediaType');
                 
                 switch (mediaType) {
                   case 'image': 
@@ -116,7 +107,7 @@ class FirebaseChatServices {
                         url.toLowerCase().endsWith('.png') || 
                         url.toLowerCase().endsWith('.gif') || 
                         url.contains('/image/')) {
-                      debugPrint('Auto-detected image from URL');
+
                       attachmentType = AttachmentType.image;
                     } else {
                       attachmentType = AttachmentType.none;
@@ -129,7 +120,7 @@ class FirebaseChatServices {
                     url.toLowerCase().endsWith('.png') || 
                     url.toLowerCase().endsWith('.gif') || 
                     url.contains('/image/')) {
-                  debugPrint('Auto-detected image from URL');
+
                   attachmentType = AttachmentType.image;
                 }
               }
