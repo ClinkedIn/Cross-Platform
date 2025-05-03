@@ -11,12 +11,11 @@ class Constants {
       'assets/images/default_cover_photo.jpeg';
 
   // Server URLs
+
   static const String _emulatorUrl = "http://10.0.2.2:3000/api";
   static const String _physicalDeviceUrl =
-      "http://192.168.1.23:3000/api"; // Your actual IP address
+      "http://192.168.1.17:3000/api"; // Your actual IP address
 
-  // Base API path
-  static const String baseApiPath = '/api';
 
   // We'll use this as the baseUrl getter until we know for sure
   static String baseUrl = _physicalDeviceUrl; // Default to physical device URL
@@ -80,7 +79,20 @@ class Constants {
   static const String allChatsEndpoint = '/chats/all-chats';
   static const String chatMarkAsReadEndpoint = '/chats/mark-as-read';
   static const String chatMarkAsUnreadEndpoint = '/chats/mark-as-unread';
+
+  static const String chatGetUnreadCount = '/messages/unread-count';
+
+  /// Endpoint to fetch a specific chat conversation
+  /// Use: '/chats/direct-chat/{actualChatId}'
   static const String chatConversationEndpoint = '/chats/direct-chat/{chatId}';
+  
+  /// Block and Unblock endpoints 
+  static const String blockUserEndpoint = '/messages/block-user/{userId}';
+  static const String unblockUserEndpoint = '/messages/unblock-user/{userId}';
+  static const String isUserBlocked = '/messages/is-blocked-from-messaging/{userId}';
+
+  
+
   static const String chatMessagesEndpoint = '/messages';
 
   static const String savePostEndpoint =
@@ -122,4 +134,7 @@ class Constants {
       '/posts/%s/report'; // %s will be replaced with the postId
   static const String searchUsersEndpoint = '/search/users';
   static const String googleLoginEndpoint = '/user/auth/google';
+  // Add this constant to the Constants class
+  static const String getPostLikesEndpoint = '/posts/%s/like'; // %s will be replaced with the postId
+  static const String getsavedendpoint = '/user/saved-posts';
 }

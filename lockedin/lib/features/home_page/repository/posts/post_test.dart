@@ -39,9 +39,8 @@ class MockPostRepository implements PostRepository {
   ];
 
   @override
-  Future<List<PostModel>> fetchHomeFeed() async {
-    if (shouldThrow) throw Exception("Error fetching posts");
-    return _mockPosts;
+  Future<Map<String, dynamic>> fetchHomeFeed({int page = 1, int limit = 10}) async {
+     throw UnimplementedError();
   }
 
   @override
@@ -110,7 +109,7 @@ class MockPostRepository implements PostRepository {
     throw UnimplementedError();
   }
   @override
-  Future<bool> editPost(String postId, {required String content, List<Map<String, dynamic>>? taggedUsers}) {
+  Future<bool> editPost(String postId, {required String content, List<TaggedUser>? taggedUsers}) {
     // TODO: implement deletePost
     throw UnimplementedError();
   }
@@ -123,5 +122,14 @@ class MockPostRepository implements PostRepository {
   Future<List<TaggedUser>> searchUsers(String name, {int page = 1, int limit = 10}) {
      // TODO: implement deletePost
     throw UnimplementedError();
+  }
+  @override
+ Future<Map<String, dynamic>> getPostLikes(String postId,{int page = 1}) {
+    throw UnimplementedError();
+  }
+  @override
+  Future<bool> unsavePostById(String postId) async {
+    if (shouldThrow) throw Exception("Error unsaving post");
+    return true; // Simulate a successful unsave
   }
 }

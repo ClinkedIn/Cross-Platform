@@ -8,6 +8,7 @@ class SignupRepository {
     required String email,
     required String password,
     required bool rememberMe,
+    String? fcmToken,
   }) async {
     final body = {
       "firstName": firstName,
@@ -16,6 +17,7 @@ class SignupRepository {
       "password": password,
       "remember_me": rememberMe,
       "recaptchaResponseToken": "recaptchaResponseToken",
+      if (fcmToken != null) 'fcmToken': fcmToken,
     };
     final response = await RequestService.post("/user", body: body);
     return response;

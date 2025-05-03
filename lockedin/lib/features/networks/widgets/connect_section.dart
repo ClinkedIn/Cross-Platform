@@ -45,6 +45,12 @@ class _ConnectSectionState extends State<ConnectSection> {
 
     return Consumer<SuggestionViewModel>(
       builder: (context, viewModel, child) {
+        // Update the pending connections whenever the viewModel data changes
+        if (viewModel.pendingConnectionIds != null) {
+          _pendingConnections.clear();
+          _pendingConnections.addAll(viewModel.pendingConnectionIds!);
+        }
+
         return Container(
           color: theme.cardColor,
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
@@ -135,8 +141,7 @@ class _ConnectSectionState extends State<ConnectSection> {
                           backgroundImage:
                               suggestion.coverPhoto.startsWith('assets/')
                                   ? 'assets/images/default_cover_photo.jpeg'
-                                  : suggestion
-                                      .coverPhoto, //'assets/images/default_cover_photo.jpeg',
+                                  : suggestion.coverPhoto,
                           profileImage:
                               suggestion.profilePicture != ''
                                   ? NetworkImage(suggestion.profilePicture)

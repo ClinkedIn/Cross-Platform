@@ -161,15 +161,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         ],
                       ),
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.pushNamed(
-                          'other-profile',
-                          pathParameters: {'userId': user.id},
-                        );
-                      },
-                      child: Text('View Profile'),
-                    ),
+
                     Divider(),
                     Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -196,7 +188,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               color: theme.iconTheme.color,
                             ),
                             title: Text(
-                              "Are you still working at Microsoft?",
+                              "Are you still working at ${user.workExperience[0].companyName}?",
                               style: theme.textTheme.bodyLarge,
                             ),
                           ),

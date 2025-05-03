@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/features/company/model/company_model.dart';
+import 'package:lockedin/features/company/view/company_profile.dart';
+import 'package:lockedin/features/company/view/create_post_screen.dart';
 import 'package:lockedin/features/company/viewmodel/company_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sizer/sizer.dart';
@@ -100,7 +102,10 @@ class CompanyView extends ConsumerWidget {
 
                             await companyViewModel.createCompany(newCompany);
 
-                            if (companyViewModel.createdCompany != null) {
+                            if (companyViewModel.createdCompany != null &&
+                                companyViewModel.createdCompany!.id != null) {
+                              final companyId =
+                                  companyViewModel.createdCompany!.id!;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
@@ -108,6 +113,17 @@ class CompanyView extends ConsumerWidget {
                                   ),
                                 ),
                               );
+
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => CompanyProfileView(
+                                        companyId: companyId,
+                                      ),
+                                ),
+                              );
+
                               _formKey.currentState?.reset();
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(

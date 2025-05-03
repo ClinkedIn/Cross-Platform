@@ -5,6 +5,10 @@ import 'package:lockedin/features/home_page/model/post_model.dart';
 import 'package:lockedin/features/home_page/viewModel/home_viewmodel.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:sizer/sizer.dart';
+import '../model/taggeduser_model.dart';
+import '../repository/posts/comment_api.dart';
+import '../viewModel/comment_viewmodel.dart';
+import 'dart:async';
 
 class EditPostPage extends ConsumerStatefulWidget {
   final PostModel post;
@@ -18,16 +22,28 @@ class EditPostPage extends ConsumerStatefulWidget {
 class _EditPostPageState extends ConsumerState<EditPostPage> {
   late TextEditingController _contentController;
   bool _isSubmitting = false;
+  // Add these variables for tagging functionality
+  List<TaggedUser> _taggedUsers = [];
+  List<TaggedUser> _userSearchResults = [];
+  bool _showMentionSuggestions = false;
+  String _mentionQuery = '';
+  int _mentionStartIndex = -1;
+  bool _isSearchingUsers = false;
+  Timer? _debounce;
+  late final CommentsApi _commentsApi;
   
   @override
   void initState() {
     super.initState();
     _contentController = TextEditingController(text: widget.post.content);
+    _taggedUsers = List.from(widget.post.taggedUsers);
+    _commentsApi = ref.read(commentsApiProvider);
   }
 
   @override
   void dispose() {
     _contentController.dispose();
+    _debounce?.cancel(); 
     super.dispose();
   }
 
@@ -121,19 +137,121 @@ class _EditPostPageState extends ConsumerState<EditPostPage> {
               ),
               
               SizedBox(height: 4.h),
-              
-              // Post content text field
-              TextField(
-                controller: _contentController,
-                maxLines: null,
-                keyboardType: TextInputType.multiline,
-                decoration: InputDecoration(
-                  hintText: 'What do you want to talk about?',
-                  hintStyle: TextStyle(color: AppColors.gray, fontSize: 16.sp),
-                  border: InputBorder.none,
+
+              // Tagged users chips - add this section
+              if (_taggedUsers.isNotEmpty)
+                Container(
+                  margin: EdgeInsets.only(bottom: 2.h),
+                  child: Wrap(
+                    spacing: 1.w,
+                    runSpacing: 0.5.h,
+                    children: _taggedUsers.map((user) {
+                      return Chip(
+                        backgroundColor: theme.primaryColor.withOpacity(0.1),
+                        avatar: CircleAvatar(
+                          backgroundImage: user.profilePicture != null && 
+                                        user.profilePicture!.isNotEmpty
+                              ? NetworkImage(user.profilePicture!)
+                              : null,
+                          child: (user.profilePicture == null || 
+                                user.profilePicture!.isEmpty)
+                              ? Icon(Icons.person, size: 1.5.h)
+                              : null,
+                        ),
+                        label: Text(
+                          '${user.firstName} ${user.lastName}',
+                          style: TextStyle(fontSize: 12.sp),
+                        ),
+                        deleteIcon: Icon(Icons.close, size: 1.5.h),
+                        onDeleted: () => _removeTaggedUser(user.userId),
+                      );
+                    }).toList(),
+                  ),
                 ),
-                style: TextStyle(fontSize: 16.sp, height: 1.4),
-                onChanged: (_) => setState(() {}),
+              
+              // Post content text field with mention suggestions
+              Stack(
+                children: [
+                  TextField(
+                    controller: _contentController,
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    decoration: InputDecoration(
+                      hintText: 'What do you want to talk about?',
+                      hintStyle: TextStyle(color: AppColors.gray, fontSize: 16.sp),
+                      border: InputBorder.none,
+                    ),
+                    style: TextStyle(fontSize: 16.sp, height: 1.4),
+                    onChanged: (text) {
+                      setState(() {}); // Update state for the Save button
+                      _checkForMentions(text); // Check for @ mentions
+                    },
+                  ),
+                  
+                  // User mention suggestions overlay
+                  if (_showMentionSuggestions && _userSearchResults.isNotEmpty)
+                    Positioned(
+                      top: 40, // Adjust based on your layout
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        constraints: BoxConstraints(maxHeight: 30.h),
+                        decoration: BoxDecoration(
+                          color: theme.cardColor,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: _isSearchingUsers
+                          ? Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16),
+                                child: CircularProgressIndicator(),
+                              ),
+                            )
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: _userSearchResults.length,
+                              itemBuilder: (context, index) {
+                                final user = _userSearchResults[index];
+                                return ListTile(
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 2.h,
+                                    vertical: 0.5.h,
+                                  ),
+                                  leading: CircleAvatar(
+                                    backgroundImage: user.profilePicture != null && 
+                                                  user.profilePicture!.isNotEmpty
+                                        ? NetworkImage(user.profilePicture!)
+                                        : null,
+                                    child: (user.profilePicture == null || 
+                                          user.profilePicture!.isEmpty)
+                                        ? Icon(Icons.person)
+                                        : null,
+                                  ),
+                                  title: Text(
+                                    '${user.firstName} ${user.lastName}',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  subtitle: user.headline != null && user.headline!.isNotEmpty
+                                      ? Text(
+                                          user.headline!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        )
+                                      : null,
+                                  onTap: () => _onMentionSelected(user),
+                                );
+                              },
+                            ),
+                      ),
+                    ),
+                ],
               ),
               
               SizedBox(height: 2.h),
@@ -202,6 +320,7 @@ class _EditPostPageState extends ConsumerState<EditPostPage> {
       final success = await ref.read(homeViewModelProvider.notifier).editPost(
         widget.post.id,
         _contentController.text,
+        taggedUsers: _taggedUsers,
       );
       
       if (success && mounted) {
@@ -227,5 +346,118 @@ class _EditPostPageState extends ConsumerState<EditPostPage> {
         });
       }
     }
+  }
+
+  // Check if text contains @ symbol and extract query
+  void _checkForMentions(String text) {
+    final selection = _contentController.selection;
+    
+    // If there's a text selection, don't show mentions
+    if (selection.baseOffset != selection.extentOffset) {
+      setState(() => _showMentionSuggestions = false);
+      return;
+    }
+    
+    final currentPosition = selection.baseOffset;
+    
+    // Find the last @ before the cursor
+    int lastAtIndex = -1;
+    for (int i = currentPosition - 1; i >= 0; i--) {
+      if (text[i] == '@') {
+        lastAtIndex = i;
+        break;
+      } else if (text[i] == ' ' || text[i] == '\n') {
+        // Stop at spaces or newlines
+        break;
+      }
+    }
+    
+    if (lastAtIndex >= 0) {
+      // Extract query text between @ and cursor
+      final query = text.substring(lastAtIndex + 1, currentPosition);
+      
+      if (query.isNotEmpty) {
+        setState(() {
+          _mentionStartIndex = lastAtIndex;
+          _mentionQuery = query;
+          _showMentionSuggestions = true;
+        });
+        
+        // Debounce search to avoid too many API calls
+        if (_debounce?.isActive ?? false) _debounce?.cancel();
+        _debounce = Timer(const Duration(milliseconds: 500), () {
+          _searchUsers(query);
+        });
+        return;
+      }
+    }
+    
+    setState(() => _showMentionSuggestions = false);
+  }
+
+  // Search for users to tag
+  Future<void> _searchUsers(String query) async {
+    if (query.length < 2) {
+      setState(() {
+        _userSearchResults = [];
+        _isSearchingUsers = false;
+      });
+      return;
+    }
+    
+    setState(() => _isSearchingUsers = true);
+    
+    try {
+      // Using the existing PostApi
+      final results = await _commentsApi.searchUsers(query);
+      
+      setState(() {
+        _userSearchResults = results;
+        _isSearchingUsers = false;
+      });
+    } catch (e) {
+      debugPrint('Error searching users: $e');
+      setState(() {
+        _userSearchResults = [];
+        _isSearchingUsers = false;
+      });
+    }
+  }
+
+  // Handle when a user is selected from suggestions
+  void _onMentionSelected(TaggedUser user) {
+    final text = _contentController.text;
+    final mentionText = "${user.firstName} ${user.lastName}";
+    
+    // Replace the @query with the selected username
+    final newText = text.replaceRange(
+      _mentionStartIndex, 
+      _contentController.selection.baseOffset, 
+      "@$mentionText "
+    );
+    
+    // Add the user to tagged users list if not already there
+    if (!_taggedUsers.any((u) => u.userId == user.userId)) {
+      setState(() {
+        _taggedUsers.add(user);
+      });
+    }
+    
+    // Update the text and cursor position
+    _contentController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(
+        offset: _mentionStartIndex + mentionText.length + 2, // +2 for @ and space
+      ),
+    );
+    
+    setState(() => _showMentionSuggestions = false);
+  }
+
+  // Remove a tagged user
+  void _removeTaggedUser(String userId) {
+    setState(() {
+      _taggedUsers.removeWhere((user) => user.userId == userId);
+    });
   }
 }

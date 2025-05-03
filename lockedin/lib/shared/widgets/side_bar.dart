@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lockedin/features/company/view/create_company_view.dart';
+import 'package:lockedin/features/company/view/my_companies.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
 
 class SidebarDrawer extends ConsumerWidget {
@@ -80,14 +82,19 @@ class SidebarDrawer extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                   child: Row(
                     children: [
-                      Image.asset(
-                        'assets/images/experience.jpg',
-                        width: 24,
-                        height: 24,
+                      ClipOval(
+                        child: Image.network(
+                          user.workExperience[0].media ?? "",
+                          width: 24,
+                          height: 24,
+                          fit:
+                              BoxFit
+                                  .cover, // Ensures the image fills the circle
+                        ),
                       ),
                       SizedBox(width: 8),
                       Text(
-                        user.lastJobTitle ?? "Career Center",
+                        user.workExperience[0].jobTitle,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -105,9 +112,20 @@ class SidebarDrawer extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Column(
                     children: [
-                      _buildStatRow("27", "profile viewers"),
+                      _buildStatRow(
+                        user.profileViews.length.toString(),
+                        "profile viewers",
+                      ),
                       SizedBox(height: 8),
-                      _buildStatRow("3", "post impressions"),
+                      _buildStatRow(
+                        user.followers.length.toString(),
+                        "followers",
+                      ),
+                      SizedBox(height: 8),
+                      _buildStatRow(
+                        user.following.length.toString(),
+                        "following",
+                      ),
                     ],
                   ),
                 ),
@@ -115,10 +133,33 @@ class SidebarDrawer extends ConsumerWidget {
                 SizedBox(height: 12),
                 Divider(color: Colors.grey.shade700),
 
-                /// Menu Items
-                _buildMenuItem("Puzzle games"),
-                _buildMenuItem("Saved posts"),
-                _buildMenuItem("Groups"),
+                _buildMenuItem(
+                  "Saved posts",
+                  onTap: () {
+                    context.pop();
+                    context.push("/saved-posts");
+                  },
+                ),
+                _buildMenuItem(
+                  "Create company",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => CompanyView()),
+                    );
+                  },
+                ),
+                _buildMenuItem(
+                  "My Companies",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MyCompaniesView(),
+                      ),
+                    );
+                  },
+                ),
 
                 SizedBox(height: 12),
                 Divider(color: Colors.grey.shade700),
@@ -129,7 +170,7 @@ class SidebarDrawer extends ConsumerWidget {
                   child: Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Color(0xFF8B5700), // Golden brown
+                      color: Color(0xFF8B5700),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Stack(
@@ -154,14 +195,31 @@ class SidebarDrawer extends ConsumerWidget {
                               ),
                             ),
                             SizedBox(height: 8),
-                            Text(
-                              "🔶 Try Premium for EGP0",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                            TextButton.icon(
+                              onPressed: () {
+                                context.pop(); // Close the drawer first
+                                context.push('/subscription'); // Navigate to subscription page
+                              },
+                              icon: Icon(
+                                Icons.workspace_premium,
+                                color: Colors.amber,
+                                size: 18,
                               ),
-                            ),
+                              label: Text(
+                                "Try Premium for EGP0",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                alignment: Alignment.centerLeft,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                            )
                           ],
                         ),
                         Positioned(
@@ -226,13 +284,14 @@ class SidebarDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildMenuItem(String title) {
+  Widget _buildMenuItem(String title, {VoidCallback? onTap}) {
     return ListTile(
       title: Text(
         title,
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
       ),
-      onTap: () {},
+
+      onTap: onTap,
     );
   }
 }

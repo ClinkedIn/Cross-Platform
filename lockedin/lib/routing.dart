@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/core/services/token_services.dart';
+import 'package:lockedin/features/admin/view/admin_pannel_page.dart';
 import 'package:lockedin/features/auth/view/change_password_page.dart';
 import 'package:lockedin/features/auth/view/edit_email_view.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
 import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/features/auth/view/main_page.dart';
 import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
+import 'package:lockedin/features/chat/model/chat_model.dart';
+import 'package:lockedin/features/chat/view/chat_conversation_page.dart';
 import 'package:lockedin/features/chat/view/chat_list_page.dart';
 import 'package:lockedin/features/home_page/view/home_page.dart';
 import 'package:lockedin/features/jobs/view/jobs_page.dart';
@@ -42,8 +45,12 @@ import 'package:lockedin/shared/widgets/bottom_navbar.dart';
 import 'package:lockedin/features/home_page/view/detailed_post.dart';
 import './features/home_page/view/editpost_view.dart';
 import './features/home_page/model/post_model.dart';
+import 'package:lockedin/features/home_page/view/post_likes_view.dart';
+import 'package:lockedin/features/home_page/view/saved_posts_view.dart';
 import 'package:lockedin/features/jobs/view/application_status.dart';
-
+import 'package:lockedin/features/payment/view/subescription_view.dart';
+import 'package:lockedin/features/home_page/view/repost_view.dart';
+import 'package:lockedin/features/home_page/view/create_repost_view.dart';
 
 // Use this to control drawer state
 final scaffoldKeyProvider = Provider((ref) => GlobalKey<ScaffoldState>());
@@ -215,13 +222,70 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return ViewOtherProfilePage(userId: userId);
         },
       ),
-      // Add the new route
+
+      GoRoute(
+        path: '/post-reposts/:postId',
+        name: 'post-reposts',
+        builder: (context, state) {
+          final postId = state.pathParameters['postId']!;
+          return RepostPage(postId: postId);
+        }
+        ),
+      
+
+      GoRoute(
+        path: '/admin-dashboard',
+        name: 'admin-dashboard',
+        builder: (context, state) => AdminHomePage(),
+      ),
+
       GoRoute(
         path: '/edit-post',
         builder: (context, state) {
           final post = state.extra as PostModel;
           return EditPostPage(post: post);
         },
+      ),
+      GoRoute(
+        path: '/chat-list',
+        name: 'chat-list',
+        builder: (context, state) => ChatListScreen(),
+      ),
+      GoRoute(
+        path: '/chat-conversation',
+        builder: (context, state) {
+          final chat = state.extra as Chat;
+          return ChatConversationScreen(chat: chat);
+        },
+      ),
+
+      GoRoute(
+        path: '/create-repost',
+        name: 'create-repost',
+        builder: (context, state) {
+          final post = state.extra as PostModel;
+          return CreateRepostView(post: post);
+        },
+      ),
+
+      GoRoute(
+        path: '/post-likes/:postId',
+        name: 'post-likes',
+        builder: (context, state) {
+          final postId = state.pathParameters['postId']!;
+          return PostLikesPage(postId: postId);
+        },
+      ),
+
+      GoRoute(
+        path: '/subscription',
+        name: 'subscription',
+        builder: (context, state) => PremiumSubscriptionPage(),
+        ),
+
+      GoRoute(
+        path: '/saved-posts',
+        builder: (context, state) => const SavedPostsPage(),
       ),
 
       GoRoute(

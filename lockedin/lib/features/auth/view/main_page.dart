@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lockedin/core/services/token_services.dart';
 import 'package:lockedin/core/services/request_services.dart';
+import 'dart:convert';
 
 class MainPage extends ConsumerStatefulWidget {
   MainPage({Key? key}) : super(key: key);
@@ -45,7 +46,10 @@ class _MainPageState extends ConsumerState<MainPage> {
 
           if (response.statusCode == 200 || response.statusCode == 304) {
             // Token is valid, navigate to home
-            if (mounted) {
+            final responseBody = jsonDecode(response.body);
+            if (responseBody['user']['isSuperAdmin'] == true) {
+              context.go('/admin-dashboard');
+            } else {
               context.go('/home');
             }
           } else {
