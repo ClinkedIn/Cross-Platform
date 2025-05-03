@@ -394,4 +394,23 @@ class HomeViewModel extends StateNotifier<HomeState> {
       rethrow;
     }
   }
+
+  // Add this method to your HomeViewModel class
+  Future<bool> createRepost(String postId, {String? description}) async {
+    try {
+      // Call the repository method
+      final success = await repository.createRepost(postId, description: description);
+      
+      if (success) {
+        // After successful repost, refresh the feed to see the new repost
+        await refreshFeed();
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      debugPrint('Error creating repost: $e');
+      rethrow;
+    }
+  }
 }

@@ -213,6 +213,7 @@ class _PostListState extends ConsumerState<PostList> {
           },
           onShare: () async {
             print("Shared post: ${widget.posts[index].id}");
+            context.push('/create-repost', extra: widget.posts[index]);
             // Share functionality...
           },
           onFollow: () {

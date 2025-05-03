@@ -192,7 +192,7 @@ class PostCard extends StatelessWidget {
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text: post.reposterName ?? 'Someone',
+                                text: post.isMine ? 'You' : (post.reposterName ?? 'Someone'),
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontSize: 15.sp,
                                   fontWeight: FontWeight.bold,
@@ -200,8 +200,12 @@ class PostCard extends StatelessWidget {
                                 ),
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () {
-                                    // Navigate to reposter's profile
-                                    if (post.reposterId != null && post.reposterId!.isNotEmpty) {
+                                    // If it's your repost, go to your profile
+                                    if (post.isMine) {
+                                      context.push('/profile');
+                                    } 
+                                    // Otherwise go to reposter's profile if ID exists
+                                    else  {
                                       context.push('/other-profile/${post.reposterId}');
                                     }
                                   },
