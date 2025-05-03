@@ -26,24 +26,6 @@ class ChatListScreen extends ConsumerWidget {
                 : Colors.black,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.info_outline),
-            onPressed: () async {
-              final user = authService.currentUser;
-              final message = user != null
-                  ? "User authenticated: ${user.id}"
-                  : "No user authenticated!";
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(message),
-                  duration: Duration(seconds: 3),
-                ),
-              );
-            },
-          ),
-        ],
       ),
       body: FutureBuilder<bool>(
         future: authService.isLoggedIn(),
