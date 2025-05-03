@@ -7,144 +7,29 @@ import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/core/services/auth_service.dart';
 import 'dart:io';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
-
+import 'package:lockedin/features/chat/model/chat_message_model.dart';
+import 'package:lockedin/features/chat/repository/firebase_chat_services.dart';
 
 class ChatConversationRepository {
   final AuthService _authService;
-  String? _receiverId; // Add this to store the receiver ID
+  final FirebaseChatServices _firebaseService;
   
-  ChatConversationRepository(this._authService);
+  ChatConversationRepository(this._authService, this._firebaseService);
 
-  // Getter for receiverId
-  String? get receiverId => _receiverId;
+  // Delegate to Firebase service
+  String? get receiverId => _firebaseService.receiverId;
 
-  Future<Map<String, dynamic>> fetchConversation(String chatId) async {
-    try {
-      // Use the chat conversation endpoint from constants
-      final endpoint = Constants.chatConversationEndpoint.replaceAll('{chatId}', chatId);
-      
-      try {
-        final response = await RequestService.get(endpoint);
-
-        // If we have a valid response, process it
-        if (response.statusCode != 200) {
-          return {
-            'success': false,
-            'error': 'Server returned status code ${response.statusCode}',
-            'chat': {
-              'rawMessages': [],
-              'conversationHistory': []
-            },
-          };
-        }
-
-        // Parse the JSON response
-        try {
-          final String responseBody = response.body.trim();
-          final Map<String, dynamic> jsonData = jsonDecode(responseBody);
-          
-          // Check if response has the expected structure
-          if (jsonData['success'] == true) {
-            // Extract the receiver ID from the otherUser field at the root level
-            if (jsonData['otherUser'] != null) {
-              _receiverId = jsonData['otherUser']['_id'];
-              debugPrint('Extracted receiver ID from otherUser: $_receiverId');
-            } 
-            // Also try checking within chat.participants if that exists
-            else if (jsonData['chat'] != null && jsonData['chat']['participants'] != null) {
-              final participants = jsonData['chat']['participants'];
-              
-              // Check if otherUser exists in participants
-              if (participants['otherUser'] != null) {
-                _receiverId = participants['otherUser']['_id'];
-                debugPrint('Extracted receiver ID: $_receiverId');
-              } else if (participants is List) {
-                // If participants is a list, find the other user
-                final currentUserId = _authService.currentUser?.id;
-                for (var participant in participants) {
-                  if (participant['_id'] != currentUserId) {
-                    _receiverId = participant['_id'];
-                    debugPrint('Extracted receiver ID from list: $_receiverId');
-                    break;
-                  }
-                }
-              }
-            }
-            // Check members array in the chat object if otherUser wasn't found
-            else if (jsonData['chat'] != null && jsonData['chat']['members'] != null) {
-              final List<dynamic> members = jsonData['chat']['members'];
-              final currentUserId = _authService.currentUser?.id;
-              
-              for (var memberId in members) {
-                if (memberId != currentUserId) {
-                  _receiverId = memberId;
-                  debugPrint('Extracted receiver ID from members array: $_receiverId');
-                  break;
-                }
-              }
-            }
-            
-            // If no receiver ID was found but messages exist, try to extract from first message
-            if (_receiverId == null && 
-                jsonData['chat'] != null && 
-                jsonData['chat']['rawMessages'] != null && 
-                jsonData['chat']['rawMessages'].isNotEmpty) {
-              
-              final firstMessage = jsonData['chat']['rawMessages'][0];
-              final currentUserId = _authService.currentUser?.id;
-              
-              if (firstMessage['sender'] != null && 
-                  firstMessage['sender']['_id'] != null && 
-                  firstMessage['sender']['_id'] != currentUserId) {
-                _receiverId = firstMessage['sender']['_id'];
-                debugPrint('Extracted receiver ID from first message: $_receiverId');
-              }
-            }
-            
-            return jsonData;
-          }
-          
-          // If success is false or not specified, handle the error
-          return {
-            'success': false,
-            'error': jsonData['message'] ?? 'Unknown API error',
-            'chat': {
-              'rawMessages': [],
-              'conversationHistory': []
-            },
-          };
-        } catch (e) {
-          return {
-            'success': false,
-            'error': 'Failed to parse server response: ${e.toString()}',
-            'chat': {
-              'rawMessages': [],
-              'conversationHistory': []
-            },
-          };
-        }
-      } catch (e) {
-        return {
-          'success': false,
-          'error': 'Network error: ${e.toString()}',
-          'chat': {
-            'rawMessages': [],
-            'conversationHistory': []
-          },
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'error': 'Failed to load conversation: ${e.toString()}',
-        'chat': {
-          'rawMessages': [],
-          'conversationHistory': []
-        },
-      };
-    }
+  // Delegate to Firebase service
+  Stream<List<ChatMessage>> getMessagesStream(String chatId) {
+    return _firebaseService.getMessagesStream(chatId);
   }
-  
+
+  // Delegate to Firebase service
+  Future<void> fetchReceiverIdFromConversation(String chatId) async {
+    await _firebaseService.fetchReceiverIdFromConversation(chatId);
+  }
+
+  // Keep the REST API implementation for sending messages
   Future<Map<String, dynamic>> sendMessage({
     required String chatId,
     required String messageText,
@@ -154,14 +39,23 @@ class ChatConversationRepository {
     try {
       // Make sure user data is loaded before trying to send a message
       await _authService.fetchCurrentUser();
-           
-      // Create the request body with the required fields according to the API spec
+      
+      // Get current user ID and receiver ID
+      final currentUserId = _authService.currentUser?.id;
+      final actualReceiverId = receiverId ?? this.receiverId;
+
+      // Create the request body with all string values
       final Map<String, dynamic> body = {
         'type': chatType,
         'messageText': messageText,
-        'chatId': chatId,
+        'chatId': chatId.toString(), // Ensure chatId is a string
       };
       
+      // Only add receiverId if we have a valid ID - don't use participants array
+      if (actualReceiverId != null) {
+        body['receiverId'] = actualReceiverId.toString();
+      }
+
       // Log the request body for debugging
       debugPrint('Sending message with body: ${jsonEncode(body)}');
       
@@ -174,9 +68,14 @@ class ChatConversationRepository {
         body: body,
       );
       
+      // Log response for debugging
+      debugPrint('POST Response Code: ${response.statusCode}');
+      debugPrint('POST Response Body: ${response.body}');
+      
       // Check status code for success
       if (response.statusCode != 200 && response.statusCode != 201) {
         debugPrint('Error: Server returned status code ${response.statusCode}');
+        debugPrint('Response Body: ${response.body}');
         return {
           'success': false,
           'error': 'Server returned status code ${response.statusCode}',
@@ -215,6 +114,7 @@ class ChatConversationRepository {
     }
   }
 
+  // Keep all original methods for attachment, block/unblock functionality
   Future<Map<String, dynamic>> sendMessageWithAttachment({
     required String chatId,
     required String messageText,
@@ -224,6 +124,7 @@ class ChatConversationRepository {
     String? fileName,
     String? replyTo,
   }) async {
+    // Same implementation as original
     try {
       // Make sure user data is loaded before trying to send a message
       await _authService.fetchCurrentUser();
@@ -231,27 +132,38 @@ class ChatConversationRepository {
       // Use the endpoint constant for messages
       final endpoint = Constants.chatMessagesEndpoint.replaceAll('{chatId}', chatId);
 
-      // Set up the body according to the form structure shown in the image
+      // Get receiver ID
+      final actualReceiverId = receiverId;
+
+      // Set up the body with explicitly stringified values
       final body = {
         'messageText': messageText,
         'type': chatType,
-        'receiverId': _receiverId ?? '', // Make sure receiverId is available from previous API calls
-        'chatId': chatId, // Adding chatId to ensure proper routing
+        'chatId': chatId.toString(), // Ensure chatId is a string
       };
+      
+      // Only add receiverId if available - don't use participants array
+      if (actualReceiverId != null) {
+        body['receiverId'] = actualReceiverId.toString();
+      }
       
       // Log the request for debugging
       debugPrint('Sending message with attachment to chat: $chatId');
       debugPrint('File: ${attachment.path}, Type: ${attachmentType.toString()}');
-      debugPrint('Receiver ID: ${_receiverId ?? "Not available"}');
+      debugPrint('Receiver ID: ${receiverId ?? "Not available"}');
+      debugPrint('Request body: ${jsonEncode(body)}');
       
       // Send the message with attachment using the multipart request
-      // Use 'files' as the field name without array notation based on the Multer error
       final response = await RequestService.postMultipart(
         endpoint,
         file: attachment,
-        fileFieldName: 'files', // Field name must match exactly what the server expects
+        fileFieldName: 'files', // Field name must match what the server expects
         additionalFields: body,
       );
+      
+      // Log response for debugging
+      debugPrint('Attachment POST Response Code: ${response.statusCode}');
+      debugPrint('Attachment POST Response Body: ${response.body}');
       
       // Check status code for success
       if (response.statusCode != 200 && response.statusCode != 201) {
@@ -295,6 +207,7 @@ class ChatConversationRepository {
   }
 
   Future<Map<String, dynamic>> blockUser(String? userId) async {
+    // Keep original implementation
     if (userId == null) {
       return {
         'success': false,
@@ -347,6 +260,7 @@ class ChatConversationRepository {
   }
 
   Future<Map<String, dynamic>> unblockUser(String? userId) async {
+    // Keep original implementation
     if (userId == null) {
       return {
         'success': false,
@@ -398,6 +312,7 @@ class ChatConversationRepository {
   }
 
   Future<bool> isUserBlocked(String? userId) async {
+    // Keep original implementation
     if (userId == null) {
       debugPrint('Cannot check if user is blocked: No user ID provided');
       return false;
@@ -426,6 +341,11 @@ class ChatConversationRepository {
       return false;
     }
   }
+
+  // Delegate to Firebase service
+  getMessagesByDateStream(String chatId) {
+    return _firebaseService.getMessagesByDateStream(chatId);
+  }
 }
 
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -434,5 +354,6 @@ final authServiceProvider = Provider<AuthService>((ref) {
 
 final chatConversationRepositoryProvider = Provider<ChatConversationRepository>((ref) {
   final authService = ref.read(authServiceProvider);
-  return ChatConversationRepository(authService);
+  final firebaseService = ref.read(firebaseChatServicesProvider);
+  return ChatConversationRepository(authService, firebaseService);
 });

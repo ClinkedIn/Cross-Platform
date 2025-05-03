@@ -1,167 +1,109 @@
-import 'dart:math' as Math;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
 import 'package:lockedin/features/chat/repository/chat_repository.dart';
 import 'package:lockedin/features/chat/view/chat_conversation_page.dart';
+import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 
 // Provider for the chat repository
-final chatRepositoryProvider = Provider<ChatRepository>((ref) {
-  return ChatRepository();
+final firebaseChatRepositoryProvider = Provider<FirebaseChatRepository>((ref) {
+  return FirebaseChatRepository();
 });
 
-// State for chat loading
-enum ChatLoadingState { initial, loading, loaded, error }
-
-// State class for chat data
+// State for chat data
 class ChatState {
   final List<Chat> chats;
-  final ChatLoadingState loadingState;
   final String? errorMessage;
   final int totalUnreadCount;
-  final bool isLoadingUnreadCount;
+  final bool isLoading;
 
   ChatState({
     this.chats = const [],
-    this.loadingState = ChatLoadingState.initial,
     this.errorMessage,
     this.totalUnreadCount = 0,
-    this.isLoadingUnreadCount = false,
+    this.isLoading = true, // Default to loading when first created
   });
 
   ChatState copyWith({
     List<Chat>? chats,
-    ChatLoadingState? loadingState,
     String? errorMessage,
     int? totalUnreadCount,
-    bool? isLoadingUnreadCount,
+    bool? isLoading,
   }) {
     return ChatState(
       chats: chats ?? this.chats,
-      loadingState: loadingState ?? this.loadingState,
       errorMessage: errorMessage ?? this.errorMessage,
       totalUnreadCount: totalUnreadCount ?? this.totalUnreadCount,
-      isLoadingUnreadCount: isLoadingUnreadCount ?? this.isLoadingUnreadCount,
+      isLoading: isLoading ?? this.isLoading,
     );
   }
 }
 
-class ChatViewModel extends StateNotifier<ChatState> {
-  final ChatRepository _repository;
+class FirebaseChatViewModel extends StateNotifier<ChatState> {
+  final FirebaseChatRepository _repository;
+  final String userId; // User ID for the current user
+  StreamSubscription? _chatsSubscription;
+  StreamSubscription? _unreadCountSubscription;
 
-  ChatViewModel(this._repository) : super(ChatState());
-
-  // Fetch chats from the backend
-  Future<void> fetchChats() async {
-    state = state.copyWith(loadingState: ChatLoadingState.loading);
-    
-    try {
-      final chats = await _repository.fetchChats();
-      state = state.copyWith(
-        chats: chats,
-        loadingState: ChatLoadingState.loaded,
-      );
-      
-      // After fetching chats, update the unread count
-      fetchTotalUnreadCount();
-    } catch (e) {
-      state = state.copyWith(
-        loadingState: ChatLoadingState.error,
-        errorMessage: e.toString(),
-      );
-    }
-  }
-  
-  // Fetch the total count of unread messages
-  Future<void> fetchTotalUnreadCount() async {
-    state = state.copyWith(isLoadingUnreadCount: true);
-    
-    try {
-      final count = await _repository.getTotalUnreadCount();
-      state = state.copyWith(
-        totalUnreadCount: count,
-        isLoadingUnreadCount: false,
-      );
-    } catch (e) {
-      print("Error fetching total unread count: $e");
-      // Don't update error state for the whole UI, just log it
-      // and end the loading state
-      state = state.copyWith(isLoadingUnreadCount: false);
-    }
+  FirebaseChatViewModel(this._repository, this.userId) : super(ChatState()) {
+    // Initialize streams when the ViewModel is created
+    _initChatStream(userId);
+    _initUnreadCountStream();
   }
 
-  // Mark a chat as read and update the state
+  // Initialize chat stream
+  void _initChatStream(userId) {
+    _chatsSubscription = _repository.getChatStream(userId).listen(
+      (chats) {
+        // Set isLoading to false when data is received
+        state = state.copyWith(chats: chats, isLoading: false);
+      },
+      onError: (error) {
+        // Set isLoading to false even on error
+        state = state.copyWith(errorMessage: error.toString(), isLoading: false);
+      }
+    );
+  }
+
+  // Initialize unread count stream
+  void _initUnreadCountStream() {
+    _unreadCountSubscription = _repository.getTotalUnreadCountStream(userId).listen(
+      (count) {
+        state = state.copyWith(totalUnreadCount: count);
+      },
+      onError: (error) {
+        print("Error in unread count stream: $error");
+        // Don't update error state just for unread count
+      }
+    );
+  }
+
+  // Mark a chat as read and update Firebase
   Future<void> markChatAsRead(Chat chat) async {
-      try {
-      await _repository.markChatAsRead(chat.id);
-      
-      // Update local state to reflect the change
-      final updatedChats = state.chats.map((c) {
-        if (c.id == chat.id) {
-          return c.copyWith(unreadCount: 0);
-        }
-        return c;
-      }).toList();
-      
-      // Calculate new total unread count by subtracting the chat's unread count
-      final newTotalUnread = state.totalUnreadCount - chat.unreadCount;
-      
-      state = state.copyWith(
-        chats: updatedChats,
-        totalUnreadCount: Math.max(0, newTotalUnread), // Ensure it's not negative
-      );
+    try {
+      await _repository.markChatAsRead(chat.id, userId);
+      // No need to update local state, Firebase will trigger the stream
     } catch (e) {
-      // Handle error but don't change the UI state
-      print("Error marking chat as read: ${e}");
-      
-      // Re-fetch unread count to ensure accuracy
-      fetchTotalUnreadCount();
+      print("Error marking chat as read: $e");
     }
   }
 
-  // Mark a chat as unread and update the state
+  // Mark a chat as unread and update Firebase
   Future<void> markChatAsUnread(Chat chat) async {
     try {
-      await _repository.markChatAsUnread(chat.id);
-      
-      // Update local state to reflect the change
-      final updatedChats = state.chats.map((c) {
-        if (c.id == chat.id) {
-          return c.copyWith(unreadCount: 1); // Set unread count to 1
-        }
-        return c;
-      }).toList();
-      
-      // Update total unread count
-      // If the chat already had unread messages, don't add anything
-      // Otherwise add 1 (since we're adding an unread)
-      final addToTotal = chat.unreadCount > 0 ? 0 : 1;
-      
-      state = state.copyWith(
-        chats: updatedChats,
-        totalUnreadCount: state.totalUnreadCount + addToTotal,
-      );
+      await _repository.markChatAsUnread(chat.id, userId);
+      // No need to update local state, Firebase will trigger the stream
     } catch (e) {
-      // Handle error but don't change the UI state
       print("Error marking chat as unread: $e");
-      
-      // Re-fetch unread count to ensure accuracy
-      fetchTotalUnreadCount();
     }
-  }
-
-  // Refresh chats (useful for pull-to-refresh functionality)
-  Future<void> refreshChats() async {
-    // Refresh both chats and unread count
-    await fetchChats();
   }
   
   // UI Event Handlers
   
   // Handle chat item tap event
   void onChatItemTapped(BuildContext context, Chat chat) {
-
     // Mark as read when tapped
     markChatAsRead(chat);
     
@@ -171,10 +113,7 @@ class ChatViewModel extends StateNotifier<ChatState> {
       MaterialPageRoute(
         builder: (context) => ChatConversationScreen(chat: chat),
       ),
-    ).then((_) {
-      // Refresh unread count when returning from conversation
-      fetchTotalUnreadCount();
-    });
+    );
   }
   
   // Show chat options menu
@@ -219,21 +158,35 @@ class ChatViewModel extends StateNotifier<ChatState> {
       }
     });
   }
+  
+  @override
+  void dispose() {
+    // Cancel subscriptions when the ViewModel is disposed
+    _chatsSubscription?.cancel();
+    _unreadCountSubscription?.cancel();
+    super.dispose();
+  }
 }
 
-// Create a provider for chat management
-final chatProvider = StateNotifierProvider<ChatViewModel, ChatState>((ref) {
-  final repository = ref.watch(chatRepositoryProvider);
-  final chatViewModel = ChatViewModel(repository);
+// Create a provider for Firebase chat management
+final firebaseChatProvider = StateNotifierProvider<FirebaseChatViewModel, ChatState>((ref) {
+  final repository = ref.watch(firebaseChatRepositoryProvider);
+  final userState = ref.watch(userProvider);
   
-  // Initial fetch
-  chatViewModel.fetchChats();
+  // Extract the user ID from the AsyncValue state
+  final userId = userState.when(
+    data: (user) => user.id,
+    loading: () => '', // Default empty ID when loading
+    error: (_, __) => '', // Default empty ID on error
+  );
   
-  return chatViewModel;
+  return FirebaseChatViewModel(repository, userId);
 });
 
 // Provider for just the total unread count - useful for displaying in app bar or bottom navigation
 final unreadCountProvider = Provider<int>((ref) {
-  final chatState = ref.watch(chatProvider);
+  final chatState = ref.watch(firebaseChatProvider);
   return chatState.totalUnreadCount;
 });
+
+// StreamSubscription import is now at the top of the file
