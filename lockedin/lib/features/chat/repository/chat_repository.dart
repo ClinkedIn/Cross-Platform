@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
 
-
 /// Repository for handling chat-related Firebase operations
 class FirebaseChatRepository {
   // Firebase instance
@@ -199,12 +198,24 @@ class FirebaseChatRepository {
     
     // Determine unread status
     int unreadCount = 0;
-    if (data['forceUnread'] == true) {
+    if (data['messageCount'] != null && data['readCount'] != null && data['readCount'] is Map) {
+      // Get the read count for current user
+      final readCountMap = data['readCount'] as Map;
+      final userReadCount = readCountMap[currentUserId] as int? ?? 0;
+      // Get total message count
+      final totalMessages = data['messageCount'] as int? ?? 0;
+      // Calculate unread = total - read
+      unreadCount = totalMessages - userReadCount;
+      // Ensure we don't have negative unread count
+      if (unreadCount < 0) unreadCount = 0;
+    } else if (data['forceUnread'] == true) {
+      // Legacy support for forceUnread
       unreadCount = 1;
     } else if (data['unreadBy'] != null && data['unreadBy'] is List) {
+      // Legacy support for unreadBy array
       List<dynamic> unreadBy = data['unreadBy'];
       if (unreadBy.contains(currentUserId)) {
-        unreadCount = 1; 
+        unreadCount = 1;
       }
     }
     
@@ -229,14 +240,28 @@ class FirebaseChatRepository {
 
   /// Mark a chat as read
   Future<void> markChatAsRead(String chatId, userId) async {
-    
     if (userId.isEmpty) return;
     
     try {
-      await _firestore.collection('conversations').doc(chatId).update({
+      // First, get the current chat document to read the message count
+      final chatDoc = await _firestore.collection('conversations').doc(chatId).get();
+      final data = chatDoc.data();
+      
+      if (data == null) return;
+      
+      // Get the total message count
+      final messageCount = data['messageCount'] as int? ?? 0;
+      
+      // Prepare the update
+      Map<String, dynamic> updateData = {
         'forceUnread': false,
-        'unreadBy': FieldValue.arrayRemove([userId])
-      });
+        'unreadBy': FieldValue.arrayRemove([userId]),
+        // Update readCount for this user to match the total message count
+        'readCount.$userId': messageCount
+      };
+      
+      // Update the document
+      await _firestore.collection('conversations').doc(chatId).update(updateData);
     } catch (e) {
       print("Error marking chat as read: $e");
       throw Exception("Failed to mark chat as read");
@@ -329,4 +354,6 @@ class FirebaseChatRepository {
           return totalUnread;
         });
   }
+
+  
 }

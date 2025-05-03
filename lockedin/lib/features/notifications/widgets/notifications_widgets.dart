@@ -42,9 +42,11 @@ Widget buildNotificationItem(
           // Profile Picture
           if (!notification.isPlaceholder)
             CircleAvatar(
-              backgroundImage: notification.sendingUser.profilePicture != null
-              ? NetworkImage(notification.sendingUser.profilePicture!) 
-              : AssetImage('assets/images/default_profile_photo.png') as ImageProvider,
+              backgroundImage:
+                  notification.sendingUser.profilePicture != null
+                      ? NetworkImage(notification.sendingUser.profilePicture!)
+                      : AssetImage('assets/images/default_profile_photo.png')
+                          as ImageProvider,
               radius: 24,
             ),
 
@@ -510,6 +512,6 @@ void showDeleteMessage(
             ? Colors.grey[800]
             : Colors.white, // Background color similar to the image
   );
-  
+
   ScaffoldMessenger.of(context).showSnackBar(snackBar);
 }

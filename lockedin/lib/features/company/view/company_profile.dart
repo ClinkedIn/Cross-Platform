@@ -1,11 +1,12 @@
-import 'dart:io';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/company/view/company_analytics_screen.dart';
+import 'package:lockedin/features/company/view/company_job_details.dart';
+import 'package:lockedin/features/company/view/create_job_screen.dart';
 import 'package:lockedin/features/company/view/create_post_screen.dart';
 import 'package:lockedin/features/company/view/edit_company_profile_view.dart';
 import 'package:lockedin/features/company/viewmodel/company_viewmodel.dart';
-import 'package:lockedin/features/company/model/company_post_model.dart';
+import 'package:lockedin/features/company/widgets/job_card.dart';
 import 'package:lockedin/features/company/widgets/post_card.dart';
 import 'package:sizer/sizer.dart';
 
@@ -26,6 +27,7 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
     Future.microtask(() {
       ref.read(companyViewModelProvider).fetchCompanyById(widget.companyId);
       ref.read(companyViewModelProvider).fetchCompanyPosts(widget.companyId);
+      ref.read(companyViewModelProvider).fetchCompanyJobs(widget.companyId);
     });
   }
 
@@ -36,6 +38,7 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
     final errorMessage = companyViewModel.errorMessage;
     final company = companyViewModel.fetchedCompany;
     final posts = companyViewModel.companyPosts;
+    final jobs = companyViewModel.companyJobs;
 
     return Scaffold(
       appBar: AppBar(
@@ -57,6 +60,11 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                           height: 8.w,
                           width: 8.w,
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.business,
+                            size: 8.w,
+                            color: Colors.grey[400],
+                          ),
                         ),
                       )
                     else
@@ -96,6 +104,14 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                     builder:
                         (_) =>
                             EditCompanyProfileView(companyId: widget.companyId),
+                  ),
+                );
+              }
+              else if (value == 'analytics') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CompanyAnalyticsScreen(companyId: widget.companyId),
                   ),
                 );
               }
@@ -160,6 +176,12 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                                 width: double.infinity,
                                 height: 20.h,
                                 fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    width: double.infinity,
+                                    height: 20.h,
+                                    color: Colors.grey[300],
+                                    child: Icon(Icons.business, size: 10.h, color: Colors.white),
+                                  ),
                               ),
                             )
                           else
@@ -198,6 +220,33 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                   ),
                   SizedBox(height: 2.h),
                   Text(
+                    "Create New Job",
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 1.h),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) =>
+                                  JobCreationView(companyId: widget.companyId),
+                        ),
+                      ).then((_) {
+                        // Re-fetch posts after coming back
+                        ref
+                            .read(companyViewModelProvider)
+                            .fetchCompanyPosts(widget.companyId);
+                      });
+                    },
+                    child: const Text("Post a job for free"),
+                  ),
+                  SizedBox(height: 1.h),
+                  Text(
                     "Create New Post",
                     style: TextStyle(
                       fontSize: 16.sp,
@@ -234,10 +283,33 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                     ),
                   ),
                   SizedBox(height: 1.h),
-                  ...posts.map(
-                    (post) =>
-                        PostCard(post: post, companyLogoUrl: company.logo),
+                  ...posts.map((post) {
+                    print("post description: ${post.description}, post time ago: ${post.createdAt}");
+                    return PostCard(post: post, companyLogoUrl: company.logo);
+                  }),
+
+                  Text(
+                    "Recent Jobs",
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                  SizedBox(height: 1.h),
+                  ...jobs.map((job) {
+                    print("job description: ${job.description}, job time ago: ${job.createdAt}");
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => JobDetailsScreen(jobId: job.id),
+                          ),
+                        );
+                      },
+                      child: JobCard(job: job),
+                    );
+                  }),
                 ],
               ),
     );

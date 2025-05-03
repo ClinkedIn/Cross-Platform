@@ -1,9 +1,6 @@
 import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
-
 import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:lockedin/core/services/token_services.dart';
 import 'package:lockedin/core/utils/constants.dart';
@@ -23,12 +20,23 @@ class RequestService {
   }) async {
     final String? storedCookie = await TokenService.getCookie();
 
-    return {
-      'Content-Type': 'application/json',
-      if (storedCookie != null && storedCookie.isNotEmpty)
-        'Cookie': storedCookie,
-      ...?additionalHeaders,
-    };
+    Map<String, String> headers = {'Content-Type': 'application/json'};
+
+    // Add cookie header if available - critical for authentication
+    if (storedCookie != null && storedCookie.isNotEmpty) {
+      headers['Cookie'] = storedCookie;
+      // Debugging
+      debugPrint('🍪 Using cookie: $storedCookie');
+    } else {
+      debugPrint('⚠️ No cookie available for request');
+    }
+
+    // Add any additional headers
+    if (additionalHeaders != null) {
+      headers.addAll(additionalHeaders);
+    }
+
+    return headers;
   }
 
   static Future<http.Response> postMultipart(
@@ -38,6 +46,11 @@ class RequestService {
     Map<String, dynamic>? additionalFields,
     Map<String, String>? headers,
   }) async {
+    // Ensure the endpoint starts with '/'
+    if (!endpoint.startsWith('/')) {
+      endpoint = '/$endpoint';
+    }
+
     final uri = Uri.parse('$_baseUrl$endpoint');
     final String? storedCookie = await TokenService.getCookie();
 
@@ -111,7 +124,6 @@ class RequestService {
         ),
       );
 
-      // Log the request for debugging
       debugPrint('Adding file to field name: $fileFieldName');
     }
 
@@ -129,6 +141,7 @@ class RequestService {
     // Add cookie if available
     if (storedCookie != null && storedCookie.isNotEmpty) {
       request.headers['Cookie'] = storedCookie;
+      debugPrint('🍪 Adding cookie to multipart request: $storedCookie');
     }
 
     // Add additional headers if provided
@@ -164,10 +177,21 @@ class RequestService {
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
 
     try {
+      debugPrint('GET Request: $uri');
+      debugPrint('GET Headers: $headers');
+
       final response = await _client.get(uri, headers: headers);
+
+      debugPrint('GET Response Status: ${response.statusCode}');
+
+      // Process cookies from response
+      _storeCookiesFromResponse(response);
+
       if (response.statusCode == 401) {
-        TokenService.deleteCookie();
+        debugPrint('⚠️ Unauthorized (401) response, clearing cookie');
+        await TokenService.deleteCookie();
       }
+
       return response;
     } catch (e) {
       // Retry network errors as well
@@ -204,18 +228,28 @@ class RequestService {
 
       final jsonBody = jsonEncode(body);
 
+      debugPrint('POST Request: $url');
+      debugPrint('POST Headers: $headers');
+      if (jsonBody.length < 1000) {
+        debugPrint('POST Body: $jsonBody');
+      }
+
       final response = await _client.post(
         uri,
         headers: headers,
         body: jsonBody,
       );
 
+      // Process cookies from response
+      _storeCookiesFromResponse(response);
+
+      debugPrint('POST Response Status: ${response.statusCode}');
+
       // Check if we got HTML instead of JSON
       if (_isHtmlResponse(response)) {
+        debugPrint('⚠️ Received HTML response instead of JSON');
         // Retry logic for HTML responses (max 2 retries)
         if (retryCount < 2) {
-          // Refresh the authentication token if we have one
-          await TokenService.getCookie(); // Ensure we have latest token
           // Wait a bit before retrying
           await Future.delayed(Duration(seconds: 1));
           // Retry the request with incremented retry count
@@ -226,6 +260,11 @@ class RequestService {
             retryCount: retryCount + 1,
           );
         }
+      }
+
+      if (response.statusCode == 401) {
+        debugPrint('⚠️ Unauthorized (401) response, clearing cookie');
+        await TokenService.deleteCookie();
       }
 
       if (response.body.length < 1000) {
@@ -265,15 +304,31 @@ class RequestService {
     required Map<String, dynamic> body,
     Map<String, String>? additionalHeaders,
   }) async {
+    // Ensure the endpoint starts with '/'
+    if (!endpoint.startsWith('/')) {
+      endpoint = '/$endpoint';
+    }
+
     final String url = '$_baseUrl$endpoint';
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
 
     try {
+      debugPrint('PATCH Request: $url');
+
       final response = await _client.patch(
         Uri.parse(url),
         headers: headers,
         body: jsonEncode(body),
       );
+
+      // Process cookies from response
+      _storeCookiesFromResponse(response);
+
+      if (response.statusCode == 401) {
+        debugPrint('⚠️ Unauthorized (401) response, clearing cookie');
+        await TokenService.deleteCookie();
+      }
+
       return response;
     } catch (e) {
       throw Exception('PATCH request failed: $e');
@@ -286,6 +341,11 @@ class RequestService {
     required Map<String, dynamic> body,
     Map<String, String>? additionalHeaders,
   }) async {
+    // Ensure the endpoint starts with '/'
+    if (!endpoint.startsWith('/')) {
+      endpoint = '/$endpoint';
+    }
+
     final String url = '$_baseUrl$endpoint';
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
     debugPrint('PUT Request: $url');
@@ -296,6 +356,14 @@ class RequestService {
         headers: headers,
         body: jsonEncode(body),
       );
+
+      // Process cookies from response
+      _storeCookiesFromResponse(response);
+
+      if (response.statusCode == 401) {
+        debugPrint('⚠️ Unauthorized (401) response, clearing cookie');
+        await TokenService.deleteCookie();
+      }
 
       return response;
     } catch (e) {
@@ -309,12 +377,26 @@ class RequestService {
     String endpoint, {
     Map<String, String>? additionalHeaders,
   }) async {
+    // Ensure the endpoint starts with '/'
+    if (!endpoint.startsWith('/')) {
+      endpoint = '/$endpoint';
+    }
+
     final String url = '$_baseUrl$endpoint';
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
     debugPrint('DELETE Request: $url');
 
     try {
       final response = await _client.delete(Uri.parse(url), headers: headers);
+
+      // Process cookies from response
+      _storeCookiesFromResponse(response);
+
+      if (response.statusCode == 401) {
+        debugPrint('⚠️ Unauthorized (401) response, clearing cookie');
+        await TokenService.deleteCookie();
+      }
+
       return response;
     } catch (e) {
       debugPrint('DELETE request failed: $e');
@@ -328,20 +410,50 @@ class RequestService {
     required String password,
     String? fcmToken,
   }) async {
-    final String url = '$_baseUrl${Constants.loginEndpoint}';
+    // Ensure the endpoint has a leading slash
+    String loginEndpoint = Constants.loginEndpoint;
+    if (!loginEndpoint.startsWith('/')) {
+      loginEndpoint = '/$loginEndpoint';
+    }
+
+    final String url = '$_baseUrl$loginEndpoint';
     debugPrint('LOGIN Request: $url');
-    debugPrint('LOGIN Request Body: $email, $password');
 
     try {
+      final Map<String, dynamic> loginBody = {
+        'email': email,
+        'password': password,
+      };
+
+      // Add FCM token if available
+      if (fcmToken != null) {
+        loginBody['fcmToken'] = fcmToken;
+        debugPrint('Adding FCM token to login request');
+      }
+
       final response = await _client.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password, if (fcmToken != null) 'fcmToken': fcmToken}),
+        body: jsonEncode(loginBody),
+
       );
-      debugPrint('LOGIN Response: ${response.body}');
+
+      debugPrint('LOGIN Response Status: ${response.statusCode}');
       debugPrint('LOGIN Response Headers: ${response.headers}');
 
-      _storeCookiesFromResponse(response);
+      if (response.body.length < 1000) {
+        debugPrint('LOGIN Response Body: ${response.body}');
+      }
+
+      // Always try to extract and store cookies, even on failed logins
+      final cookies = _extractCookiesFromResponse(response);
+      debugPrint('🍪 Extracted cookies: $cookies');
+
+      if (cookies.isNotEmpty) {
+        await TokenService.saveCookie(cookies);
+        debugPrint('🍪 Saved cookies to secure storage');
+      }
+
       return response;
     } catch (e) {
       debugPrint('Login request failed: $e');
@@ -350,23 +462,51 @@ class RequestService {
   }
 
   /// Parses and stores cookies from a response
-  static void _storeCookiesFromResponse(http.Response response) {
-    final rawSetCookie = response.headers['set-cookie'];
-    if (rawSetCookie != null) {
-      final cleanedCookies = rawSetCookie
-          .split(',')
-          .map((cookie) => cookie.split(';').first.trim())
-          .join('; ');
-      TokenService.saveCookie(cleanedCookies);
+  static void _storeCookiesFromResponse(http.Response response) async {
+    final cookies = _extractCookiesFromResponse(response);
+    if (cookies.isNotEmpty) {
+      debugPrint('🍪 Extracted cookies from response: $cookies');
+      await TokenService.saveCookie(cookies);
     }
+  }
+
+  /// Extract cookies from response headers
+  static String _extractCookiesFromResponse(http.Response response) {
+    // This is the problematic part that can cause iOS issues
+    final Map<String, String> headers = response.headers;
+    final List<String> cookies = [];
+
+    // The 'set-cookie' header may be lowercase or uppercase or mixed case
+    // iOS is particularly sensitive to case differences
+    String? rawCookies;
+    for (final key in headers.keys) {
+      if (key.toLowerCase() == 'set-cookie') {
+        rawCookies = headers[key];
+        break;
+      }
+    }
+
+    if (rawCookies != null && rawCookies.isNotEmpty) {
+      // Split multiple cookies and extract the name-value pair
+      // iOS often sends cookies with complex attributes that need to be parsed correctly
+      rawCookies.split(',').forEach((cookie) {
+        // Extract only the name=value part (before the first ';')
+        final mainPart = cookie.split(';').first.trim();
+        if (mainPart.isNotEmpty) {
+          cookies.add(mainPart);
+        }
+      });
+    }
+
+    return cookies.join('; ');
   }
 
   /// Check if the response is HTML instead of JSON
   static bool _isHtmlResponse(http.Response response) {
     final contentType = response.headers['content-type'] ?? '';
-    final body = response.body;
+    final body = response.body.trim();
 
-    return contentType.contains('text/html') ||
+    return contentType.toLowerCase().contains('text/html') ||
         body.contains('<!DOCTYPE html>') ||
         body.contains('<html>') ||
         (body.isNotEmpty && !body.startsWith('{') && !body.startsWith('['));

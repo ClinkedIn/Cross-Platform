@@ -41,6 +41,7 @@ class _MainPageState extends ConsumerState<MainPage> {
       } else {
         // Check token validity with a quick API call
         try {
+          print("tokenhburfre = ${await TokenService.getCookie()}");
           // Use a simple API endpoint that requires authentication
           final response = await RequestService.get('/user/me');
 

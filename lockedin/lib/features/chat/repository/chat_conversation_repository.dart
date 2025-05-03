@@ -379,6 +379,17 @@ class ChatConversationRepository {
         return typingStatus;
       });
   }
+
+  Future<void> markChatAsUnreadForRecipient(String chatId, String recipientId) async {
+    try {
+      await FirebaseFirestore.instance.collection('conversations').doc(chatId).update({
+        'unreadBy': FieldValue.arrayUnion([recipientId])
+      });
+    } catch (e) {
+      debugPrint("Error marking chat as unread for recipient: $e");
+    }
+  }
+
 }
 
 final authServiceProvider = Provider<AuthService>((ref) {

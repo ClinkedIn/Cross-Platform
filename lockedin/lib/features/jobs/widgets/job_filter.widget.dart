@@ -111,10 +111,7 @@ class JobFiltersWidget extends StatelessWidget {
           children: [
             // Reset Filters
             FilterChip(
-              label: Text(
-                'Jobs',
-                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12.sp),
-              ),
+              label: Text('Jobs'),
               selected:
                   selectedExperienceLevel == null &&
                   selectedLocation == null &&
@@ -125,7 +122,6 @@ class JobFiltersWidget extends StatelessWidget {
               },
               backgroundColor: theme.cardColor,
               selectedColor: theme.primaryColor.withOpacity(0.2),
-              side: BorderSide(color: theme.primaryColor),
               labelStyle: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface,
               ),

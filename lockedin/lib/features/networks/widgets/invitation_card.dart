@@ -17,11 +17,11 @@ class InvitationCard extends StatelessWidget {
     required this.role,
     required this.mutualConnections,
     required this.timeAgo,
-    required this.profileImage,
+    this.profileImage = "/assets/images/default_profile_photo.png",
     this.isOpenToWork = false,
     required this.onAccept,
     required this.onDecline,
-    required this.onNameTap
+    required this.onNameTap,
   }) : super(key: key);
 
   @override
