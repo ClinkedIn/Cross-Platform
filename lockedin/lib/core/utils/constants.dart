@@ -12,9 +12,9 @@ class Constants {
 
   // Server URLs
 
-  static const String _androidEmulatorUrl = "http://10.0.2.2:3000/api";
+  static const String _androidEmulatorUrl = "https://lockedin-cufe.me/api";
   static const String _iosEmulatorUrl =
-      "http://127.0.0.1:3000/api"; // Your actual IP address
+      "https://lockedin-cufe.me/api"; // Your actual IP address
 
   static late String baseUrl;
 
