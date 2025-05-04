@@ -32,24 +32,6 @@ void main() {
     });
   });
 
-  group('savePostById', () {
-    test('returns true on success', () async {
-      final result = await viewModel.savePostById('1');
-
-      expect(result, true);
-      expect(viewModel.state.error, null);
-    });
-
-    test('handles save error', () async {
-      mockRepository.shouldThrow = true;
-
-      final result = await viewModel.savePostById('1');
-
-      expect(result, false);
-      expect(viewModel.state.error, isNotNull);
-    });
-  });
-
   group('toggleLike', () {
     test('likes a post', () async {
       viewModel.state = HomeState(

@@ -12,53 +12,21 @@ class Constants {
 
   // Server URLs
 
-
   static const String _androidEmulatorUrl = "http://10.0.2.2:3000/api";
   static const String _iosEmulatorUrl =
       "http://127.0.0.1:3000/api"; // Your actual IP address
 
-  static String baseUrl = _iosEmulatorUrl;
+  static late String baseUrl;
 
-  // // Initialize method to be called at app startup
-  // static Future<void> initializeBaseUrl() async {
-  //   try {
-  //     debugPrint('⚠️ Current baseUrl: $baseUrl');
-
-  //     if (Platform.isAndroid) {
-  //       final deviceInfoPlugin = DeviceInfoPlugin();
-  //       final androidInfo = await deviceInfoPlugin.androidInfo;
-
-  //       if (!androidInfo.isPhysicalDevice) {
-  //         baseUrl = _emulatorUrl;
-  //         debugPrint('⚠️ Using emulator URL: $baseUrl');
-  //       } else {
-  //         baseUrl = _physicalDeviceUrl;
-  //         debugPrint('⚠️ Using physical device URL: $baseUrl');
-  //       }
-  //     } else if (Platform.isIOS) {
-  //       final deviceInfoPlugin = DeviceInfoPlugin();
-  //       final iosInfo = await deviceInfoPlugin.iosInfo;
-
-  //       if (!iosInfo.isPhysicalDevice) {
-  //         baseUrl = _emulatorUrl;
-  //         debugPrint('⚠️ Using iOS simulator URL: $baseUrl');
-  //       } else {
-  //         baseUrl = _physicalDeviceUrl;
-  //         debugPrint('⚠️ Using iOS physical device URL: $baseUrl');
-  //       }
-  //     }
-
-  //     debugPrint('⚠️ FINAL API BASE URL: $baseUrl');
-  //     debugPrint(
-  //       '⚠️ To connect to the API server, make sure it\'s running at $baseUrl',
-  //     );
-  //   } catch (e) {
-  //     debugPrint('⚠️ Error initializing baseUrl: $e');
-  //     baseUrl = _physicalDeviceUrl;
-  //     debugPrint('⚠️ Using fallback URL: $baseUrl');
-  //   }
-  // }
-
+  static void initializeBaseUrl() {
+    if (Platform.isAndroid) {
+      baseUrl = _androidEmulatorUrl;
+    } else if (Platform.isIOS) {
+      baseUrl = _iosEmulatorUrl;
+    } else {
+      throw UnsupportedError('Unsupported platform');
+    }
+  }
 
   // Authentication endpoints
   static const String loginEndpoint = '/user/login';

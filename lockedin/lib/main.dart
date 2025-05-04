@@ -1,16 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/core/services/token_services.dart';
-import 'package:lockedin/core/utils/constants.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lockedin/core/utils/constants.dart';
 import 'package:lockedin/routing.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:lockedin/firebase_options.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'firebase_options.dart';
 import 'package:lockedin/features/notifications/notifications_helper.dart';
 
 void main() async {
@@ -24,6 +22,7 @@ void main() async {
 
   // Helper file for showing notifications
   await NotificationHelper.init();
+  Constants.initializeBaseUrl();
 
   // Initialize push notification logic
   await _initializeFCM();
