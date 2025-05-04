@@ -10,16 +10,26 @@ class SignupRepository {
     required bool rememberMe,
     String? fcmToken,
   }) async {
-    final body = {
-      "firstName": firstName,
-      "lastName": lastName,
-      "email": email,
-      "password": password,
-      "remember_me": rememberMe,
-      "recaptchaResponseToken": "recaptchaResponseToken",
-      if (fcmToken != null) 'fcmToken': fcmToken,
-    };
-    final response = await RequestService.post("/user", body: body);
+    final response = await RequestService.signup(
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      password: password,
+      rememberMe: rememberMe,
+      fcmToken: fcmToken ?? 'fcmToken',
+    );
+    return response;
+  }
+
+  Future<http.Response> verifyEmailOTP({
+    required String email,
+    required String otp,
+  }) async {
+    final body = {"otp": otp};
+    final response = await RequestService.post(
+      "/user/confirm-email",
+      body: body,
+    );
     return response;
   }
 }

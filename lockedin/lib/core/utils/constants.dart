@@ -31,7 +31,7 @@ class Constants {
   // Authentication endpoints
   static const String loginEndpoint = '/user/login';
   static const String getUserDataEndpoint = '/user/me';
-  static const String registerEndpoint = '/user/';
+  static const String signupEndpoint = '/user/';
   static const String createUserProfileEndpoint = '/user/profile';
   static const String logoutEndpoint = '/user/logout';
 
