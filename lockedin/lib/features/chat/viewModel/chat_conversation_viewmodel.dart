@@ -649,6 +649,18 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     return false;
   }
 
+  // Mark messages as read when conversation is opened
+  Future<void> markMessagesAsRead() async {
+    try {
+      await _repository.markMessagesAsRead(chatId);
+      
+      // Update local state to reflect that messages are read
+      state = state.copyWith(isMarkedAsRead: true);
+    } catch (e) {
+      debugPrint('Error marking messages as read: $e');
+    }
+  }
+
   @override
   void dispose() {
     // Cancel any active subscriptions

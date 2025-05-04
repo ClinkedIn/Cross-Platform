@@ -231,6 +231,47 @@ class FirebaseChatServices {
     }
   }
 
+  // Method to mark messages as read by the current user
+  Future<void> markMessagesAsRead(String chatId) async {
+    try {
+      final currentUserId = _authService.currentUser?.id;
+      if (currentUserId == null) return;
+      
+      // Get all unread messages in this conversation
+      final messagesSnapshot = await _firestore
+        .collection('conversations')
+        .doc(chatId)
+        .collection('messages')
+        .where('readBy', whereNotIn: [currentUserId])
+        .get();
+      
+      // Create a batch to perform multiple updates
+      final batch = _firestore.batch();
+      
+      for (final doc in messagesSnapshot.docs) {
+        // Add current user to readBy array for each message
+        batch.update(doc.reference, {
+          'readBy': FieldValue.arrayUnion([currentUserId]),
+        });
+      }
+      
+      // Commit the batch
+      await batch.commit();
+      
+      // Also update the conversation document to remove current user from unreadBy
+      await _firestore
+        .collection('conversations')
+        .doc(chatId)
+        .update({
+          'unreadBy': FieldValue.arrayRemove([currentUserId])
+        });
+        
+      debugPrint('Marked ${messagesSnapshot.docs.length} messages as read');
+    } catch (e) {
+      debugPrint('Error marking messages as read: $e');
+    }
+  }
+
 }
 
 final firebaseChatServicesProvider = Provider<FirebaseChatServices>((ref) {

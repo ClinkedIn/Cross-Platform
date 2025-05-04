@@ -33,6 +33,9 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     // Set the chat ID for the input field to use
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(chatIdProvider.notifier).state = widget.chat.id;
+
+      // Mark messages as read when the conversation is opened
+      ref.read(chatConversationProvider(widget.chat.id).notifier).markMessagesAsRead();
     });
   }
 
@@ -161,6 +164,14 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(child: Text('Error loading messages'));
+        }
+        
+        // Mark messages as read whenever new messages arrive while viewing the conversation
+        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(chatConversationProvider(widget.chat.id).notifier)
+              .markMessagesAsRead();
+          });
         }
         
         // Use data from stream if available, otherwise fall back to state

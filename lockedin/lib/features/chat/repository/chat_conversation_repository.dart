@@ -390,6 +390,11 @@ class ChatConversationRepository {
     }
   }
 
+  // Mark messages as read
+  Future<void> markMessagesAsRead(String chatId) async {
+    await _firebaseService.markMessagesAsRead(chatId);
+  }
+
 }
 
 final authServiceProvider = Provider<AuthService>((ref) {
