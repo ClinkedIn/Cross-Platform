@@ -41,11 +41,11 @@ class ConnectionModel {
 
   factory ConnectionModel.fromJson(Map<String, dynamic> json) =>
       ConnectionModel(
-        id: json["_id"],
-        firstName: json["firstName"],
-        lastName: json["lastName"],
-        profilePicture: json["profilePicture"],
-        lastJobTitle: json["lastJobTitle"],
+        id: json["_id"] ?? '',
+        firstName: json["firstName"] ?? '',
+        lastName: json["lastName"] ?? '',
+        profilePicture: json["profilePicture"] ?? '',
+        lastJobTitle: json["lastJobTitle"] ?? '',
       );
 
   Map<String, dynamic> toJson() => {

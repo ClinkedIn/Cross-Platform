@@ -288,44 +288,44 @@ class MessageRequestService {
   }
 
   Future<bool> sendMessageRequest(String recipientUserId, String message, {String? targetUserId}) async {
-    try {
-      if (kDebugMode) {
-        print('Sending message request to user ID: $recipientUserId');
-      }
-      
-      // Create the request body with the correct structure
-      final Map<String, dynamic> requestBody = {
-        "recipientUserId": recipientUserId,
-        "message": message,
-      };
-      
-      // Add targetUserId if provided
-      if (targetUserId != null) {
-        requestBody["targetUserId"] = targetUserId;
-      }
-      
-      final response = await RequestService.post(
-        "/user/message-requests",
-        body: requestBody,
-      );
-      
-      if (kDebugMode) {
-        print('Response status: ${response.statusCode}');
-        print('Response body: ${response.body}');
-      }
-      
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return true;
-      } else {
-        throw Exception('Failed to send message request: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error sending message request: $e');
-      }
-      throw Exception('Error sending message request: $e');
+  try {
+    if (kDebugMode) {
+      print('Sending message request to user ID: $recipientUserId');
     }
+    
+    // Create the request body with the correct structure
+    final Map<String, dynamic> requestBody = {
+      "recipientUserId": recipientUserId,
+      "message": message,
+    };
+    
+    // Add targetUserId if provided
+    if (targetUserId != null) {
+      requestBody["targetUserId"] = targetUserId;
+    }
+    
+    final response = await RequestService.post(
+      "/user/message-requests",
+      body: requestBody,
+    );
+    
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
+    
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return true;
+    } else {
+      throw Exception('Failed to send message request: ${response.statusCode}');
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('Error sending message request: $e');
+    }
+    throw Exception('Error sending message request: $e');
   }
+}
 
 
   // Update request status - using same action format as your example

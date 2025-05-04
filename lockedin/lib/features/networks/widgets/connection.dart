@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 import 'package:sizer/sizer.dart';
 
 class Connection extends StatelessWidget {
