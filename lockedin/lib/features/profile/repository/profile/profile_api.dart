@@ -24,6 +24,7 @@ class ProfileService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         final List<dynamic> data = responseData['educations'] ?? [];
+        print("education data: ${responseData['educations']}");
         final List<Education> educationList =
             data.map((item) => Education.fromJson(item)).toList();
         return educationList;

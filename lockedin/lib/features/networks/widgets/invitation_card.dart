@@ -17,7 +17,7 @@ class InvitationCard extends StatelessWidget {
     required this.role,
     required this.mutualConnections,
     required this.timeAgo,
-    this.profileImage = "/assets/images/default_profile_photo.png",
+    this.profileImage = "assets/images/default_profile_photo.png",
     this.isOpenToWork = false,
     required this.onAccept,
     required this.onDecline,

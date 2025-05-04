@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/auth/state/sign_up_state.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/text_styles.dart';
@@ -154,7 +155,28 @@ class _PasswordStepState extends State<PasswordStep> {
             }
 
             widget.notifier.setPassword(widget.passwordController.text);
-            await widget.notifier.submitForm();
+            final String signupMessage = await widget.notifier.submitForm();
+            print("Signup message: $signupMessage");
+            print("Success: ${widget.viewModel.success}");
+            print("Is loading: ${widget.viewModel.isLoading}");
+            if (context.mounted && widget.viewModel.success) {
+              context.go('/');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(signupMessage),
+                  backgroundColor: AppColors.green,
+                ),
+              );
+            } else if (!widget.viewModel.success) {
+              print("Error: $signupMessage");
+              context.go('/signup');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(signupMessage),
+                  backgroundColor: AppColors.primary,
+                ),
+              );
+            }
           },
         ),
 

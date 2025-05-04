@@ -80,28 +80,39 @@ class SidebarDrawer extends ConsumerWidget {
                 /// Career Center
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                  child: Row(
-                    children: [
-                      ClipOval(
-                        child: Image.network(
-                          user.workExperience[0].media ?? "",
-                          width: 24,
-                          height: 24,
-                          fit:
-                              BoxFit
-                                  .cover, // Ensures the image fills the circle
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        user.workExperience[0].jobTitle,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+                  child:
+                      (user?.workExperience != null &&
+                              user!.workExperience!.isNotEmpty)
+                          ? Row(
+                            children: [
+                              ClipOval(
+                                child: Image.network(
+                                  user.workExperience![0].media ?? "",
+                                  width: 24,
+                                  height: 24,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (context, error, stackTrace) => Icon(
+                                        Icons.work,
+                                        size: 24,
+                                        color: Colors.white,
+                                      ),
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                user.workExperience![0].jobTitle ?? "No title",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          )
+                          : Text(
+                            "No work experience",
+                            style: TextStyle(color: Colors.white70),
+                          ),
                 ),
 
                 SizedBox(height: 12),
@@ -198,7 +209,9 @@ class SidebarDrawer extends ConsumerWidget {
                             TextButton.icon(
                               onPressed: () {
                                 context.pop(); // Close the drawer first
-                                context.push('/subscription'); // Navigate to subscription page
+                                context.push(
+                                  '/subscription',
+                                ); // Navigate to subscription page
                               },
                               icon: Icon(
                                 Icons.workspace_premium,
@@ -219,7 +232,7 @@ class SidebarDrawer extends ConsumerWidget {
                                 minimumSize: Size.zero,
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
-                            )
+                            ),
                           ],
                         ),
                         Positioned(

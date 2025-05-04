@@ -18,6 +18,9 @@ class ProfileViewModel {
     ref.read(educationProvider.notifier).setLoading();
     try {
       final education = await ProfileService().fetchEducation();
+      for (var item in education) {
+        print("Education Item: ${item.media}");
+      }
       ref.read(educationProvider.notifier).setEducation(education);
     } catch (e, stackTrace) {
       ref.read(educationProvider.notifier).setError(e, stackTrace);
@@ -28,6 +31,7 @@ class ProfileViewModel {
     ref.read(experienceProvider.notifier).setLoading();
     try {
       final experience = await ProfileService().fetchExperience();
+      print("Experience: $experience");
       ref.read(experienceProvider.notifier).setExperience(experience);
     } catch (e, stackTrace) {
       ref.read(experienceProvider.notifier).setError(e, stackTrace);

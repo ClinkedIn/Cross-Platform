@@ -6,7 +6,7 @@ import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/features/post/viewmodel/post_viewmodel.dart';
-import 'package:video_player/video_player.dart'; 
+import 'package:video_player/video_player.dart';
 
 class PostPage extends ConsumerStatefulWidget {
   const PostPage({Key? key}) : super(key: key);
@@ -30,10 +30,10 @@ class _PostPageState extends ConsumerState<PostPage> {
     if (initialData.content.isNotEmpty) {
       textController.text = initialData.content;
     }
-    
+
     // Initialize video controller if video is already selected
-    if (initialData.attachments != null && 
-        initialData.attachments!.isNotEmpty && 
+    if (initialData.attachments != null &&
+        initialData.attachments!.isNotEmpty &&
         initialData.fileType == 'video') {
       _initializeVideoController(initialData.attachments!.first);
     }
@@ -62,7 +62,7 @@ class _PostPageState extends ConsumerState<PostPage> {
   // Add this method to your _PostPageState class
   IconData _getDocumentIcon(String path) {
     final extension = path.split('.').last.toLowerCase();
-    
+
     switch (extension) {
       case 'pdf':
         return Icons.picture_as_pdf;
@@ -86,14 +86,15 @@ class _PostPageState extends ConsumerState<PostPage> {
   @override
   void didUpdateWidget(covariant PostPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     final data = ref.read(postViewModelProvider);
-    if (data.attachments != null && 
-        data.attachments!.isNotEmpty && 
+    if (data.attachments != null &&
+        data.attachments!.isNotEmpty &&
         data.fileType == 'video') {
       // If the file is a video and we don't have a controller or it's for a different file
-      if (_videoController == null || 
-          _videoController!.dataSource != 'file://${data.attachments!.first.path}') {
+      if (_videoController == null ||
+          _videoController!.dataSource !=
+              'file://${data.attachments!.first.path}') {
         _videoController?.dispose();
         _initializeVideoController(data.attachments!.first);
       }
@@ -133,20 +134,23 @@ class _PostPageState extends ConsumerState<PostPage> {
                 ),
               )
               : FilledButton(
-                onPressed: data.canSubmit
-                    ? () {
-                        ref
-                            .read(postViewModelProvider.notifier)
-                            .submitPost(
-                              content: textController.text,
-                              attachments:
-                                  data.attachments ??
-                                  [], // Provide an empty list if null
-                              visibility: data.visibility,
-                            );
-                        context.go('/home'); // Navigate to home page after posting
-                      }
-                    : null,
+                onPressed:
+                    data.canSubmit
+                        ? () {
+                          ref
+                              .read(postViewModelProvider.notifier)
+                              .submitPost(
+                                content: textController.text,
+                                attachments:
+                                    data.attachments ??
+                                    [], // Provide an empty list if null
+                                visibility: data.visibility,
+                              );
+                          context.go(
+                            '/home',
+                          ); // Navigate to home page after posting
+                        }
+                        : null,
                 style: FilledButton.styleFrom(
                   backgroundColor:
                       data.canSubmit
@@ -175,21 +179,29 @@ class _PostPageState extends ConsumerState<PostPage> {
               // User profile info
               Row(
                 children: [
-                    CircleAvatar(
+                  CircleAvatar(
                     radius: 6.w,
                     backgroundImage: userState.whenOrNull(
-                    data: (user) => user.profilePicture != null && user.profilePicture!.isNotEmpty
-                    ? NetworkImage(user.profilePicture!)
-                    : null,
+                      data:
+                          (user) =>
+                              user.profilePicture != null &&
+                                      user.profilePicture!.isNotEmpty
+                                  ? NetworkImage(user.profilePicture!)
+                                  : AssetImage(
+                                    'assets/images/default_profile_photo.png',
+                                  ),
                     ),
                     backgroundColor: Colors.grey[300],
                     onBackgroundImageError: (_, __) {},
                     child: userState.when(
-                    data: (user) => (user.profilePicture == null || user.profilePicture!.isEmpty)
-                    ? Icon(Icons.person, color: Colors.white)
-                    : null,
-                    error: (_, __) => Icon(Icons.person, color: Colors.white),
-                    loading: () => Icon(Icons.person, color: Colors.white),
+                      data:
+                          (user) =>
+                              (user.profilePicture == null ||
+                                      user.profilePicture!.isEmpty)
+                                  ? Icon(Icons.person, color: Colors.white)
+                                  : null,
+                      error: (_, __) => Icon(Icons.person, color: Colors.white),
+                      loading: () => Icon(Icons.person, color: Colors.white),
                     ),
                   ),
                   SizedBox(width: 3.w),
@@ -289,123 +301,141 @@ class _PostPageState extends ConsumerState<PostPage> {
                 ],
               ),
 
-SizedBox(height: 4.h),
-// Tagged users chips 
-if (data.taggedUsers.isNotEmpty)
-  Container(
-    margin: EdgeInsets.only(bottom: 2.h),
-    child: Wrap(
-      spacing: 1.w,
-      runSpacing: 0.5.h,
-      children: data.taggedUsers.map((user) {
-        return Chip(
-          backgroundColor: theme.primaryColor.withOpacity(0.1),
-          avatar: CircleAvatar(
-            backgroundImage: user.profilePicture != null && 
-                            user.profilePicture!.isNotEmpty
-                ? NetworkImage(user.profilePicture!)
-                : null,
-            child: (user.profilePicture == null || 
-                    user.profilePicture!.isEmpty)
-                ? Icon(Icons.person, size: 1.5.h)
-                : null,
-          ),
-          label: Text(
-            '${user.firstName} ${user.lastName}',
-            style: TextStyle(fontSize: 12.sp),
-          ),
-          deleteIcon: Icon(Icons.close, size: 1.5.h),
-          onDeleted: () => ref
-              .read(postViewModelProvider.notifier)
-              .removeTaggedUser(user.userId),
-        );
-      }).toList(),
-    ),
-  ),
-// Post content text field
-TextField(
-  controller: textController,
-  maxLines: null,
-  keyboardType: TextInputType.multiline,
-  decoration: InputDecoration(
-    hintText: 'What do you want to talk about?',
-    hintStyle: TextStyle(color: AppColors.gray, fontSize: 16.sp),
-    border: InputBorder.none,
-  ),
-  style: TextStyle(fontSize: 16.sp, height: 1.4),
-  onChanged: (text) {
-    // Just for UI updates
-    ref.read(postViewModelProvider.notifier).updateContent(text,textController);
-    setState(() {});
-  },
-),
-
-// User mention suggestions overlay
-if (data.showMentionSuggestions && data.userSearchResults.isNotEmpty)
-  Container(
-    margin: EdgeInsets.only(top: 2.h),
-    constraints: BoxConstraints(maxHeight: 30.h),
-    decoration: BoxDecoration(
-      color: theme.cardColor,
-      borderRadius: BorderRadius.circular(8),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.1),
-          blurRadius: 4,
-          offset: Offset(0, 2),
-        ),
-      ],
-    ),
-    child: data.isSearchingUsers
-        ? Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: CircularProgressIndicator(),
-            ),
-          )
-        : ListView.builder(
-            shrinkWrap: true,
-            itemCount: data.userSearchResults.length,
-            itemBuilder: (context, index) {
-              final user = data.userSearchResults[index];
-              return ListTile(
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 2.h,
-                  vertical: 0.5.h,
+              SizedBox(height: 4.h),
+              // Tagged users chips
+              if (data.taggedUsers.isNotEmpty)
+                Container(
+                  margin: EdgeInsets.only(bottom: 2.h),
+                  child: Wrap(
+                    spacing: 1.w,
+                    runSpacing: 0.5.h,
+                    children:
+                        data.taggedUsers.map((user) {
+                          return Chip(
+                            backgroundColor: theme.primaryColor.withOpacity(
+                              0.1,
+                            ),
+                            avatar: CircleAvatar(
+                              backgroundImage:
+                                  user.profilePicture != null &&
+                                          user.profilePicture!.isNotEmpty
+                                      ? NetworkImage(user.profilePicture!)
+                                      : null,
+                              child:
+                                  (user.profilePicture == null ||
+                                          user.profilePicture!.isEmpty)
+                                      ? Icon(Icons.person, size: 1.5.h)
+                                      : null,
+                            ),
+                            label: Text(
+                              '${user.firstName} ${user.lastName}',
+                              style: TextStyle(fontSize: 12.sp),
+                            ),
+                            deleteIcon: Icon(Icons.close, size: 1.5.h),
+                            onDeleted:
+                                () => ref
+                                    .read(postViewModelProvider.notifier)
+                                    .removeTaggedUser(user.userId),
+                          );
+                        }).toList(),
+                  ),
                 ),
-                leading: CircleAvatar(
-                  backgroundImage: user.profilePicture != null && 
-                                user.profilePicture!.isNotEmpty
-                      ? NetworkImage(user.profilePicture!)
-                      : null,
-                  child: (user.profilePicture == null || 
-                          user.profilePicture!.isEmpty)
-                      ? Icon(Icons.person)
-                      : null,
+              // Post content text field
+              TextField(
+                controller: textController,
+                maxLines: null,
+                keyboardType: TextInputType.multiline,
+                decoration: InputDecoration(
+                  hintText: 'What do you want to talk about?',
+                  hintStyle: TextStyle(color: AppColors.gray, fontSize: 16.sp),
+                  border: InputBorder.none,
                 ),
-                title: Text(
-                  '${user.firstName} ${user.lastName}',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 16.sp, height: 1.4),
+                onChanged: (text) {
+                  // Just for UI updates
+                  ref
+                      .read(postViewModelProvider.notifier)
+                      .updateContent(text, textController);
+                  setState(() {});
+                },
+              ),
+
+              // User mention suggestions overlay
+              if (data.showMentionSuggestions &&
+                  data.userSearchResults.isNotEmpty)
+                Container(
+                  margin: EdgeInsets.only(top: 2.h),
+                  constraints: BoxConstraints(maxHeight: 30.h),
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child:
+                      data.isSearchingUsers
+                          ? Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                          : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: data.userSearchResults.length,
+                            itemBuilder: (context, index) {
+                              final user = data.userSearchResults[index];
+                              return ListTile(
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 2.h,
+                                  vertical: 0.5.h,
+                                ),
+                                leading: CircleAvatar(
+                                  backgroundImage:
+                                      user.profilePicture != null &&
+                                              user.profilePicture!.isNotEmpty
+                                          ? NetworkImage(user.profilePicture!)
+                                          : null,
+                                  child:
+                                      (user.profilePicture == null ||
+                                              user.profilePicture!.isEmpty)
+                                          ? Icon(Icons.person)
+                                          : null,
+                                ),
+                                title: Text(
+                                  '${user.firstName} ${user.lastName}',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                subtitle:
+                                    user.headline != null &&
+                                            user.headline!.isNotEmpty
+                                        ? Text(
+                                          user.headline!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        )
+                                        : null,
+                                onTap:
+                                    () => ref
+                                        .read(postViewModelProvider.notifier)
+                                        .onMentionSelected(
+                                          user,
+                                          textController,
+                                        ),
+                              );
+                            },
+                          ),
                 ),
-                subtitle: user.headline != null && user.headline!.isNotEmpty
-                    ? Text(
-                        user.headline!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      )
-                    : null,
-                onTap: () => ref
-                    .read(postViewModelProvider.notifier)
-                    .onMentionSelected(user, textController),
-              );
-            },
-          ),
-  ),
 
-SizedBox(height: 2.h),
+              SizedBox(height: 2.h),
 
-// Media preview section when attachments exist
-if (data.attachments != null && data.attachments!.isNotEmpty)
+              // Media preview section when attachments exist
+              if (data.attachments != null && data.attachments!.isNotEmpty)
                 for (var file in data.attachments!)
                   Stack(
                     children: [
@@ -413,89 +443,114 @@ if (data.attachments != null && data.attachments!.isNotEmpty)
                         margin: EdgeInsets.only(bottom: 2.h),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(2.w),
-                          border: Border.all(color: AppColors.gray.withOpacity(0.3)),
+                          border: Border.all(
+                            color: AppColors.gray.withOpacity(0.3),
+                          ),
                         ),
-                        child: data.fileType == 'document'
-                            ? Container(
-                                padding: EdgeInsets.all(3.w),
-                                height: 15.h,
-                                width: double.infinity,
-                                child: Row(
-                                  children: [
-                                    // Document icon based on file extension
-                                    Container(
-                                      width: 12.w,
-                                      height: 12.w,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[200],
-                                        borderRadius: BorderRadius.circular(1.w),
-                                      ),
-                                      child: Icon(
-                                        _getDocumentIcon(file.path),
-                                        size: 8.w,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                    SizedBox(width: 4.w),
-                                    // Document details
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            file.path.split('/').last,
-                                            style: TextStyle(fontWeight: FontWeight.bold),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          SizedBox(height: 1.h),
-                                          Text(
-                                            '${(file.lengthSync() / 1024).toStringAsFixed(1)} KB',
-                                            style: TextStyle(
-                                              color: Colors.grey[600], 
-                                              fontSize: 12.sp
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : data.fileType == 'video'
+                        child:
+                            data.fileType == 'document'
                                 ? Container(
-                                    height: 30.h,
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      color: Colors.black,
-                                      borderRadius: BorderRadius.circular(2.w),
-                                    ),
-                                    child: _isVideoInitialized && _videoController != null
-                                        ? Stack(
+                                  padding: EdgeInsets.all(3.w),
+                                  height: 15.h,
+                                  width: double.infinity,
+                                  child: Row(
+                                    children: [
+                                      // Document icon based on file extension
+                                      Container(
+                                        width: 12.w,
+                                        height: 12.w,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[200],
+                                          borderRadius: BorderRadius.circular(
+                                            1.w,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          _getDocumentIcon(file.path),
+                                          size: 8.w,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                      SizedBox(width: 4.w),
+                                      // Document details
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              file.path.split('/').last,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            SizedBox(height: 1.h),
+                                            Text(
+                                              '${(file.lengthSync() / 1024).toStringAsFixed(1)} KB',
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 12.sp,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                                : data.fileType == 'video'
+                                ? Container(
+                                  height: 30.h,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black,
+                                    borderRadius: BorderRadius.circular(2.w),
+                                  ),
+                                  child:
+                                      _isVideoInitialized &&
+                                              _videoController != null
+                                          ? Stack(
                                             alignment: Alignment.center,
                                             children: [
                                               ClipRRect(
-                                                borderRadius: BorderRadius.circular(2.w),
+                                                borderRadius:
+                                                    BorderRadius.circular(2.w),
                                                 child: AspectRatio(
-                                                  aspectRatio: _videoController!.value.aspectRatio,
-                                                  child: VideoPlayer(_videoController!),
+                                                  aspectRatio:
+                                                      _videoController!
+                                                          .value
+                                                          .aspectRatio,
+                                                  child: VideoPlayer(
+                                                    _videoController!,
+                                                  ),
                                                 ),
                                               ),
                                               // Play button overlay
                                               IconButton(
                                                 icon: Icon(
-                                                  _videoController!.value.isPlaying
-                                                      ? Icons.pause_circle_filled
-                                                      : Icons.play_circle_filled,
+                                                  _videoController!
+                                                          .value
+                                                          .isPlaying
+                                                      ? Icons
+                                                          .pause_circle_filled
+                                                      : Icons
+                                                          .play_circle_filled,
                                                   color: Colors.white,
                                                   size: 15.w,
                                                 ),
                                                 onPressed: () {
                                                   setState(() {
-                                                    _videoController!.value.isPlaying
-                                                        ? _videoController!.pause()
-                                                        : _videoController!.play();
+                                                    _videoController!
+                                                            .value
+                                                            .isPlaying
+                                                        ? _videoController!
+                                                            .pause()
+                                                        : _videoController!
+                                                            .play();
                                                   });
                                                 },
                                               ),
@@ -509,11 +564,19 @@ if (data.attachments != null && data.attachments!.isNotEmpty)
                                                     vertical: 0.5.h,
                                                   ),
                                                   decoration: BoxDecoration(
-                                                    color: Colors.black.withOpacity(0.7),
-                                                    borderRadius: BorderRadius.circular(4.w),
+                                                    color: Colors.black
+                                                        .withOpacity(0.7),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          4.w,
+                                                        ),
                                                   ),
                                                   child: Text(
-                                                    _formatDuration(_videoController!.value.duration),
+                                                    _formatDuration(
+                                                      _videoController!
+                                                          .value
+                                                          .duration,
+                                                    ),
                                                     style: TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 12.sp,
@@ -523,28 +586,30 @@ if (data.attachments != null && data.attachments!.isNotEmpty)
                                               ),
                                             ],
                                           )
-                                        : Center(
+                                          : Center(
                                             child: CircularProgressIndicator(
                                               color: Colors.white,
                                             ),
                                           ),
-                                  )
+                                )
                                 : ClipRRect(
-                                    borderRadius: BorderRadius.circular(2.w),
-                                    child: Image.file(
-                                      file,
-                                      height: 30.h,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                    ),
+                                  borderRadius: BorderRadius.circular(2.w),
+                                  child: Image.file(
+                                    file,
+                                    height: 30.h,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
                                   ),
+                                ),
                       ),
                       Positioned(
                         right: 1.w,
                         top: 1.w,
                         child: InkWell(
                           onTap: () {
-                            ref.read(postViewModelProvider.notifier).removeAttachment();
+                            ref
+                                .read(postViewModelProvider.notifier)
+                                .removeAttachment();
                             _videoController?.dispose();
                             _videoController = null;
                             _isVideoInitialized = false;

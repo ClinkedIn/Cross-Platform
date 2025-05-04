@@ -58,18 +58,18 @@ class SignupViewModel extends Notifier<SignupState> {
       state.email.isNotEmpty &&
       state.password.isNotEmpty;
 
-  Future<void> submitForm() async {
+  Future<String> submitForm() async {
     print('✅ Submit button pressed');
 
     if (!isFormValid) {
       print('❌ Error: All fields must be filled!');
-      return;
+      return '❌ Error: All fields must be filled!';
     }
 
     String? validationMessage = validateEmailOrPhone(state.email);
     if (validationMessage != null) {
       print(validationMessage);
-      return;
+      return validationMessage;
     }
 
     state = state.copyWith(isLoading: true);
@@ -117,13 +117,16 @@ class SignupViewModel extends Notifier<SignupState> {
         print(
           "✅ State updated: success=${state.success}, email=${state.email}",
         );
+        return "✅ Signup successful!";
       } else {
         print('❌ Signup failed. Server responded with: ${response.body}');
         state = state.copyWith(isLoading: false);
+        return '❌ Signup failed. Server responded with: ${response.body}';
       }
     } catch (e) {
       state = state.copyWith(isLoading: false);
       print('❌ Signup failed due to network error: $e');
+      return '❌ Signup failed due to network error: $e';
     }
   }
 
