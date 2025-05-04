@@ -9,6 +9,7 @@ class Company {
   final String? tagLine;
   final String? location;
   final String? logo;
+  final bool isFollowing;
 
   Company({
     this.id,
@@ -21,11 +22,12 @@ class Company {
     this.tagLine,
     this.location,
     this.logo,
+    this.isFollowing = false,
   });
 
   factory Company.fromJson(Map<String, dynamic> json) {
     return Company(
-      id: json['id'],
+      id: json['_id'],
       name: json['name'] ?? '',
       address: json['address'] ?? '',
       website: json['website'], // nullable
@@ -35,6 +37,7 @@ class Company {
       tagLine: json['tagLine'], // nullable
       location: json['location'], // nullable
       logo: json['logo'], // nullable
+      isFollowing: json['isFollowing'] ?? false,
     );
   }
 
@@ -49,6 +52,35 @@ class Company {
       'tagLine': tagLine,
       'location': location,
       'logo': logo,
+      'isFollowing': isFollowing,
     };
+  }
+
+  Company copyWith({
+    String? id,
+    String? name,
+    String? address,
+    String? website,
+    String? industry,
+    String? organizationSize,
+    String? organizationType,
+    String? tagLine,
+    String? location,
+    String? logo,
+    bool? isFollowing,
+  }) {
+    return Company(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      address: address ?? this.address,
+      website: website ?? this.website,
+      industry: industry ?? this.industry,
+      organizationSize: organizationSize ?? this.organizationSize,
+      organizationType: organizationType ?? this.organizationType,
+      tagLine: tagLine ?? this.tagLine,
+      location: location ?? this.location,
+      logo: logo ?? this.logo,
+      isFollowing: isFollowing ?? this.isFollowing,
+    );
   }
 }

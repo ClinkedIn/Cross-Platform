@@ -13,7 +13,6 @@ class GrowTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return ListView(
       children: [
         ManageNetwork(),

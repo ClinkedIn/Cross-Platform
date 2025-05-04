@@ -12,6 +12,7 @@ import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
 import 'package:lockedin/features/chat/view/chat_conversation_page.dart';
 import 'package:lockedin/features/chat/view/chat_list_page.dart';
+import 'package:lockedin/features/company/view/visitor_company_profile.dart';
 import 'package:lockedin/features/home_page/view/home_page.dart';
 import 'package:lockedin/features/jobs/view/jobs_page.dart';
 import 'package:lockedin/features/networks/view/connections_page.dart';
@@ -297,6 +298,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               state
                   .pathParameters['jobId']!; // Retrieve jobId from the URL parameters
           return ApplicationStatusPage(jobId: jobId);
+        },
+      ),
+
+      GoRoute(
+        path: '/company-visitor/:id',
+        name: 'company-visitor',
+        builder: (context, state) {
+          final companyId = state.pathParameters['id']!;
+          return CompanyVisitorView(companyId: companyId);
         },
       ),
 

@@ -154,7 +154,9 @@ class ChatItem extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              chat.unreadCount.toString(),
+
+              "New",
+
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,

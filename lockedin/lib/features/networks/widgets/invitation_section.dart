@@ -15,7 +15,6 @@ class _InvitationSectionState extends State<InvitationSection> {
   @override
   void initState() {
     super.initState();
-    // Fetch requests when widget initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<RequestViewModel>(context, listen: false).fetchRequests();
     });
@@ -118,7 +117,7 @@ class _InvitationSectionState extends State<InvitationSection> {
 
               return InvitationCard(
                 name: "${request.firstName} ${request.lastName}",
-                role: request.headline,
+                role: request.headline ?? "No headline",
                 mutualConnections:
                     "Connect", // You may need to add this to your model
                 timeAgo: "Recently", // You may need to add this to your model
@@ -188,9 +187,6 @@ class _InvitationSectionState extends State<InvitationSection> {
   }
 
   void _handleNameTap(String userID) {
-    context.pushNamed(
-      'other-profile',
-      pathParameters: {'userId': userID},
-    );
+    context.pushNamed('other-profile', pathParameters: {'userId': userID});
   }
 }

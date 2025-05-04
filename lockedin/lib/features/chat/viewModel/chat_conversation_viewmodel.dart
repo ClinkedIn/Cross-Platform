@@ -1,7 +1,6 @@
 // chat_conversation_viewmodel.dart
 import 'dart:async';
 import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
@@ -311,6 +310,11 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         throw Exception(result['error'] ?? 'Failed to send message');
       }
       
+      // Mark the chat as unread for the recipient
+      if (receiverId != null && receiverId.isNotEmpty) {
+        await _repository.markChatAsUnreadForRecipient(chatId, receiverId);
+      }
+      
     } catch (e) {
       debugPrint('Error sending message: ${e.toString()}');
       state = state.copyWith(
@@ -413,6 +417,12 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
         // Check if the message was sent successfully
         if (result['success'] != true) {
           throw Exception(result['error'] ?? 'Failed to send message with attachment');
+        }
+
+        // Get receiver ID and mark the chat as unread for the recipient
+        final String? receiverId = getReceiverUserId();
+        if (receiverId != null && receiverId.isNotEmpty) {
+          await _repository.markChatAsUnreadForRecipient(chatId, receiverId);
         }
         
         // Message sent successfully
@@ -647,8 +657,7 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     _typingSubscription?.cancel();
     _typingTimer?.cancel();
     
-    // Make sure typing status is set to false when leaving the chat
-    _repository.setTypingStatus(chatId, false);
+
     super.dispose();
   }
 }
