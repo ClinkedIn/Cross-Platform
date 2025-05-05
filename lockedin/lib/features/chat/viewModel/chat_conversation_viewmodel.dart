@@ -90,6 +90,7 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
   StreamSubscription<Map<String, List<ChatMessage>>>? _messagesByDateSubscription;
   StreamSubscription<Map<String, bool>>? _typingSubscription;
   Timer? _typingTimer;
+  bool _lastTypingStatus = false;
 
   String get currentUserId {
     final userId = _authService.currentUser?.id ?? '';
@@ -633,6 +634,26 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     state = state.copyWith(isCurrentUserTyping: isTyping);
     
     // No need for timer here since the input field handles that
+  }
+
+  void updateTypingStatus(bool isTyping) {
+    // Skip if status hasn't changed
+    if (isTyping == _lastTypingStatus) return;
+    
+    // If timer is active, cancel it
+    _typingTimer?.cancel();
+    
+    // For typing=true, update immediately
+    if (isTyping) {
+      _lastTypingStatus = true;
+      _repository.setTypingStatus(chatId, true);
+    } else {
+      // For typing=false, delay the update by 1 second
+      _typingTimer = Timer(Duration(seconds: 1), () {
+        _lastTypingStatus = false;
+        _repository.setTypingStatus(chatId, false);
+      });
+    }
   }
   
   // Check if any other user is typing
