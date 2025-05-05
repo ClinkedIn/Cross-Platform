@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:lockedin/core/services/auth_service.dart';
+import 'package:lockedin/features/home_page/model/taggeduser_model.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:sizer/sizer.dart';
 import '../../home_page/model/post_model.dart';
@@ -8,13 +9,103 @@ import 'package:lockedin/shared/theme/colors.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/videoplayer_view.dart';
-import '../../home_page/repository/posts/comment_api.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
     
 //some helper functions for media handling
 // Add this at the top of the file, after your imports
     enum MediaType { image, video, document, unknown }
+
+      /// Function that converts text with @mentions into clickable text spans
+        RichText buildTextWithMentions({
+          required String text,
+          required List<TaggedUser> taggedUsers,
+          required TextStyle? baseStyle,
+          required BuildContext context,
+        }) {
+          if (text.isEmpty) {
+            return RichText(text: TextSpan(text: '', style: baseStyle));
+          }
+
+          // Regular expression to find @mentions
+          final RegExp mentionRegex = RegExp(r'@(\w+)');
+          final List<TextSpan> textSpans = [];
+          
+          // Keep track of where we are in the string
+          int lastIndex = 0;
+          
+          // Find all mentions
+          for (final Match match in mentionRegex.allMatches(text)) {
+            // Add text before the mention
+            if (match.start > lastIndex) {
+              textSpans.add(TextSpan(
+                text: text.substring(lastIndex, match.start),
+                style: baseStyle,
+              ));
+            }
+            
+            // Extract the username without the @ symbol
+            final String mentionText = match.group(0)!; // With @ symbol for display
+            final String username = match.group(1)!;    // Without @ for matching
+            
+            // Try to find this user in the tagged users list
+            TaggedUser? taggedUser;
+            for (final user in taggedUsers) {
+              // Match using cleaned versions of names
+              final fullName = '${user.firstName}${user.lastName}'.toLowerCase().replaceAll(' ', '');
+              final usernameClean = username.toLowerCase().replaceAll(' ', '');
+              
+              if (user.firstName.toLowerCase() == usernameClean ||
+                  fullName == usernameClean ||
+                  fullName.contains(usernameClean)) {
+                taggedUser = user;
+                break;
+              }
+            }
+            
+            // Create the display text for the mention - KEEP THE ORIGINAL TEXT
+            // This is the key change - don't try to reconstruct the name
+            final String displayText = mentionText;
+            
+            // Make it blue and clickable
+            textSpans.add(TextSpan(
+              text: displayText,
+              style: baseStyle?.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () {
+                  if (taggedUser != null && taggedUser.userId.isNotEmpty) {
+                    debugPrint('Navigating to user profile: ${taggedUser.userId}');
+                    context.push('/other-profile/${taggedUser.userId}');
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('User profile not found')),
+                    );
+                  }
+                },
+            ));
+            
+            // Update last index
+            lastIndex = match.end;
+          }
+          
+          // Add remaining text after the last mention
+          if (lastIndex < text.length) {
+            textSpans.add(TextSpan(
+              text: text.substring(lastIndex),
+              style: baseStyle,
+            ));
+          }
+          
+          return RichText(
+            text: TextSpan(
+              children: textSpans,
+              style: baseStyle,
+            ),
+          );
+        }
 
     // Add these helper functions after the PostCard class
        String _getFileExtension(String url) {
@@ -207,7 +298,6 @@ class PostCard extends ConsumerWidget {
                                     if (post.isMine) {
                                       context.push('/profile');
                                     } 
-                                    // Otherwise go to reposter's profile if ID exists
                                     else  {
                                       context.push('/other-profile/${post.reposterId}');
                                     }
@@ -226,12 +316,14 @@ class PostCard extends ConsumerWidget {
                          // Show repost description if available
                         if (post.repostDescription != null && post.repostDescription!.isNotEmpty) ...[
                           SizedBox(height: 0.5.h),
-                          Text(
-                            post.repostDescription!,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontSize: 15.sp,
-                            ),
+                        buildTextWithMentions(
+                          text: post.repostDescription!,
+                          taggedUsers: post.taggedUsers ?? [],
+                          baseStyle: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: 15.sp,
                           ),
+                          context: context,
+                        ),
                         ],
                       ],
                     ),
@@ -470,12 +562,14 @@ class PostCard extends ConsumerWidget {
               ),
               // Content with null safety
               SizedBox(height: 1.5.h),
-              Text(
-                post.content.isNotEmpty ? post.content : 'No content',
-                style: theme.textTheme.bodyLarge?.copyWith(
+              buildTextWithMentions(
+                text: post.content.isNotEmpty ? post.content : 'No content',
+                taggedUsers: post.taggedUsers ?? [],
+                baseStyle: theme.textTheme.bodyLarge?.copyWith(
                   fontSize: 15.sp,
                   height: 1.4,
                 ),
+                context: context,
               ),
              // Image/media with advanced handling
               if (post.imageUrl != null && post.imageUrl!.isNotEmpty) ...[
