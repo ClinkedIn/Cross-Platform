@@ -1,7 +1,9 @@
 import 'package:lockedin/features/home_page/model/post_model.dart';
+import 'package:lockedin/features/company/model/company_model.dart';
 
 class SearchState {
   final List<PostModel> searchResults;
+  final List<Company> companyResults;
   final bool isLoading;
   final String? error;
   final String keyword;
@@ -10,6 +12,7 @@ class SearchState {
 
   SearchState({
     required this.searchResults,
+    required this.companyResults,
     required this.isLoading,
     this.error,
     required this.keyword,
@@ -20,6 +23,7 @@ class SearchState {
   // Initial state factory
   factory SearchState.initial() => SearchState(
         searchResults: [],
+        companyResults: [],
         isLoading: false,
         keyword: '',
         showResults: false,
@@ -29,6 +33,7 @@ class SearchState {
   // Copy with method for immutability
   SearchState copyWith({
     List<PostModel>? searchResults,
+    List<Company>? companyResults,
     bool? isLoading,
     String? error,
     String? keyword,
@@ -37,6 +42,7 @@ class SearchState {
   }) {
     return SearchState(
       searchResults: searchResults ?? this.searchResults,
+      companyResults: companyResults ?? this.companyResults,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       keyword: keyword ?? this.keyword,

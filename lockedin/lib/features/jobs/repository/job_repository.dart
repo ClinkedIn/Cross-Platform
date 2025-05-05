@@ -4,7 +4,7 @@ import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/features/jobs/model/job_model.dart';
 
 class JobRepository {
-  static const String _searchJobsEndpoint = '/api/search/jobs';
+  static const String _searchJobsEndpoint = '/search/jobs';
 
   Future<List<JobModel>> fetchJobs({
     String q = '',
@@ -28,7 +28,7 @@ class JobRepository {
     final uri = Uri(path: _searchJobsEndpoint, queryParameters: queryParams);
 
     final response = await RequestService.get(uri.toString());
-
+    print('Fetching jobsdkeh from: ${response.body}');
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       print('Fetched job data: ${jsonEncode(data)}');
@@ -40,10 +40,8 @@ class JobRepository {
   }
 
   Future<void> saveJob(String jobId) async {
-    final uri = Uri(path: '/api/jobs/$jobId/save');
-
     final response = await RequestService.post(
-      uri.toString(),
+      '/jobs/$jobId/save',
       body: {}, // Empty body
     );
 
@@ -54,7 +52,7 @@ class JobRepository {
   }
 
   Future<void> unsaveJob(String jobId) async {
-    final response = await RequestService.delete('/api/jobs/$jobId/save');
+    final response = await RequestService.delete('/jobs/$jobId/save');
 
     if (response.statusCode != 200) {
       final data = json.decode(response.body);
@@ -68,7 +66,7 @@ class JobRepository {
     required String contactPhone,
     required List<Map<String, String>> answers,
   }) async {
-    final uri = Uri(path: '/api/jobs/$jobId/apply');
+    final uri = Uri(path: '/jobs/$jobId/apply');
 
     final response = await RequestService.post(
       uri.toString(),
@@ -91,9 +89,8 @@ class JobRepository {
   }
 
   Future<JobModel> getJobById(String jobId) async {
-    final uri = Uri(path: '/api/jobs/$jobId');
-
-    final response = await RequestService.get(uri.toString());
+    final response = await RequestService.get("jobs/$jobId");
+    print('dhekdcedw job by ID from: ${response.body}');
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -106,9 +103,7 @@ class JobRepository {
   }
 
   Future<Map<String, dynamic>> getCompanyById(String companyId) async {
-    final uri = Uri(path: '/api/companies/$companyId');
-
-    final response = await RequestService.get(uri.toString());
+    final response = await RequestService.get('/companies/$companyId');
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);

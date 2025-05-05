@@ -18,7 +18,7 @@ class ConnectionViewModel extends ChangeNotifier {
   ConnectionViewState get state => _state;
   ConnectionList? get connectionList => _connectionList;
   int get connectionCount => _connectionList?.connections.length ?? 0;
-  List<Connection> get connections => _connectionList?.connections ?? [];
+  List<ConnectionModel> get connections => _connectionList?.connections ?? [];
   String? get errorMessage => _errorMessage;
   Pagination? get pagination => _connectionList?.pagination;
 
@@ -60,20 +60,22 @@ class ConnectionViewModel extends ChangeNotifier {
   }
 
   Future<void> loadNextPage() async {
-    if (_connectionList == null || 
+    if (_connectionList == null ||
         _connectionList!.pagination.page >= _connectionList!.pagination.pages) {
       return; // No more pages to load
     }
 
     try {
       final nextPage = _connectionList!.pagination.page + 1;
-      final nextPageData = await connectionService.getConnections(page: nextPage);
-      
+      final nextPageData = await connectionService.getConnections(
+        page: nextPage,
+      );
+
       // Append new connections to existing list
       _connectionList!.connections.addAll(nextPageData.connections);
       // Update pagination info
       _connectionList!.pagination = nextPageData.pagination;
-      
+
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
@@ -87,4 +89,3 @@ class ConnectionViewModel extends ChangeNotifier {
     notifyListeners();
   }
 }
-
