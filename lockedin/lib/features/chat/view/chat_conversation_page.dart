@@ -33,9 +33,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     // Set the chat ID for the input field to use
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(chatIdProvider.notifier).state = widget.chat.id;
-
-      // Mark messages as read when the conversation is opened
-      ref.read(chatConversationProvider(widget.chat.id).notifier).markMessagesAsRead();
     });
   }
 
@@ -166,11 +163,23 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
           return Center(child: Text('Error loading messages'));
         }
         
-        // Mark messages as read whenever new messages arrive while viewing the conversation
+        // Mark messages as read only when there are new unread messages
         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            ref.read(chatConversationProvider(widget.chat.id).notifier)
-              .markMessagesAsRead();
+            // Get current user ID to check which messages are for us
+            final currentUserId = ref.read(chatConversationProvider(widget.chat.id).notifier).currentUserId;
+            
+            // Find messages that aren't marked as read by the current user
+            final unreadMessages = snapshot.data!.where(
+              (msg) => !msg.readBy.contains(currentUserId) && 
+                       msg.sender.id != currentUserId
+            ).toList();
+            
+            // Only call markMessagesAsRead if we have unread messages
+            if (unreadMessages.isNotEmpty) {
+              ref.read(chatConversationProvider(widget.chat.id).notifier)
+                .markMessagesAsRead();
+            }
           });
         }
         

@@ -39,16 +39,6 @@ class ChatBubble extends ConsumerWidget {
         mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!isMe) ...[
-            CircleAvatar(
-              backgroundImage: senderImageUrl != null && senderImageUrl!.isNotEmpty
-                  ? NetworkImage(senderImageUrl!)
-                  : null,
-              radius: 16,
-              child: senderImageUrl == null || senderImageUrl!.isEmpty
-                  ? const Icon(Icons.person, size: 16)
-                  : null,
-            ),
-            const SizedBox(width: 8),
           ],
           Container(
             constraints: BoxConstraints(
