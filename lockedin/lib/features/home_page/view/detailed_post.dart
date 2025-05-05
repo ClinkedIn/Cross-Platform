@@ -1,5 +1,7 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/home_page/model/taggeduser_model.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/features/post/widgets/post_card.dart';
@@ -49,6 +51,107 @@ class PostDetailView extends ConsumerWidget {
       ),
     );
   }
+
+
+  RichText buildTextWithMentions({
+          required String text,
+          required List<TaggedUser> taggedUsers,
+          required TextStyle? baseStyle,
+          required BuildContext context,
+        }) {
+          if (text.isEmpty) {
+            return RichText(text: TextSpan(text: '', style: baseStyle));
+          }
+
+          // Regular expression to find @mentions
+          final RegExp mentionRegex = RegExp(r'@(\w+)');
+          final List<TextSpan> textSpans = [];
+          
+          // Keep track of where we are in the string
+          int lastIndex = 0;
+          
+          // Find all mentions
+          for (final Match match in mentionRegex.allMatches(text)) {
+            // Add text before the mention
+            if (match.start > lastIndex) {
+              textSpans.add(TextSpan(
+                text: text.substring(lastIndex, match.start),
+                style: baseStyle,
+              ));
+            }
+            
+            // Extract the username without the @ symbol
+            final String mentionText = match.group(0)!; // With @ symbol for display
+            final String username = match.group(1)!;    // Without @ for matching
+            
+            // Try to find this user in the tagged users list
+// In buildTextWithMentions function
+TaggedUser? taggedUser;
+for (final user in taggedUsers) {
+  // Simplify debug output and matching
+  debugPrint('Looking for @$username in tagged users: ${user.firstName} ${user.lastName}');
+  
+  // Try multiple matching strategies - Make this more forgiving
+  final userFirstName = user.firstName.toLowerCase().trim();
+  final userLastName = user.lastName.toLowerCase().trim();
+  final userFullNameNoSpace = '${userFirstName}${userLastName}';
+  final mentionName = username.toLowerCase().trim();
+  
+  if (userFirstName == mentionName || 
+      userLastName == mentionName || 
+      userFullNameNoSpace == mentionName ||
+      userFullNameNoSpace.contains(mentionName) || 
+      mentionName.contains(userFirstName)) {
+    debugPrint('✅ Found match! User ID: ${user.userId}');
+    taggedUser = user;
+    break;
+  }
+}
+            
+            // Create the display text for the mention - KEEP THE ORIGINAL TEXT
+            // This is the key change - don't try to reconstruct the name
+            final String displayText = mentionText;
+            
+            // Make it blue and clickable
+            textSpans.add(TextSpan(
+              text: displayText,
+              style: baseStyle?.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () {
+                  if (taggedUser != null) {
+                    debugPrint('Navigating to user profile: ${taggedUser.userId}');
+                    context.push('/other-profile/${taggedUser.userId}');
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('User profile not found')),
+                    );
+                  }
+                },
+            ));
+            
+            // Update last index
+            lastIndex = match.end;
+          }
+          
+          // Add remaining text after the last mention
+          if (lastIndex < text.length) {
+            textSpans.add(TextSpan(
+              text: text.substring(lastIndex),
+              style: baseStyle,
+            ));
+          }
+          
+          return RichText(
+            text: TextSpan(
+              children: textSpans,
+              style: baseStyle,
+            ),
+          );
+        }
+
 
   Widget _buildErrorView(BuildContext context, String error, WidgetRef ref) {
     return Center(
@@ -537,7 +640,12 @@ class PostDetailView extends ConsumerWidget {
                       SizedBox(height: 0.5.h),
 
                       // Comment content
-                      Text(comment.content, style: TextStyle(fontSize: 15.sp)),
+                      buildTextWithMentions(
+                        text: comment.content,
+                        taggedUsers: comment.taggedUsers ?? [], // ✓ Use taggedUsers from comment object
+                        baseStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 15.sp), // ✓ Use Theme.of(context)
+                        context: context,
+                      ),
                     ],
                   ),
                 ),
