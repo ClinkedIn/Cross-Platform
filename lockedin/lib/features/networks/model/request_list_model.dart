@@ -40,10 +40,10 @@ class Request {
   });
 
   factory Request.fromJson(Map<String, dynamic> json) => Request(
-    id: json["_id"],
-    firstName: json["firstName"],
+    id: json["_id"] ?? '',
+    firstName: json["firstName"] ?? '',
     lastName: json["lastName"],
-    profilePicture: json["profilePicture"],
+    profilePicture: json["profilePicture"] ?? '',
     headline: json["headline"] ?? "",
   );
 

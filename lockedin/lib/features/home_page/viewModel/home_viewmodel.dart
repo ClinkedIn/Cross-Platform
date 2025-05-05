@@ -32,13 +32,16 @@ class HomeViewModel extends StateNotifier<HomeState> {
       state = state.copyWith(isLoading: true, error: null);
 
       // Fetch posts from repository (now with pagination)
-      final result = await repository.fetchHomeFeed(page: 1, limit: state.limit);
+      final result = await repository.fetchHomeFeed(
+        page: 1,
+        limit: state.limit,
+      );
       final List<PostModel> posts = result['posts'];
       final Map<String, dynamic> pagination = result['pagination'];
 
       // Update state with fetched posts and pagination info
       state = state.copyWith(
-        posts: posts, 
+        posts: posts,
         isLoading: false,
         currentPage: pagination['page'] ?? 1,
         totalPages: pagination['pages'] ?? 1,
@@ -55,14 +58,13 @@ class HomeViewModel extends StateNotifier<HomeState> {
   /// Refresh feed data (reset to page 1)
   Future<void> refreshFeed() async {
     try {
-      state = state.copyWith(
-        isLoading: true,
-        error: null,
-        currentPage: 1,
-      );
+      state = state.copyWith(isLoading: true, error: null, currentPage: 1);
 
       // Fetch first page of posts
-      final result = await repository.fetchHomeFeed(page: 1, limit: state.limit);
+      final result = await repository.fetchHomeFeed(
+        page: 1,
+        limit: state.limit,
+      );
       final List<PostModel> posts = result['posts'];
       final Map<String, dynamic> pagination = result['pagination'];
 
@@ -76,10 +78,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
         hasPrevPage: pagination['hasPrevPage'] ?? false,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
@@ -95,10 +94,10 @@ class HomeViewModel extends StateNotifier<HomeState> {
     try {
       final nextPage = state.currentPage + 1;
       final result = await repository.fetchHomeFeed(
-        page: nextPage, 
-        limit: state.limit
+        page: nextPage,
+        limit: state.limit,
       );
-      
+
       final List<PostModel> newPosts = result['posts'];
       final Map<String, dynamic> pagination = result['pagination'];
 
@@ -115,10 +114,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
         hasPrevPage: pagination['hasPrevPage'] ?? false,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoadingMore: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoadingMore: false, error: e.toString());
     }
   }
 
@@ -136,9 +132,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
       final isCurrentlySaved = post.isSaved;
 
       // Optimistically update UI
-      final updatedPost = post.copyWith(
-        isSaved: !(isCurrentlySaved ?? false),
-      );
+      final updatedPost = post.copyWith(isSaved: !(isCurrentlySaved ?? false));
       final updatedPosts = List<PostModel>.from(state.posts);
       updatedPosts[index] = updatedPost;
       state = state.copyWith(posts: updatedPosts);
@@ -160,7 +154,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
         }
       } else {
         // Unsave the post
-        try { 
+        try {
           success = await repository.unsavePostById(postId);
         } catch (e) {
           // Check for "not saved" error
@@ -221,7 +215,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
         }
       } else {
         // Unlike the post
-        try { 
+        try {
           success = await repository.unlikePost(postId);
         } catch (e) {
           // Check for "not liked" error
@@ -244,55 +238,61 @@ class HomeViewModel extends StateNotifier<HomeState> {
   }
 
   /// Toggle repost for a post
-    Future<bool> toggleRepost(String postId,String user, {String? description}) async {
-      try {
-        // Find the current post
-        final postIndex = state.posts.indexWhere((post) => post.id == postId);
-        if (postIndex == -1) return false;
+  Future<bool> toggleRepost(
+    String postId,
+    String user, {
+    String? description,
+  }) async {
+    try {
+      // Find the current post
+      final postIndex = state.posts.indexWhere((post) => post.id == postId);
+      if (postIndex == -1) return false;
 
-        final post = state.posts[postIndex];
+      final post = state.posts[postIndex];
 
-        // Check if the post is already reposted
-        final bool isCurrentlyReposted = post.isRepost;
-        bool success;
+      // Check if the post is already reposted
+      final bool isCurrentlyReposted = post.isRepost;
+      bool success;
 
-        if (isCurrentlyReposted && post.reposterId == user) {
-          // Delete the repost
-          success = await repository.deleteRepost(post.repostId!);
-        } else {
-          // Create a new repost
-          success = await repository.createRepost(
-            postId,
-            description: description,
-          );
-        }
-
-        if (success) {
-          // For proper UI update, ideally we should refresh the feed
-          // But for immediate feedback, we can update the local state
-          final updatedPosts = List<PostModel>.from(state.posts);
-
-          // Update the repost count and status
-          final updatedPost = post.copyWith(
-            isRepost: !isCurrentlyReposted,
-            reposts: isCurrentlyReposted ? post.reposts - 1 : post.reposts + 1,
-          );
-
-          // Replace the old post with the updated one
-          updatedPosts[postIndex] = updatedPost;
-
-          // Update the state with the new list
-          state = state.copyWith(posts: updatedPosts);
-
-          return true;
-        }
-
-        return false;
-      } catch (e) {
-        debugPrint('Error in toggleRepost: $e');
-        rethrow;
+      if (isCurrentlyReposted && post.reposterId == user) {
+        // Delete the repost
+        success = await repository.deleteRepost(post.repostId!);
+        print('Repost deleted successfully');
+      } else {
+        // Create a new repost
+        success = await repository.createRepost(
+          postId,
+          description: description,
+        );
+        print('Repost created successfully');
       }
+
+      if (success) {
+        // For proper UI update, ideally we should refresh the feed
+        // But for immediate feedback, we can update the local state
+        final updatedPosts = List<PostModel>.from(state.posts);
+
+        // Update the repost count and status
+        final updatedPost = post.copyWith(
+          isRepost: !isCurrentlyReposted,
+          reposts: isCurrentlyReposted ? post.reposts - 1 : post.reposts + 1,
+        );
+
+        // Replace the old post with the updated one
+        updatedPosts[postIndex] = updatedPost;
+
+        // Update the state with the new list
+        state = state.copyWith(posts: updatedPosts);
+
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('Error in toggleRepost: $e');
+      rethrow;
     }
+  }
 
   /// Delete a post
   Future<bool> deletePost(String postId) async {
@@ -301,16 +301,17 @@ class HomeViewModel extends StateNotifier<HomeState> {
       // Find the post first to double-check ownership
       final postIndex = state.posts.indexWhere((post) => post.id == postId);
       if (postIndex == -1) throw Exception('Post not found');
-      
+
       final post = state.posts[postIndex];
       if (!post.isMine) throw Exception('You can only delete your own posts');
-      
+
       state = state.copyWith(isLoading: true, error: null);
       final success = await repository.deletePost(postId);
-      
+
       if (success) {
         // Remove the post from the list
-        final updatedPosts = List<PostModel>.from(state.posts)..removeAt(postIndex);
+        final updatedPosts = List<PostModel>.from(state.posts)
+          ..removeAt(postIndex);
         state = state.copyWith(posts: updatedPosts, isLoading: false);
         return true;
       } else {
@@ -325,56 +326,69 @@ class HomeViewModel extends StateNotifier<HomeState> {
   }
 
   /// Edit a post
-  Future<bool> editPost(String postId, String content, {List<TaggedUser>? taggedUsers}) async {
+  Future<bool> editPost(
+    String postId,
+    String content, {
+    List<TaggedUser>? taggedUsers,
+  }) async {
     // Existing implementation...
     try {
       debugPrint('📝 Editing post: $postId');
       if (taggedUsers != null && taggedUsers.isNotEmpty) {
         debugPrint('👥 With ${taggedUsers.length} tagged users');
       }
-      
+
       // Use the updated API method that now accepts TaggedUser objects
       final success = await repository.editPost(
         postId,
         content: content,
         taggedUsers: taggedUsers,
       );
-      
+
       if (success) {
         // Update the post in the local posts list
         state = state.copyWith(
-          posts: state.posts.map((post) {
-            if (post.id == postId) {
-              return post.copyWith(
-                content: content,
-                taggedUsers: taggedUsers ?? post.taggedUsers,
-              );
-            }
-            return post;
-          }).toList(),
+          posts:
+              state.posts.map((post) {
+                if (post.id == postId) {
+                  return post.copyWith(
+                    content: content,
+                    taggedUsers: taggedUsers ?? post.taggedUsers,
+                  );
+                }
+                return post;
+              }).toList(),
         );
       }
-      
+
       return success;
     } catch (e) {
       debugPrint('❌ Error editing post: $e');
       return false;
     }
   }
-      
+
   /// Report a post for policy violations
-  Future<bool> reportPost(String postId, String policyViolation, {String? dontWantToSee}) async {
+  Future<bool> reportPost(
+    String postId,
+    String policyViolation, {
+    String? dontWantToSee,
+  }) async {
     // Existing implementation...
     try {
       // Set loading state (optional)
       state = state.copyWith(isLoading: true, error: null);
-      
+
       // Call repository method
-      final success = await repository.reportPost(postId, policyViolation, dontWantToSee: dontWantToSee);
-      
+      final success = await repository.reportPost(
+        postId,
+        policyViolation,
+        dontWantToSee: dontWantToSee,
+      );
+
       // Update state after operation
       state = state.copyWith(isLoading: false);
-      
+
       return success;
     } catch (e) {
       debugPrint('Error reporting post: $e');
@@ -384,7 +398,10 @@ class HomeViewModel extends StateNotifier<HomeState> {
   }
 
   /// Get the post likes
-  Future<Map<String, dynamic>> getPostLikes(String postId, {int page = 1}) async {
+  Future<Map<String, dynamic>> getPostLikes(
+    String postId, {
+    int page = 1,
+  }) async {
     // Existing implementation...
     try {
       final likesData = await repository.getPostLikes(postId, page: page);
@@ -399,14 +416,17 @@ class HomeViewModel extends StateNotifier<HomeState> {
   Future<bool> createRepost(String postId, {String? description}) async {
     try {
       // Call the repository method
-      final success = await repository.createRepost(postId, description: description);
-      
+      final success = await repository.createRepost(
+        postId,
+        description: description,
+      );
+
       if (success) {
         // After successful repost, refresh the feed to see the new repost
         await refreshFeed();
         return true;
       }
-      
+
       return false;
     } catch (e) {
       debugPrint('Error creating repost: $e');

@@ -13,7 +13,9 @@ class CompanyRepository {
   static const String _companiesEndpoint = '/companies';
 
   Future<Company?> getCompanyById(String companyId) async {
-    final uri = Uri.parse('http://10.0.2.2:3000$_companiesEndpoint/$companyId');
+    final uri = Uri.parse(
+      'https://lockedin-cufe.me/api$_companiesEndpoint/$companyId',
+    );
 
     print('Fetching company from: $uri');
 
@@ -36,7 +38,7 @@ class CompanyRepository {
   }
 
   Future<Company?> createCompany(Company company, {String? logoPath}) async {
-    final uri = Uri.parse('http://10.0.2.2:3000$_companiesEndpoint');
+    final uri = Uri.parse('https://lockedin-cufe.me/api$_companiesEndpoint');
 
     print('Creating company at: $uri');
 
@@ -79,7 +81,7 @@ class CompanyRepository {
     String? location,
     String? logoPath,
   }) async {
-    final uri = Uri.parse('http://10.0.2.2:3000/api/companies/$companyId');
+    final uri = Uri.parse('https://lockedin-cufe.me/api/companies/$companyId');
 
     try {
       final token = await TokenService.getCookie();
@@ -131,7 +133,9 @@ class CompanyRepository {
     String? whoCanComment,
     List<String>? filePaths,
   }) async {
-    final uri = Uri.parse('http://10.0.2.2:3000/api/companies/$companyId/post');
+    final uri = Uri.parse(
+      'https://lockedin-cufe.me/api/companies/$companyId/post',
+    );
     final token = await TokenService.getCookie();
 
     final cleanedDescription = description.trim();
@@ -258,7 +262,7 @@ class CompanyRepository {
   }
 
   Future<List<CompanyJob>> fetchCompanyJobs(String companyId) async {
-    final response = await RequestService.get('jobs/company/$companyId');
+    final response = await RequestService.get('/jobs/company/$companyId');
     print('Jobbb Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
     if (response.statusCode == 200) {
@@ -272,7 +276,7 @@ class CompanyRepository {
   }
 
   Future<List<JobApplication>> fetchJobApplications(String jobId) async {
-    final response = await RequestService.get('jobs/$jobId/apply');
+    final response = await RequestService.get('/jobs/$jobId/apply');
     print('applicationsss Response status: ${response.statusCode}');
     if (response.statusCode == 200) {
       print('applicationsss Response body: ${response.body}');
@@ -292,7 +296,7 @@ class CompanyRepository {
     required String userId,
   }) async {
     final response = await RequestService.put(
-      'jobs/$jobId/applications/$userId/accept',
+      '/jobs/$jobId/applications/$userId/accept',
       body: {},
     );
 
@@ -307,7 +311,7 @@ class CompanyRepository {
     required String userId,
   }) async {
     final response = await RequestService.put(
-      'jobs/$jobId/applications/$userId/reject',
+      '/jobs/$jobId/applications/$userId/reject',
       body: {},
     );
 
@@ -318,7 +322,7 @@ class CompanyRepository {
   }
 
   Future<CompanyJob> getSpecificJob(String jobId) async {
-    final response = await RequestService.get('jobs/$jobId');
+    final response = await RequestService.get('/jobs/$jobId');
     print('Job application Response status: ${response.statusCode}');
     if (response.statusCode == 200) {
       final data = json.decode(response.body);

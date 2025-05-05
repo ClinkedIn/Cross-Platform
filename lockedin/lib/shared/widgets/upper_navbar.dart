@@ -73,53 +73,57 @@ class _UpperNavbarState extends ConsumerState<UpperNavbar> {
     super.dispose();
   }
 
-// In the _onSearchChanged method:
+  // In the _onSearchChanged method:
 
-void _onSearchChanged() {
-  // Cancel previous timer
-  _debounceTimer?.cancel();
+  void _onSearchChanged() {
+    // Cancel previous timer
+    _debounceTimer?.cancel();
 
-  // Start new debounce timer
-  _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-    // Ensure minimum 2 characters before triggering search
-    if (_searchController.text.trim().length >= 2) {
-      final currentRoute = _getCurrentRoute(context);
-      
-      // Use appropriate search based on current route
-      if (currentRoute == "/network") {
-        ref.read(userSearchViewModelProvider.notifier)
-          .searchUsers(_searchController.text);
+    // Start new debounce timer
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      // Ensure minimum 2 characters before triggering search
+      if (_searchController.text.trim().length >= 2) {
+        final currentRoute = _getCurrentRoute(context);
+
+        // Use appropriate search based on current route
+        if (currentRoute == "/network") {
+          ref
+              .read(userSearchViewModelProvider.notifier)
+              .searchUsers(_searchController.text);
+        } else {
+          ref
+              .read(searchViewModelProvider.notifier)
+              .searchPosts(_searchController.text);
+        }
+
+        if (!_searchFocusNode.hasFocus) {
+          _searchFocusNode.requestFocus();
+        }
+      } else if (_searchController.text.isEmpty) {
+        // Clear appropriate search based on current route
+        if (_getCurrentRoute(context) == "/network") {
+          ref.read(userSearchViewModelProvider.notifier).clearSearch();
+        } else {
+          ref.read(searchViewModelProvider.notifier).clearSearch();
+        }
       } else {
-        ref.read(searchViewModelProvider.notifier)
-          .searchPosts(_searchController.text);
+        // Handle case when text is 1 character - show warning
+        final currentRoute = _getCurrentRoute(context);
+        if (currentRoute == "/network") {
+          ref.read(userSearchViewModelProvider.notifier).clearSearch();
+          ref.read(userSearchViewModelProvider.notifier).state = ref
+              .read(userSearchViewModelProvider.notifier)
+              .state
+              .copyWith(
+                error: "Search term must be at least 2 characters",
+                keyword: _searchController.text,
+                showResults: true,
+                isLoading: false,
+              );
+        }
       }
-      
-      if (!_searchFocusNode.hasFocus) {
-        _searchFocusNode.requestFocus();
-      }
-    } else if (_searchController.text.isEmpty) {
-      // Clear appropriate search based on current route
-      if (_getCurrentRoute(context) == "/network") {
-        ref.read(userSearchViewModelProvider.notifier).clearSearch();
-      } else {
-        ref.read(searchViewModelProvider.notifier).clearSearch();
-      }
-    } else {
-      // Handle case when text is 1 character - show warning
-      final currentRoute = _getCurrentRoute(context);
-      if (currentRoute == "/network") {
-        ref.read(userSearchViewModelProvider.notifier).clearSearch();
-        ref.read(userSearchViewModelProvider.notifier).state = 
-          ref.read(userSearchViewModelProvider.notifier).state.copyWith(
-            error: "Search term must be at least 2 characters",
-            keyword: _searchController.text,
-            showResults: true,
-            isLoading: false,
-          );
-      }
-    }
-  });
-}
+    });
+  }
 
   void _showOverlay() {
     _removeOverlay();
@@ -128,43 +132,51 @@ void _onSearchChanged() {
     // Create appropriate overlay based on current route
     if (currentRoute == "/network") {
       _overlayEntry = OverlayEntry(
-        builder: (context) => UserSearchResultsOverlay(
-          link: _layerLink,
-          searchBarKey: _searchBarKey,
-          onUserSelected: (user) {
-            _searchFocusNode.unfocus();
-            
-            debugPrint('User selected: ${user.id}');
-            if (user.id.isNotEmpty) {
-              context.push('/other-profile/${user.id}');
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error: Could not find user ID')),
-              );
-            }
-          },
-        ),
+        builder:
+            (context) => UserSearchResultsOverlay(
+              link: _layerLink,
+              searchBarKey: _searchBarKey,
+              onUserSelected: (user) {
+                _searchFocusNode.unfocus();
+
+                debugPrint('User selected: ${user.id}');
+                if (user.id.isNotEmpty) {
+                  context.push('/other-profile/${user.id}');
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: Could not find user ID')),
+                  );
+                }
+              },
+            ),
       );
     } else {
       _overlayEntry = OverlayEntry(
-        builder: (context) => SearchResultsOverlay(
-          link: _layerLink,
-          searchBarKey: _searchBarKey,
-          onPostSelected: (post) {
-            _searchFocusNode.unfocus();
+        builder:
+            (context) => SearchResultsOverlay(
+              link: _layerLink,
+              onCompanySelected: (company) {
+                _searchFocusNode.unfocus();
+                if (company.id != null) {
+                  context.push('/company/${company.id}');
+                }
+              },
+              searchBarKey: _searchBarKey,
+              onPostSelected: (post) {
+                _searchFocusNode.unfocus();
 
-            final postId = post.id;
-            debugPrint('Post selected: $postId');
-            
-            if (postId.isNotEmpty) {
-              context.push('/detailed-post/$postId');
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error: Could not find post ID')),
-              );
-            }
-          },
-        ),
+                final postId = post.id;
+                debugPrint('Post selected: $postId');
+
+                if (postId.isNotEmpty) {
+                  context.push('/detailed-post/$postId');
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: Could not find post ID')),
+                  );
+                }
+              },
+            ),
       );
     }
 
@@ -206,34 +218,42 @@ void _onSearchChanged() {
             focusNode: _searchFocusNode,
             decoration: InputDecoration(
               fillColor: isDarkMode ? Colors.grey[700] : Colors.grey[200],
-              hintText: currentRoute == "/home"
-                  ? "Search posts"
-                  : currentRoute == "/network"
-                  ? "Search users"
-                  : currentRoute == "/jobs"
-                  ? "Search jobs"
-                  : "Search",
+              hintText:
+                  currentRoute == "/home"
+                      ? "Search posts"
+                      : currentRoute == "/network"
+                      ? "Search users"
+                      : currentRoute == "/jobs"
+                      ? "Search jobs"
+                      : "Search",
               hintStyle: TextStyle(color: Colors.grey[400]),
               prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(
-                        Icons.clear,
-                        color: Colors.grey[400],
-                        size: 20,
-                      ),
-                      onPressed: () {
-                        _searchController.clear();
-                        if (currentRoute == "/home") {
-                          ref.read(searchViewModelProvider.notifier).clearSearch();
-                        } else if (currentRoute == "/network") {
-                          ref.read(userSearchViewModelProvider.notifier).clearSearch();
-                        } else if (currentRoute == "/jobs") {
-                          ref.read(searchViewModelProvider.notifier).clearSearch();
-                        }
-                      },
-                    )
-                  : null,
+              suffixIcon:
+                  _searchController.text.isNotEmpty
+                      ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          color: Colors.grey[400],
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          if (currentRoute == "/home") {
+                            ref
+                                .read(searchViewModelProvider.notifier)
+                                .clearSearch();
+                          } else if (currentRoute == "/network") {
+                            ref
+                                .read(userSearchViewModelProvider.notifier)
+                                .clearSearch();
+                          } else if (currentRoute == "/jobs") {
+                            ref
+                                .read(searchViewModelProvider.notifier)
+                                .clearSearch();
+                          }
+                        },
+                      )
+                      : null,
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(vertical: 10.0),
             ),
@@ -242,7 +262,9 @@ void _onSearchChanged() {
             onSubmitted: (value) {
               if (value.trim().isNotEmpty) {
                 if (currentRoute == "/network") {
-                  ref.read(userSearchViewModelProvider.notifier).searchUsers(value);
+                  ref
+                      .read(userSearchViewModelProvider.notifier)
+                      .searchUsers(value);
                 } else {
                   ref.read(searchViewModelProvider.notifier).searchPosts(value);
                 }

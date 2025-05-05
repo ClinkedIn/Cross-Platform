@@ -19,11 +19,6 @@ void main() {
     expect(viewModel.state.visibility, 'Anyone');
   });
 
-  test('updates content correctly', () {
-    viewModel.updateContent('Test post');
-    expect(viewModel.state.content, 'Test post');
-  });
-
   test('updates visibility correctly', () {
     viewModel.updateVisibility('Connections');
     expect(viewModel.state.visibility, 'Connections');

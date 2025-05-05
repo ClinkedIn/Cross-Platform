@@ -24,7 +24,7 @@ class PostCard extends StatelessWidget {
       avatarImage = NetworkImage(
         post.companyLogoUrl.startsWith('http')
             ? post.companyLogoUrl
-            : 'http://10.0.2.2:3000/${post.companyLogoUrl}',
+            : 'https://lockedin-cufe.me/api${post.companyLogoUrl}',
       );
     } else {
       avatarImage = const AssetImage('assets/images/default_profile_photo.png');
@@ -99,7 +99,9 @@ class PostCard extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.network(
-                    url.startsWith('http') ? url : 'http://10.0.2.2:3000/$url',
+                    url.startsWith('http')
+                        ? url
+                        : 'https://lockedin-cufe.me/api/$url',
                     fit: BoxFit.cover,
                   ),
                 ),
