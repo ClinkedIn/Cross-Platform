@@ -258,8 +258,20 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   Widget _buildMessageBubble(ChatMessage message) {
     final currentUserId = ref.read(chatConversationProvider(widget.chat.id).notifier).currentUserId;
     
-    // Normal mode: check if the message sender is the current user
+    // Check if the message sender is the current user
     final isMe = currentUserId.isNotEmpty && message.sender.id == currentUserId;
+    
+    // Only check read status for messages sent by the current user
+    bool isReadByReceiver = false;
+    if (isMe) {
+      // Get the receiver ID (anyone who's not the current user)
+      final receiverId = ref.read(chatConversationProvider(widget.chat.id).notifier).getReceiverUserId();
+      
+      // Check if receiver has read this message
+      if (receiverId != null) {
+        isReadByReceiver = message.readBy.contains(receiverId);
+      }
+    }
     
     // Default to empty string for messageText if null
     final messageText = message.messageText;
@@ -274,9 +286,10 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       isMe: isMe,
       time: DateFormat('hh:mm a').format(message.createdAt),
       senderImageUrl: isMe ? null : message.sender.profilePicture,
-      isRead: true,
-      attachmentUrl: attachmentUrl,  // Use the extracted URL
-      attachmentType: message.attachmentType, 
+      // Pass whether the message has been read by the receiver
+      isRead: isReadByReceiver,
+      attachmentUrl: attachmentUrl,
+      attachmentType: message.attachmentType,
     );
   }
 

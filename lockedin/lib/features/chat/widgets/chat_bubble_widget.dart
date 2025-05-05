@@ -15,6 +15,7 @@ class ChatBubble extends ConsumerWidget {
   final bool isRead;
   final String? attachmentUrl;
   final AttachmentType attachmentType;
+  final String? receiverId; // Add receiverId to check against readBy
 
   const ChatBubble({
     Key? key,
@@ -25,6 +26,7 @@ class ChatBubble extends ConsumerWidget {
     required this.isRead,
     this.attachmentUrl,
     this.attachmentType = AttachmentType.none,
+    this.receiverId, // Add receiverId parameter
   }) : super(key: key);
 
   @override

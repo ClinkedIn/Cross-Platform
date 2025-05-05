@@ -58,6 +58,14 @@ class FirebaseChatServices {
               profilePicture: participants[senderId]?['profilePicture'],
             );
             
+            // Extract readBy list - who has read this message
+            List<String> readBy = [];
+            if (data['readBy'] != null) {
+              if (data['readBy'] is List) {
+                readBy = List<String>.from(data['readBy']);
+              }
+            }
+            
             // Handle attachments with additional logging
             List<String> attachments = [];
             AttachmentType attachmentType = AttachmentType.none;
@@ -132,9 +140,9 @@ class FirebaseChatServices {
               messageText: data['text'] ?? '',
               createdAt: createdAt,
               updatedAt: updatedAt,
-              // Extract first URL from attachments array rather than passing the whole array
               messageAttachment: attachments,
               attachmentType: attachmentType,
+              readBy: readBy, // Include readBy information
             );
           }).toList();
           
