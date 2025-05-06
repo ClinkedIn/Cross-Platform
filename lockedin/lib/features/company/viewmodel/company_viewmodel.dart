@@ -9,96 +9,131 @@ import 'package:lockedin/features/company/repository/company_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Key for storing following status in SharedPreferences
+const String _followingKeyPrefix = 'isFollowing_';
+
+/// ViewModel responsible for managing company-related state and operations
 class CompanyViewModel extends ChangeNotifier {
   final CompanyRepository _companyRepository;
+
+  // Main state
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  // Company state
+  Company? _createdCompany;
+  Company? _fetchedCompany;
+  List<Company> _fetchedCompanies = [];
+
+  // Posts state
+  List<CompanyPost> _companyPosts = [];
+
+  // Jobs state
+  List<CompanyJob> _companyJobs = [];
+  CompanyJob? _fetchedJob;
+  List<JobApplication> _jobApplications = [];
 
   CompanyViewModel({CompanyRepository? companyRepository})
     : _companyRepository = companyRepository ?? CompanyRepository();
 
-  bool _isLoading = false;
-  String? _errorMessage;
-  Company? _createdCompany;
-
+  // Getters
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   Company? get createdCompany => _createdCompany;
-
-  // Jobs state
-  List<CompanyJob> _companyJobs = [];
+  Company? get fetchedCompany => _fetchedCompany;
+  List<Company> get fetchedCompanies => _fetchedCompanies;
+  List<CompanyPost> get companyPosts => _companyPosts;
   List<CompanyJob> get companyJobs => _companyJobs;
-
-  List<JobApplication> _jobApplications = [];
+  CompanyJob? get fetchedJob => _fetchedJob;
   List<JobApplication> get jobApplications => _jobApplications;
 
-  CompanyJob? _fetchedJob;
-  CompanyJob? get fetchedJob => _fetchedJob;
-
-  Future<void> createCompany(Company company, {String? logoPath}) async {
+  /// Helper method to handle async operations with loading state and error handling
+  Future<T?> _executeAsync<T>(
+    Future<T?> Function() operation, {
+    String? errorMessage,
+  }) async {
     _setLoading(true);
     _clearError();
 
-    final createdResult = await _companyRepository.createCompany(
-      company,
-      logoPath: logoPath,
-    );
-
-    if (createdResult != null &&
-        createdResult.id != null &&
-        createdResult.id!.isNotEmpty) {
-      final fetchedResult = await _companyRepository.getCompanyById(
-        createdResult.id!,
-      );
-
-      if (fetchedResult != null) {
-        _createdCompany = fetchedResult;
-      } else {
-        _createdCompany = createdResult;
-        _errorMessage = 'Company created, but failed to retrieve full data.';
-      }
-    } else {
-      _errorMessage = 'Failed to create company.';
+    try {
+      final result = await operation();
+      return result;
+    } catch (e) {
+      _errorMessage = errorMessage ?? 'An error occurred: ${e.toString()}';
+      debugPrint('❌ Error in CompanyViewModel: $_errorMessage');
+      return null;
+    } finally {
+      _setLoading(false);
     }
-
-    _setLoading(false);
   }
 
+  /// Updates loading state and notifies listeners
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
   }
 
+  /// Clears error message and notifies listeners
   void _clearError() {
     _errorMessage = null;
     notifyListeners();
   }
 
+  /// Clears created company state
   void clearCreatedCompany() {
     _createdCompany = null;
     notifyListeners();
   }
 
-  Company? _fetchedCompany;
-  Company? get fetchedCompany => _fetchedCompany;
+  /// Creates a new company with optional logo
+  Future<bool> createCompany(Company company, {String? logoPath}) async {
+    return await _executeAsync<bool>(() async {
+          final createdResult = await _companyRepository.createCompany(
+            company,
+            logoPath: logoPath,
+          );
+          print('Created company: ${createdResult?.id}');
 
-  Future<void> fetchCompanyById(String companyId) async {
-    _setLoading(true);
-    _clearError();
+          if (createdResult != null &&
+              createdResult.id != null &&
+              createdResult.id!.isNotEmpty) {
+            final fetchedResult = await _companyRepository.getCompanyById(
+              createdResult.id!,
+            );
 
-    final result = await _companyRepository.getCompanyById(companyId);
-    if (result != null) {
-      final localIsFollowing = await loadIsFollowing(companyId);
-      _fetchedCompany =
-          localIsFollowing != null
-              ? result.copyWith(isFollowing: localIsFollowing)
-              : result;
-      notifyListeners();
-    } else {
-      _errorMessage = 'Failed to fetch company details.';
-    }
-
-    _setLoading(false);
+            if (fetchedResult != null) {
+              _createdCompany = fetchedResult;
+            } else {
+              _createdCompany = createdResult;
+              _errorMessage =
+                  'Company created, but failed to retrieve full data.';
+            }
+            return true;
+          } else {
+            _errorMessage = 'Failed to create company.';
+            return false;
+          }
+        }, errorMessage: 'Failed to create company') ??
+        false;
   }
 
+  /// Fetches company details by ID
+  Future<void> fetchCompanyById(String companyId) async {
+    await _executeAsync<void>(() async {
+      final result = await _companyRepository.getCompanyById(companyId);
+      if (result != null) {
+        final localIsFollowing = await loadIsFollowing(companyId);
+        _fetchedCompany =
+            localIsFollowing != null
+                ? result.copyWith(isFollowing: localIsFollowing)
+                : result;
+      } else {
+        _errorMessage = 'Failed to fetch company details.';
+      }
+    }, errorMessage: 'Failed to fetch company details');
+  }
+
+  /// Updates an existing company
   Future<bool> editCompany({
     required String companyId,
     required String name,
@@ -111,33 +146,32 @@ class CompanyViewModel extends ChangeNotifier {
     String? location,
     String? logoPath,
   }) async {
-    _setLoading(true);
-    _clearError();
+    return await _executeAsync<bool>(() async {
+          final success = await _companyRepository.editCompany(
+            companyId: companyId,
+            name: name,
+            address: address,
+            website: website,
+            industry: industry,
+            organizationSize: organizationSize,
+            organizationType: organizationType,
+            tagLine: tagLine,
+            location: location,
+            logoPath: logoPath,
+          );
 
-    final success = await _companyRepository.editCompany(
-      companyId: companyId,
-      name: name,
-      address: address,
-      website: website,
-      industry: industry,
-      organizationSize: organizationSize,
-      organizationType: organizationType,
-      tagLine: tagLine,
-      location: location,
-      logoPath: logoPath,
-    );
-
-    if (success) {
-      // Refresh the company details
-      await fetchCompanyById(companyId);
-    } else {
-      _errorMessage = 'Failed to update company.';
-    }
-
-    _setLoading(false);
-    return success;
+          if (success) {
+            // Refresh the company details
+            await fetchCompanyById(companyId);
+          } else {
+            _errorMessage = 'Failed to update company.';
+          }
+          return success;
+        }, errorMessage: 'Failed to edit company') ??
+        false;
   }
 
+  /// Creates a company post
   Future<bool> createPost({
     required String companyId,
     required String description,
@@ -146,31 +180,29 @@ class CompanyViewModel extends ChangeNotifier {
     String? whoCanComment,
     List<String>? filePaths,
   }) async {
-    _setLoading(true);
-    _clearError();
+    return await _executeAsync<bool>(() async {
+          final success = await _companyRepository.createCompanyPost(
+            companyId: companyId,
+            description: description,
+            taggedUsers: taggedUsers,
+            whoCanSee: whoCanSee,
+            whoCanComment: whoCanComment,
+            filePaths: filePaths,
+          );
 
-    final success = await _companyRepository.createCompanyPost(
-      companyId: companyId,
-      description: description,
-      taggedUsers: taggedUsers,
-      whoCanSee: whoCanSee,
-      whoCanComment: whoCanComment,
-      filePaths: filePaths,
-    );
-
-    if (!success) {
-      _errorMessage = 'Failed to create post.';
-      _setLoading(false);
-      return false;
-    }
-
-    // Fetch the latest posts after successful creation
-    await fetchCompanyPosts(companyId);
-
-    _setLoading(false);
-    return true;
+          if (success) {
+            // Fetch the latest posts after successful creation
+            await fetchCompanyPosts(companyId);
+            return true;
+          } else {
+            _errorMessage = 'Failed to create post.';
+            return false;
+          }
+        }, errorMessage: 'Failed to create post') ??
+        false;
   }
 
+  /// Creates a company job
   Future<bool> createJob({
     required String companyId,
     required String title,
@@ -184,94 +216,78 @@ class CompanyViewModel extends ChangeNotifier {
     required bool autoRejectMustHave,
     required String rejectPreview,
   }) async {
-    _setLoading(true);
-    _clearError();
+    return await _executeAsync<bool>(() async {
+          final success = await _companyRepository.createCompanyJob(
+            companyId: companyId,
+            description: description,
+            title: title,
+            industry: industry,
+            workplaceType: workplaceType,
+            jobLocation: jobLocation,
+            jobType: jobType,
+            applicationEmail: applicationEmail,
+            screeningQuestions: screeningQuestions,
+            autoRejectMustHave: autoRejectMustHave,
+            rejectPreview: rejectPreview,
+          );
 
-    final success = await _companyRepository.createCompanyJob(
-      companyId: companyId,
-      description: description,
-      title: title,
-      industry: industry,
-      workplaceType: workplaceType,
-      jobLocation: jobLocation,
-      jobType: jobType,
-      applicationEmail: applicationEmail,
-      screeningQuestions: screeningQuestions,
-      autoRejectMustHave: autoRejectMustHave,
-      rejectPreview: rejectPreview,
-    );
-
-    if (!success) {
-      _errorMessage = 'Failed to create post.';
-      _setLoading(false);
-      return false;
-    }
-
-    // Fetch the latest posts after successful creation
-    await fetchCompanyPosts(companyId);
-
-    _setLoading(false);
-    return true;
+          if (success) {
+            // Refresh jobs after successful creation
+            await fetchCompanyJobs(companyId);
+            return true;
+          } else {
+            _errorMessage = 'Failed to create job.';
+            return false;
+          }
+        }, errorMessage: 'Failed to create job') ??
+        false;
   }
 
-  List<CompanyPost> _companyPosts = [];
-  List<CompanyPost> get companyPosts => _companyPosts;
-
+  /// Fetches company posts
   Future<void> fetchCompanyPosts(
     String companyId, {
     int page = 1,
     int limit = 10,
   }) async {
-    _setLoading(true);
-    _clearError();
-
-    final posts = await _companyRepository.fetchCompanyPosts(
-      companyId,
-      page: page,
-      limit: limit,
-    );
-    _companyPosts = posts;
-
-    _setLoading(false);
+    await _executeAsync<void>(() async {
+      final posts = await _companyRepository.fetchCompanyPosts(
+        companyId,
+        page: page,
+        limit: limit,
+      );
+      _companyPosts = posts;
+    }, errorMessage: 'Failed to fetch company posts');
   }
 
+  /// Fetches company jobs
   Future<void> fetchCompanyJobs(
     String companyId, {
     int page = 1,
     int limit = 10,
   }) async {
-    _setLoading(true);
-    _clearError();
-
-    final jobs = await _companyRepository.fetchCompanyJobs(companyId);
-    _companyJobs = jobs;
-
-    _setLoading(false);
+    await _executeAsync<void>(() async {
+      final jobs = await _companyRepository.fetchCompanyJobs(companyId);
+      _companyJobs = jobs;
+    }, errorMessage: 'Failed to fetch company jobs');
   }
 
+  /// Fetches all job applications for a specific job
   Future<void> fetchJobApplications(String jobId) async {
-    _setLoading(true);
-    _clearError();
-
-    final applications = await _companyRepository.fetchJobApplications(jobId);
-    _jobApplications = applications;
-
-    _setLoading(false);
+    await _executeAsync<void>(() async {
+      final applications = await _companyRepository.fetchJobApplications(jobId);
+      _jobApplications = applications;
+    }, errorMessage: 'Failed to fetch job applications');
   }
 
+  /// Fetches details for a specific job
   Future<void> getSpecificJob(String jobId) async {
-    _setLoading(true);
-    _clearError();
-
-    final job = await _companyRepository.getSpecificJob(jobId);
-    _fetchedJob = job;
-
-    _setLoading(false);
+    await _executeAsync<void>(() async {
+      final job = await _companyRepository.getSpecificJob(jobId);
+      _fetchedJob = job;
+    }, errorMessage: 'Failed to fetch job details');
   }
 
-  List<Company> _fetchedCompanies = [];
-  List<Company> get fetchedCompanies => _fetchedCompanies;
-
+  /// Fetches list of companies based on filters
   Future<void> fetchCompanies({
     int page = 1,
     int limit = 10,
@@ -279,25 +295,21 @@ class CompanyViewModel extends ChangeNotifier {
     String? fields,
     String? industry,
   }) async {
-    _setLoading(true);
-    _clearError();
-
-    final companies = await _companyRepository.fetchCompanies(
-      page: page,
-      limit: limit,
-      sort: sort,
-      fields: fields,
-      industry: industry,
-    );
-
-    _fetchedCompanies = companies;
-
-    _setLoading(false);
+    await _executeAsync<void>(() async {
+      final companies = await _companyRepository.fetchCompanies(
+        page: page,
+        limit: limit,
+        sort: sort,
+        fields: fields,
+        industry: industry,
+      );
+      _fetchedCompanies = companies;
+    }, errorMessage: 'Failed to fetch companies');
   }
 
+  /// Toggles follow status for a company
   Future<void> toggleFollowCompany(String companyId) async {
-    _setLoading(true);
-    try {
+    await _executeAsync<void>(() async {
       final isCurrentlyFollowing = _fetchedCompany?.isFollowing ?? false;
       final endpoint = '/companies/$companyId/follow';
 
@@ -317,83 +329,79 @@ class CompanyViewModel extends ChangeNotifier {
           isFollowing: !isCurrentlyFollowing,
         );
         await saveIsFollowing(companyId, !isCurrentlyFollowing);
-        notifyListeners();
       } else if (response.statusCode == 400 &&
           body['message']?.toLowerCase().contains('already following') ==
               true) {
         // Already following, assume true
         _fetchedCompany = _fetchedCompany?.copyWith(isFollowing: true);
         await saveIsFollowing(companyId, true);
-        notifyListeners();
       } else {
-        debugPrint("❌ Failed to toggle follow. Status: ${response.statusCode}");
+        throw Exception(
+          'Failed to toggle follow. Status: ${response.statusCode}',
+        );
       }
-    } catch (e) {
-      debugPrint("❌ Error toggling follow: $e");
-    }
-
-    _setLoading(false);
+    }, errorMessage: 'Failed to update follow status');
   }
 
-  // Save isFollowing state
+  /// Saves company following status to local storage
   Future<void> saveIsFollowing(String companyId, bool isFollowing) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isFollowing_$companyId', isFollowing);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('$_followingKeyPrefix$companyId', isFollowing);
+    } catch (e) {
+      debugPrint('❌ Error saving follow status: $e');
+    }
   }
 
-  // Load isFollowing state
+  /// Loads company following status from local storage
   Future<bool?> loadIsFollowing(String companyId) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('isFollowing_$companyId');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool('$_followingKeyPrefix$companyId');
+    } catch (e) {
+      debugPrint('❌ Error loading follow status: $e');
+      return null;
+    }
   }
 
+  /// Accepts a job application
   Future<void> acceptJobApplication({
     required String jobId,
     required String userId,
   }) async {
-    _setLoading(true);
-    _clearError();
-
-    try {
+    await _executeAsync<void>(() async {
       await _companyRepository.acceptJobApplication(
         jobId: jobId,
         userId: userId,
       );
-    } catch (e) {
-      debugPrint('Error accepting application: $e');
-      _errorMessage = 'Failed to accept application';
-    }
-
-    _setLoading(false);
+      // Remove the application from the list once processed
+      removeApplicationFromList(userId);
+    }, errorMessage: 'Failed to accept application');
   }
 
+  /// Rejects a job application
   Future<void> rejectJobApplication({
     required String jobId,
     required String userId,
   }) async {
-    _setLoading(true);
-    _clearError();
-
-    try {
+    await _executeAsync<void>(() async {
       await _companyRepository.rejectJobApplication(
         jobId: jobId,
         userId: userId,
       );
-    } catch (e) {
-      debugPrint('Error rejecting application: $e');
-      _errorMessage = 'Failed to reject application';
-    }
-
-    _setLoading(false);
+      // Remove the application from the list once processed
+      removeApplicationFromList(userId);
+    }, errorMessage: 'Failed to reject application');
   }
 
+  /// Removes an application from the applications list
   void removeApplicationFromList(String applicationId) {
     _jobApplications.removeWhere((app) => app.applicationId == applicationId);
     notifyListeners();
   }
 }
 
-// CompanyViewModel provider for accessing this class in UI
+/// Provider for accessing CompanyViewModel throughout the app
 final companyViewModelProvider = ChangeNotifierProvider<CompanyViewModel>((
   ref,
 ) {

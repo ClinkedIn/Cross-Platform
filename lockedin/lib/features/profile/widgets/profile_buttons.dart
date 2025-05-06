@@ -3,12 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:lockedin/shared/theme/styled_buttons.dart';
 
 class ProfileButtons extends StatelessWidget {
-  const ProfileButtons({super.key});
+  final bool isPremium;
+
+  const ProfileButtons({super.key, this.isPremium = false});
   @override
   Widget build(BuildContext context) {
-    // final theme = Theme.of(context);
-    // final colorScheme = AppColors();
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
@@ -35,16 +34,16 @@ class ProfileButtons extends StatelessWidget {
           ),
           SizedBox(height: 10),
 
-          // Full-width OutlinedButton
-          SizedBox(
-            width: double.infinity, // Ensures full width
-            child: OutlinedButton(
-              onPressed: () {
-                context.push("/subscription");
-              },
-              child: Text("Enhance Profile"),
+          if (!isPremium)
+            SizedBox(
+              width: double.infinity, // Ensures full width
+              child: OutlinedButton(
+                onPressed: () {
+                  context.push("/subscription");
+                },
+                child: Text("Enhance Profile"),
+              ),
             ),
-          ),
         ],
       ),
     );

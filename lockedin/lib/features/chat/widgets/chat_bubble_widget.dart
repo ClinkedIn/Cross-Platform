@@ -5,9 +5,7 @@ import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
-// Import url_launcher for opening URLs
 import 'package:url_launcher/url_launcher.dart';
-// Import a photo viewer package for image viewing
 import 'package:photo_view/photo_view.dart';
 
 class ChatBubble extends ConsumerWidget {
@@ -35,37 +33,44 @@ class ChatBubble extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
-          if (!isMe) ...[
-          ],
+          if (!isMe) ...[],
           Container(
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.7,
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: isMe 
-                ? AppColors.primary 
-                : isDarkMode ? Colors.grey[800] : Colors.grey[200],
+              color:
+                  isMe
+                      ? AppColors.primary
+                      : isDarkMode
+                      ? Colors.grey[800]
+                      : Colors.grey[200],
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Display attachment if present
-                if (attachmentType != AttachmentType.none && attachmentUrl != null)
+                if (attachmentType != AttachmentType.none &&
+                    attachmentUrl != null)
                   _buildAttachmentWidget(context),
-                  
+
                 if (message.isNotEmpty)
                   Text(
                     message,
                     style: TextStyle(
-                      color: isMe ? Colors.white : (isDarkMode ? Colors.white : Colors.black87),
+                      color:
+                          isMe
+                              ? Colors.white
+                              : (isDarkMode ? Colors.white : Colors.black87),
                       fontSize: 16,
                     ),
                   ),
@@ -92,30 +97,30 @@ class ChatBubble extends ConsumerWidget {
       ),
     );
   }
-  
+
   Widget _buildAttachmentWidget(BuildContext context) {
-    
     switch (attachmentType) {
       case AttachmentType.image:
         if (attachmentUrl == null || attachmentUrl!.isEmpty) {
           return const SizedBox.shrink();
         }
-        
+
         // Clean the URL from brackets if they exist
         String cleanUrl = attachmentUrl!;
         if (cleanUrl.startsWith('[') && cleanUrl.endsWith(']')) {
           cleanUrl = cleanUrl.substring(1, cleanUrl.length - 1);
         }
-        
+
         // Validate URL before passing to Image.network
         bool isValidUrl = false;
         try {
           final uri = Uri.parse(cleanUrl);
-          isValidUrl = uri.hasScheme && uri.scheme.startsWith(RegExp(r'[a-zA-Z]'));
+          isValidUrl =
+              uri.hasScheme && uri.scheme.startsWith(RegExp(r'[a-zA-Z]'));
         } catch (e) {
           debugPrint('Invalid URL format: $e');
         }
-        
+
         if (!isValidUrl) {
           // Show placeholder for invalid URLs
           return Column(
@@ -133,7 +138,10 @@ class ChatBubble extends ConsumerWidget {
                   children: const [
                     Icon(Icons.image_not_supported, size: 40),
                     SizedBox(height: 8),
-                    Text('Invalid image URL format', style: TextStyle(fontSize: 12)),
+                    Text(
+                      'Invalid image URL format',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   ],
                 ),
               ),
@@ -141,7 +149,7 @@ class ChatBubble extends ConsumerWidget {
             ],
           );
         }
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -169,14 +177,15 @@ class ChatBubble extends ConsumerWidget {
                               children: [
                                 const Icon(Icons.image_not_supported, size: 40),
                                 const SizedBox(height: 8),
-                                Text('Failed to load image: ${error.toString().substring(0, min(30, error.toString().length))}...', 
-                                     style: const TextStyle(fontSize: 12))
+                                Text(
+                                  'Failed to load image: ${error.toString().substring(0, min(30, error.toString().length))}...',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
                               ],
                             ),
                           );
                         },
                       ),
-                      
                     ],
                   ),
                 ),
@@ -185,7 +194,7 @@ class ChatBubble extends ConsumerWidget {
             const SizedBox(height: 8),
           ],
         );
-        
+
       case AttachmentType.document:
         return Column(
           children: [
@@ -225,11 +234,7 @@ class ChatBubble extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    Icon(
-                      Icons.open_in_new,
-                      color: Colors.blue,
-                      size: 18,
-                    ),
+                    Icon(Icons.open_in_new, color: Colors.blue, size: 18),
                   ],
                 ),
               ),
@@ -237,7 +242,7 @@ class ChatBubble extends ConsumerWidget {
             const SizedBox(height: 8),
           ],
         );
-       
+
       default:
         return const SizedBox.shrink();
     }
@@ -247,22 +252,23 @@ class ChatBubble extends ConsumerWidget {
   void _openImageFullScreen(BuildContext context, String imageUrl) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(
-            backgroundColor: Colors.black,
-            iconTheme: IconThemeData(color: Colors.white),
-            elevation: 0,
-          ),
-          body: Center(
-            child: PhotoView(
-              imageProvider: NetworkImage(imageUrl),
-              minScale: PhotoViewComputedScale.contained,
-              maxScale: PhotoViewComputedScale.covered * 2,
-              backgroundDecoration: BoxDecoration(color: Colors.black),
+        builder:
+            (_) => Scaffold(
+              backgroundColor: Colors.black,
+              appBar: AppBar(
+                backgroundColor: Colors.black,
+                iconTheme: IconThemeData(color: Colors.white),
+                elevation: 0,
+              ),
+              body: Center(
+                child: PhotoView(
+                  imageProvider: NetworkImage(imageUrl),
+                  minScale: PhotoViewComputedScale.contained,
+                  maxScale: PhotoViewComputedScale.covered * 2,
+                  backgroundDecoration: BoxDecoration(color: Colors.black),
+                ),
+              ),
             ),
-          ),
-        ),
       ),
     );
   }
@@ -275,22 +281,22 @@ class ChatBubble extends ConsumerWidget {
       );
       return;
     }
-    
+
     // Clean the URL from brackets if they exist
     String cleanUrl = attachmentUrl!;
     if (cleanUrl.startsWith('[') && cleanUrl.endsWith(']')) {
       cleanUrl = cleanUrl.substring(1, cleanUrl.length - 1);
     }
-    
+
     try {
       final Uri url = Uri.parse(cleanUrl);
-      
+
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not open document')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not open document')));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

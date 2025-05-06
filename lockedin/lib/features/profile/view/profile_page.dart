@@ -145,7 +145,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                     ),
                     SizedBox(height: 10),
-                    ProfileButtons(),
+                    ProfileButtons(isPremium: user.isPremium),
                     SizedBox(height: 10),
                     Divider(),
 

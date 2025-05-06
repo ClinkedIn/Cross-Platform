@@ -5,7 +5,9 @@ import 'package:lockedin/features/company/viewmodel/company_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sizer/sizer.dart';
 
-final companyViewModelProvider = ChangeNotifierProvider<CompanyViewModel>((ref) {
+final companyViewModelProvider = ChangeNotifierProvider<CompanyViewModel>((
+  ref,
+) {
   return CompanyViewModel();
 });
 
@@ -49,127 +51,204 @@ class _CompanyViewState extends ConsumerState<CompanyView> {
   String? selectedType;
 
   @override
+  void dispose() {
+    _nameController.dispose();
+    _addressController.dispose();
+    _industryController.dispose();
+    _organizationSizeController.dispose();
+    _organizationTypeController.dispose();
+    _tagLineController.dispose();
+    super.dispose();
+  }
+
+  void _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final companyViewModel = ref.read(companyViewModelProvider);
+
+    final newCompany = Company(
+      name: _nameController.text.trim(),
+      address: _addressController.text.trim(),
+      industry: _industryController.text.trim(),
+      organizationSize: _organizationSizeController.text.trim(),
+      organizationType: _organizationTypeController.text.trim(),
+      tagLine: _tagLineController.text.trim(),
+    );
+
+    await companyViewModel.createCompany(newCompany);
+
+    if (!mounted) return;
+
+    if (companyViewModel.createdCompany != null &&
+        companyViewModel.createdCompany!.id != null) {
+      final companyId = companyViewModel.createdCompany!.id!;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Company created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CompanyProfileView(companyId: companyId),
+        ),
+      );
+
+      _formKey.currentState?.reset();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(companyViewModel.errorMessage ?? 'Unknown error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    String? Function(String?)? validator,
+    TextInputType keyboardType = TextInputType.text,
+    int? maxLines = 1,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 2.h),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+        ),
+        validator: validator ?? (value) => value!.isEmpty ? 'Required' : null,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required List<String> items,
+    required String? value,
+    required void Function(String?) onChanged,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 2.h),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+        ),
+        items:
+            items.map((item) {
+              return DropdownMenuItem<String>(value: item, child: Text(item));
+            }).toList(),
+        onChanged: onChanged,
+        validator: (value) => value == null ? 'Required' : null,
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final companyViewModel = ref.watch(companyViewModelProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Company')),
-      body: companyViewModel.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  children: [
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      validator: (value) => value!.isEmpty ? 'Required' : null,
-                    ),
-                    SizedBox(height: 1.25.h),
-                    TextFormField(
-                      controller: _addressController,
-                      decoration: const InputDecoration(labelText: 'Address'),
-                      validator: (value) => value!.isEmpty ? 'Required' : null,
-                    ),
-                    SizedBox(height: 1.25.h),
-                    TextFormField(
-                      controller: _industryController,
-                      decoration: const InputDecoration(labelText: 'Industry'),
-                      validator: (value) => value!.isEmpty ? 'Required' : null,
-                    ),
-                    SizedBox(height: 1.25.h),
-                    DropdownButtonFormField<String>(
-                      value: selectedSize,
-                      decoration: const InputDecoration(labelText: 'Organization Size'),
-                      items: organizationSizes.map((size) {
-                        return DropdownMenuItem<String>(
-                          value: size,
-                          child: Text(size),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedSize = value!;
-                          _organizationSizeController.text = value;
-                        });
-                      },
-                      validator: (value) => value == null ? 'Required' : null,
-                    ),
-                    SizedBox(height: 1.25.h),
-                    DropdownButtonFormField<String>(
-                      value: selectedType,
-                      decoration: const InputDecoration(labelText: 'Organization Type'),
-                      items: organizationTypes.map((type) {
-                        return DropdownMenuItem<String>(
-                          value: type,
-                          child: Text(type),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedType = value!;
-                          _organizationTypeController.text = value;
-                        });
-                      },
-                      validator: (value) => value == null ? 'Required' : null,
-                    ),
-                    SizedBox(height: 1.25.h),
-                    TextFormField(
-                      controller: _tagLineController,
-                      decoration: const InputDecoration(labelText: 'Tagline'),
-                      validator: (value) => value!.isEmpty ? 'Required' : null,
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          final newCompany = Company(
-                            name: _nameController.text.trim(),
-                            address: _addressController.text.trim(),
-                            industry: _industryController.text.trim(),
-                            organizationSize: _organizationSizeController.text.trim(),
-                            organizationType: _organizationTypeController.text.trim(),
-                            tagLine: _tagLineController.text.trim(),
-                          );
-
-                          await companyViewModel.createCompany(newCompany);
-
-                          if (companyViewModel.createdCompany != null &&
-                              companyViewModel.createdCompany!.id != null) {
-                            final companyId = companyViewModel.createdCompany!.id!;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Company created successfully!'),
-                              ),
-                            );
-
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => CompanyProfileView(companyId: companyId),
-                              ),
-                            );
-
-                            _formKey.currentState?.reset();
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  companyViewModel.errorMessage ?? 'Unknown error',
-                                ),
-                              ),
-                            );
-                          }
-                        }
-                      },
-                      child: const Text('Create Company'),
-                    ),
-                  ],
+      appBar: AppBar(
+        title: const Text('Create Company'),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      body:
+          companyViewModel.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Padding(
+                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+                child: Form(
+                  key: _formKey,
+                  child: ListView(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 3.h),
+                        child: Text(
+                          'Company Information',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      _buildInputField(
+                        controller: _nameController,
+                        label: 'Company Name',
+                      ),
+                      _buildInputField(
+                        controller: _addressController,
+                        label: 'Address',
+                      ),
+                      _buildInputField(
+                        controller: _industryController,
+                        label: 'Industry',
+                      ),
+                      _buildDropdown(
+                        label: 'Organization Size',
+                        items: organizationSizes,
+                        value: selectedSize,
+                        onChanged: (value) {
+                          setState(() {
+                            selectedSize = value;
+                            _organizationSizeController.text = value ?? '';
+                          });
+                        },
+                      ),
+                      _buildDropdown(
+                        label: 'Organization Type',
+                        items: organizationTypes,
+                        value: selectedType,
+                        onChanged: (value) {
+                          setState(() {
+                            selectedType = value;
+                            _organizationTypeController.text = value ?? '';
+                          });
+                        },
+                      ),
+                      _buildInputField(
+                        controller: _tagLineController,
+                        label: 'Tagline',
+                        maxLines: 2,
+                      ),
+                      SizedBox(height: 3.h),
+                      ElevatedButton(
+                        onPressed:
+                            companyViewModel.isLoading ? null : _submitForm,
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: 1.5.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          'Create Company',
+                          style: TextStyle(fontSize: 16.sp),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
     );
   }
 }

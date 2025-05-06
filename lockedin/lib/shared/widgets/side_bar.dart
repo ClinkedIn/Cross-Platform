@@ -81,13 +81,12 @@ class SidebarDrawer extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                   child:
-                      (user?.workExperience != null &&
-                              user!.workExperience!.isNotEmpty)
+                      (user.workExperience.isNotEmpty)
                           ? Row(
                             children: [
                               ClipOval(
                                 child: Image.network(
-                                  user.workExperience![0].media ?? "",
+                                  user.workExperience[0].media ?? "",
                                   width: 24,
                                   height: 24,
                                   fit: BoxFit.cover,
@@ -101,7 +100,7 @@ class SidebarDrawer extends ConsumerWidget {
                               ),
                               SizedBox(width: 8),
                               Text(
-                                user.workExperience![0].jobTitle ?? "No title",
+                                user.workExperience[0].jobTitle,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -186,6 +185,16 @@ class SidebarDrawer extends ConsumerWidget {
                     ),
                     child: Stack(
                       children: [
+                        if (user.isPremium == false)
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            child: Icon(
+                              Icons.workspace_premium,
+                              color: Colors.amber,
+                              size: 20,
+                            ),
+                          ),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

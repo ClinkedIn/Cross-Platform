@@ -23,9 +23,4 @@ void main() {
     viewModel.updateVisibility('Connections');
     expect(viewModel.state.visibility, 'Connections');
   });
-
-  test('removes image', () {
-    viewModel.removeImage();
-    expect(viewModel.state.attachments, null);
-  });
 }

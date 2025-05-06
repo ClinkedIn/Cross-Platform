@@ -56,8 +56,11 @@ class CompanyRepository {
           if (company.location != null) 'location': company.location!,
         },
       );
+      print('Create company response status: ${response.statusCode}');
+      print('Create company response: ${response.body}');
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body);
+        print('Created company data: ${data['company']}');
         return Company.fromJson(data['company']);
       } else {
         print('Failed to create company: ${response.statusCode}');

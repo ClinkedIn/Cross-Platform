@@ -1,5 +1,5 @@
 class Company {
-  final String? id;
+  final String id;
   final String name;
   final String address;
   final String? website;
@@ -12,7 +12,7 @@ class Company {
   final bool isFollowing;
 
   Company({
-    this.id,
+    this.id = "",
     required this.name,
     required this.address,
     this.website,
@@ -27,7 +27,7 @@ class Company {
 
   factory Company.fromJson(Map<String, dynamic> json) {
     return Company(
-      id: json['_id'],
+      id: json['id'] ?? json['_id'],
       name: json['name'] ?? '',
       address: json['address'] ?? '',
       website: json['website'], // nullable

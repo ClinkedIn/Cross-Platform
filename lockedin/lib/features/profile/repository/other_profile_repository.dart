@@ -10,7 +10,7 @@ class OtherProfileRepository {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print("User data:📀📀 $data");
+      print("User hcrjevcd :📀📀 ${data['user']['followers']}");
 
       final user = UserModel.fromJson(data['user']);
       final canSendConnectionRequest =
@@ -66,7 +66,9 @@ class OtherProfileRepository {
   }
 
   Future<bool> unConnectUser(String userId) async {
-    final response = await RequestService.delete("/user/connections/$userId");
+    final response = await RequestService.delete(
+      "/user/connections/request/$userId",
+    );
     if (response.statusCode == 200) {
       print("User unconnected successfully.");
       return true;
