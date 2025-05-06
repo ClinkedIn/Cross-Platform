@@ -47,6 +47,7 @@ class AllJobsViewModel extends ChangeNotifier {
   Future<void> toggleJobStatus(String jobId) async {
     try {
       // Find the job in our local list
+
       final jobIndex = _jobs.indexWhere((job) => job.id == jobId);
       if (jobIndex >= 0) {
         // Get the job and its current status
@@ -67,11 +68,16 @@ class AllJobsViewModel extends ChangeNotifier {
           companyName: currentJob.companyName,
           companyLogo: currentJob.companyLogo,
         );
+        repository.updateJobStatus(
+          currentJob.id,
+          newStatus ? "active" : "inactive",
+        );
 
         notifyListeners();
       }
     } catch (e) {
       _error = "Failed to update job status: ${e.toString()}";
+      print(_error);
       notifyListeners();
     }
   }

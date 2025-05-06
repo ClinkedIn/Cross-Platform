@@ -9,6 +9,7 @@ class AdminRepository {
       "/admin/user-status",
       body: {"userId": userId, "status": status},
     );
+    print('Respocefcefcnse: ${response.body}');
     _handleResponse(response);
   }
 
@@ -29,6 +30,16 @@ class AdminRepository {
     } else {
       throw Exception('Failed to load dashboard stats');
     }
+  }
+
+  Future<void> updateJobStatus(String jobId, String status) async {
+    final bool isActive = status == "active";
+    final response = await RequestService.put(
+      "/jobs/$jobId",
+      body: {"isActive": isActive},
+    );
+    print('Response: ${response.body}');
+    _handleResponse(response);
   }
 
   Future<void> deleteJob(String jobId) async {
