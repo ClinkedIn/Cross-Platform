@@ -5,6 +5,7 @@ import 'package:lockedin/features/networks/widgets/connection.dart';
 import 'package:sizer/sizer.dart';
 import 'package:provider/provider.dart';
 import 'package:lockedin/features/networks/viewmodel/connection_view_model.dart';
+import 'package:lockedin/features/networks/viewmodel/message_view_model.dart';
 
 class ConnectionsPage extends StatefulWidget {
   const ConnectionsPage({super.key});
@@ -16,6 +17,8 @@ class ConnectionsPage extends StatefulWidget {
 class _ConnectionsPageState extends State<ConnectionsPage> {
   final ScrollController _scrollController = ScrollController();
   late final ConnectionViewModel _viewModel;
+  late final MessageRequestViewModel _messageRequestViewModel;
+
   // Initialize filter
   final ConnectionFilter _filter = ConnectionFilter();
   // List of common job titles for filtering
@@ -37,9 +40,12 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
     super.initState();
 
     _viewModel = ConnectionViewModel();
+    _messageRequestViewModel = MessageRequestViewModel();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _viewModel.fetchConnections();
+      _messageRequestViewModel
+          .loadMessageRequests(); // Load message requests on init
     });
 
     _scrollController.addListener(_scrollListener);
@@ -110,19 +116,22 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _viewModel),
+        ChangeNotifierProvider.value(value: _messageRequestViewModel),
+      ],
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            onPressed: () => context.pop(),
+            icon: const Icon(Icons.arrow_back),
+          ),
+          title: const Text('Connections', style: TextStyle(fontSize: 24)),
+          centerTitle: true,
+          iconTheme: theme.iconTheme,
         ),
-        title: const Text('Connections', style: TextStyle(fontSize: 24)),
-        centerTitle: true,
-        iconTheme: theme.iconTheme,
-      ),
-      body: ChangeNotifierProvider.value(
-        value: _viewModel,
-        child: SafeArea(
+        body: SafeArea(
           minimum: EdgeInsets.all(10.px),
           child: Consumer<ConnectionViewModel>(
             builder: (context, viewModel, child) {
@@ -253,6 +262,7 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
           firstName: connectionModel.firstName,
           lastName: connectionModel.lastName,
           lastJobTitle: connectionModel.lastJobTitle,
+          userId: connectionModel.id, // Pass the userId for message requests
           onNameTap: () {
             context.push('/other-profile/${connectionModel.id}');
           },
