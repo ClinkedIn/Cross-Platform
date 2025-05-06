@@ -1,11 +1,14 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/shared/theme/theme_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
+// Import url_launcher for opening URLs
+import 'package:url_launcher/url_launcher.dart';
+// Import a photo viewer package for image viewing
+import 'package:photo_view/photo_view.dart';
 
 class ChatBubble extends ConsumerWidget {
   final String message;
@@ -15,7 +18,7 @@ class ChatBubble extends ConsumerWidget {
   final bool isRead;
   final String? attachmentUrl;
   final AttachmentType attachmentType;
-  final String? receiverId; // Add receiverId to check against readBy
+  final String? receiverId;
 
   const ChatBubble({
     Key? key,
@@ -26,7 +29,7 @@ class ChatBubble extends ConsumerWidget {
     required this.isRead,
     this.attachmentUrl,
     this.attachmentType = AttachmentType.none,
-    this.receiverId, // Add receiverId parameter
+    this.receiverId,
   }) : super(key: key);
 
   @override
@@ -142,31 +145,40 @@ class ChatBubble extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                width: double.infinity,
-                height: 150,
-                child: Image.network(
-                  cleanUrl,  // Use the cleaned URL here
-                  fit: BoxFit.cover,
-                  errorBuilder: (ctx, error, _) {
-                    debugPrint('Error loading image: $error');
-                    return Container(
-                      width: double.infinity,
-                      height: 150,
-                      color: Colors.grey[300],
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.image_not_supported, size: 40),
-                          const SizedBox(height: 8),
-                          Text('Failed to load image: ${error.toString().substring(0, min(30, error.toString().length))}...', 
-                               style: const TextStyle(fontSize: 12))
-                        ],
+            GestureDetector(
+              onTap: () => _openImageFullScreen(context, cleanUrl),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: double.infinity,
+                  height: 150,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Image.network(
+                        cleanUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, error, _) {
+                          debugPrint('Error loading image: $error');
+                          return Container(
+                            width: double.infinity,
+                            height: 150,
+                            color: Colors.grey[300],
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.image_not_supported, size: 40),
+                                const SizedBox(height: 8),
+                                Text('Failed to load image: ${error.toString().substring(0, min(30, error.toString().length))}...', 
+                                     style: const TextStyle(fontSize: 12))
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
+                      
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -175,31 +187,51 @@ class ChatBubble extends ConsumerWidget {
         );
         
       case AttachmentType.document:
-        // Document handler remains the same
         return Column(
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.insert_drive_file, color: Colors.blue),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      "Document",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
+            GestureDetector(
+              onTap: () => _openDocument(context),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.withOpacity(0.5)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.insert_drive_file, color: Colors.blue),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Document",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            "Tap to open",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                    Icon(
+                      Icons.open_in_new,
+                      color: Colors.blue,
+                      size: 18,
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -208,6 +240,62 @@ class ChatBubble extends ConsumerWidget {
        
       default:
         return const SizedBox.shrink();
+    }
+  }
+
+  // Method to open image in full screen
+  void _openImageFullScreen(BuildContext context, String imageUrl) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: IconThemeData(color: Colors.white),
+            elevation: 0,
+          ),
+          body: Center(
+            child: PhotoView(
+              imageProvider: NetworkImage(imageUrl),
+              minScale: PhotoViewComputedScale.contained,
+              maxScale: PhotoViewComputedScale.covered * 2,
+              backgroundDecoration: BoxDecoration(color: Colors.black),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Method to open document
+  void _openDocument(BuildContext context) async {
+    if (attachmentUrl == null || attachmentUrl!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Cannot open document: URL is missing')),
+      );
+      return;
+    }
+    
+    // Clean the URL from brackets if they exist
+    String cleanUrl = attachmentUrl!;
+    if (cleanUrl.startsWith('[') && cleanUrl.endsWith(']')) {
+      cleanUrl = cleanUrl.substring(1, cleanUrl.length - 1);
+    }
+    
+    try {
+      final Uri url = Uri.parse(cleanUrl);
+      
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open document')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error opening document: ${e.toString()}')),
+      );
     }
   }
 }
