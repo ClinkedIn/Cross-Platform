@@ -1,5 +1,7 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lockedin/features/home_page/model/taggeduser_model.dart';
 import 'package:sizer/sizer.dart';
 import 'package:lockedin/shared/theme/colors.dart';
 import 'package:lockedin/features/post/widgets/post_card.dart';
@@ -8,6 +10,9 @@ import '../state/comment_state.dart';
 import '../model/comment_model.dart';
 import '../viewModel/post_detail_viewmodel.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:lockedin/features/home_page/view/post_sharing_service.dart';
 
 class PostDetailView extends ConsumerWidget {
   final String postId;
@@ -49,6 +54,107 @@ class PostDetailView extends ConsumerWidget {
       ),
     );
   }
+
+
+  RichText buildTextWithMentions({
+          required String text,
+          required List<TaggedUser> taggedUsers,
+          required TextStyle? baseStyle,
+          required BuildContext context,
+        }) {
+          if (text.isEmpty) {
+            return RichText(text: TextSpan(text: '', style: baseStyle));
+          }
+
+          // Regular expression to find @mentions
+          final RegExp mentionRegex = RegExp(r'@(\w+)');
+          final List<TextSpan> textSpans = [];
+          
+          // Keep track of where we are in the string
+          int lastIndex = 0;
+          
+          // Find all mentions
+          for (final Match match in mentionRegex.allMatches(text)) {
+            // Add text before the mention
+            if (match.start > lastIndex) {
+              textSpans.add(TextSpan(
+                text: text.substring(lastIndex, match.start),
+                style: baseStyle,
+              ));
+            }
+            
+            // Extract the username without the @ symbol
+            final String mentionText = match.group(0)!; // With @ symbol for display
+            final String username = match.group(1)!;    // Without @ for matching
+            
+            // Try to find this user in the tagged users list
+// In buildTextWithMentions function
+TaggedUser? taggedUser;
+for (final user in taggedUsers) {
+  // Simplify debug output and matching
+  debugPrint('Looking for @$username in tagged users: ${user.firstName} ${user.lastName}');
+  
+  // Try multiple matching strategies - Make this more forgiving
+  final userFirstName = user.firstName.toLowerCase().trim();
+  final userLastName = user.lastName.toLowerCase().trim();
+  final userFullNameNoSpace = '${userFirstName}${userLastName}';
+  final mentionName = username.toLowerCase().trim();
+  
+  if (userFirstName == mentionName || 
+      userLastName == mentionName || 
+      userFullNameNoSpace == mentionName ||
+      userFullNameNoSpace.contains(mentionName) || 
+      mentionName.contains(userFirstName)) {
+    debugPrint('✅ Found match! User ID: ${user.userId}');
+    taggedUser = user;
+    break;
+  }
+}
+            
+            // Create the display text for the mention - KEEP THE ORIGINAL TEXT
+            // This is the key change - don't try to reconstruct the name
+            final String displayText = mentionText;
+            
+            // Make it blue and clickable
+            textSpans.add(TextSpan(
+              text: displayText,
+              style: baseStyle?.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () {
+                  if (taggedUser != null) {
+                    debugPrint('Navigating to user profile: ${taggedUser.userId}');
+                    context.push('/other-profile/${taggedUser.userId}');
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('User profile not found')),
+                    );
+                  }
+                },
+            ));
+            
+            // Update last index
+            lastIndex = match.end;
+          }
+          
+          // Add remaining text after the last mention
+          if (lastIndex < text.length) {
+            textSpans.add(TextSpan(
+              text: text.substring(lastIndex),
+              style: baseStyle,
+            ));
+          }
+          
+          return RichText(
+            text: TextSpan(
+              children: textSpans,
+              style: baseStyle,
+            ),
+          );
+        }
+
 
   Widget _buildErrorView(BuildContext context, String error, WidgetRef ref) {
     return Center(
@@ -148,31 +254,141 @@ class PostDetailView extends ConsumerWidget {
                       postDetailState.commentFocusNode.requestFocus();
                     },
                     onShare: () async {
-                      // Navigate to create repost view
-                      context.push('/create-repost', extra: commentsState.post);
-                    },
-                    onRepost: () async {
-                      try {
-                        await viewModel.repostPost();
-                        
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                commentsState.post!.isRepost
-                                    ? 'Repost removed'
-                                    : 'Post reposted successfully',
+                      // Generate a shareable link for the post
+                      final String postLink = PostSharingService.generatePostLink(commentsState.post!.id);
+                      
+                      // Show a bottom sheet with sharing options
+                      showModalBottomSheet(
+                        context: context,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                        ),
+                        builder: (context) => Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16.0),
+                              child: Text(
+                                'Share Post',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
                               ),
                             ),
-                          );
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: $e')),
-                          );
-                        }
-                      }
+                            Divider(height: 1),
+                            // Option 1: Share via native share sheet
+                            ListTile(
+                              leading: Icon(Icons.share, color: AppColors.primary),
+                              title: Text('Share to apps'),
+                              subtitle: Text('Share via other apps on your device'),
+                              onTap: () async {
+                                Navigator.pop(context); // Close bottom sheet first
+                                
+                                // Use the service implementation instead of inline implementation
+                                await PostSharingService.sharePost(
+                                  postId: commentsState.post!.id,
+                                  postContent: commentsState.post!.content,
+                                  context: context,
+                                );
+                              },
+                            ),
+                            // Option 2: Copy link to clipboard
+                            ListTile(
+                              leading: Icon(Icons.link, color: AppColors.primary),
+                              title: Text('Copy link'),
+                              subtitle: Text('Copy post link to clipboard'),
+                              onTap: () async {
+                                Navigator.pop(context); // Close bottom sheet
+                                
+                                try {
+                                  await Clipboard.setData(ClipboardData(text: postLink));
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Link copied to clipboard'))
+                                    );
+                                  }
+                                } catch (e) {
+                                  debugPrint('Error copying link: $e');
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Failed to copy link'))
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                            SizedBox(height: 16),
+                          ],
+                        ),
+                      );
+                    },
+                    onRepost: () async {
+                      // Show a bottom sheet with two repost options, matching the post_list.dart implementation
+                      showModalBottomSheet(
+                        context: context,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                        ),
+                        builder: (context) => Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16.0),
+                              child: Text(
+                                'Repost Options',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            Divider(height: 1),
+                            // Option 1: Quick Repost
+                            ListTile(
+                              leading: Icon(Icons.repeat, color: AppColors.primary),
+                              title: Text('Quick Repost'),
+                              subtitle: Text('Repost without adding your own content'),
+                              onTap: () async {
+                                Navigator.pop(context); // Close the bottom sheet
+                                try {
+                                  await viewModel.repostPost();
+                                  
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          commentsState.post!.isRepost
+                                              ? 'Repost removed'
+                                              : 'Post reposted successfully',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error: $e'))
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                            // Option 2: Repost with Content
+                            ListTile(
+                              leading: Icon(Icons.mode_edit_outline, color: AppColors.primary),
+                              title: Text('Repost with Comment'),
+                              subtitle: Text('Add your own thoughts when reposting'),
+                              onTap: () {
+                                Navigator.pop(context); // Close the bottom sheet
+                                // Navigate to create-repost page
+                                context.push('/create-repost', extra: commentsState.post);
+                              },
+                            ),
+                            SizedBox(height: 16),
+                          ],
+                        ),
+                      );
                     },
                     onFollow: () {
                       print("Following ${commentsState.post!.username}");
@@ -350,7 +566,6 @@ class PostDetailView extends ConsumerWidget {
                     } : null,
                   ),
                 ),
-
                 // Divider
                 SliverToBoxAdapter(
                   child: Divider(thickness: 0.5.h, height: 1.h),
@@ -537,7 +752,12 @@ class PostDetailView extends ConsumerWidget {
                       SizedBox(height: 0.5.h),
 
                       // Comment content
-                      Text(comment.content, style: TextStyle(fontSize: 15.sp)),
+                      buildTextWithMentions(
+                        text: comment.content,
+                        taggedUsers: comment.taggedUsers ?? [], // ✓ Use taggedUsers from comment object
+                        baseStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 15.sp), // ✓ Use Theme.of(context)
+                        context: context,
+                      ),
                     ],
                   ),
                 ),

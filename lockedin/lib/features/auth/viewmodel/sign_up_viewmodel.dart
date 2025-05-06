@@ -1,158 +1,172 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lockedin/features/auth/repository/sign_up_repository.dart';
-import 'package:lockedin/features/auth/state/sign_up_state.dart';
-import 'dart:convert';
 
-class SignupViewModel extends Notifier<SignupState> {
-  final SignupRepository _repository = SignupRepository();
-  final _secureStorage = const FlutterSecureStorage();
-  //manage reactive state
-  @override
-  SignupState build() {
-    return const SignupState(
-      firstName: '',
-      lastName: '',
-      email: '',
-      password: '',
-      rememberMe: false,
-      isLoading: false,
-      success: false,
+enum SignupState { initial, loading, error, otpSent, otpVerified, success }
+
+class SignupViewModel extends ChangeNotifier {
+  final SignupRepository _signupRepository = SignupRepository();
+
+  SignupState _state = SignupState.initial;
+  String _errorMessage = '';
+  int _currentPage = 0;
+  bool _rememberMe = true;
+
+  // User data
+  String _firstName = '';
+  String _lastName = '';
+  String _email = '';
+  String _password = '';
+  String _otp = '';
+
+  // Getters
+  SignupState get state => _state;
+  String get errorMessage => _errorMessage;
+  int get currentPage => _currentPage;
+  bool get rememberMe => _rememberMe;
+  double get progressPercentage => (_currentPage + 1) / 4;
+
+  // User data getters
+  String get firstName => _firstName;
+  String get lastName => _lastName;
+  String get email => _email;
+  String get password => _password;
+  String get otp => _otp;
+
+  // Setters
+  void setFirstName(String value) {
+    _firstName = value;
+    notifyListeners();
+  }
+
+  void setLastName(String value) {
+    _lastName = value;
+    notifyListeners();
+  }
+
+  void setEmail(String value) {
+    _email = value;
+    notifyListeners();
+  }
+
+  void setPassword(String value) {
+    _password = value;
+    notifyListeners();
+  }
+
+  void setOtp(String value) {
+    _otp = value;
+    notifyListeners();
+  }
+
+  void setRememberMe(bool value) {
+    _rememberMe = value;
+    notifyListeners();
+  }
+
+  void setCurrentPage(int page) {
+    _currentPage = page;
+    notifyListeners();
+  }
+
+  // Navigation methods
+  void nextPage() {
+    if (_currentPage < 3) {
+      _currentPage++;
+      notifyListeners();
+    }
+  }
+
+  void previousPage() {
+    if (_currentPage > 0) {
+      _currentPage--;
+      notifyListeners();
+    }
+  }
+
+  // Form validation
+  bool isNameFormValid() {
+    return _firstName.isNotEmpty && _lastName.isNotEmpty;
+  }
+
+  bool isEmailValid() {
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return emailRegex.hasMatch(_email);
+  }
+
+  bool isPasswordValid() {
+    // Password should be at least 8 characters with at least one uppercase letter,
+    // one lowercase letter, one number, and one special character
+    final passwordRegex = RegExp(
+      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$',
     );
-  }
-  //update state
-
-  void setFirstName(String value) => state = state.copyWith(firstName: value);
-  void setLastName(String value) => state = state.copyWith(lastName: value);
-  void setEmail(String value) => state = state.copyWith(email: value);
-  void setPassword(String value) => state = state.copyWith(password: value);
-  void setRememberMe(bool value) => state = state.copyWith(rememberMe: value);
-
-  String? validateEmailOrPhone(String input) {
-    print("🔍 Validating input: $input");
-
-    if (RegExp(r'^\+?[ 0-9]+$').hasMatch(input)) {
-      if (!input.startsWith('+')) {
-        print("❌ Invalid phone format");
-        return "❌ Please enter a valid phone number, including '+' when using a country code.";
-      }
-      print("✅ Valid phone number");
-      return null;
-    }
-
-    if (RegExp(
-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-    ).hasMatch(input)) {
-      print("✅ Valid email");
-      return null;
-    }
-
-    print("❌ Invalid email ");
-    return "❌ Invalid input. Please enter a valid email.";
+    return passwordRegex.hasMatch(_password);
   }
 
-  bool get isFormValid =>
-      state.firstName.isNotEmpty &&
-      state.lastName.isNotEmpty &&
-      state.email.isNotEmpty &&
-      state.password.isNotEmpty;
+  bool isOtpValid() {
+    return _otp.length == 6 && int.tryParse(_otp) != null;
+  }
 
-  Future<String> submitForm() async {
-    print('✅ Submit button pressed');
-
-    if (!isFormValid) {
-      print('❌ Error: All fields must be filled!');
-      return '❌ Error: All fields must be filled!';
-    }
-
-    String? validationMessage = validateEmailOrPhone(state.email);
-    if (validationMessage != null) {
-      print(validationMessage);
-      return validationMessage;
-    }
-
-    state = state.copyWith(isLoading: true);
-
-    String? fcmToken;
+  // API calls
+  Future<void> signUp(BuildContext context) async {
     try {
-      final settings = await FirebaseMessaging.instance.requestPermission();
-      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        fcmToken = await FirebaseMessaging.instance.getToken();
-        print("📱 FCM Token: $fcmToken");
-      } else {
-        print("⚠️ Push notification permission not granted");
-      }
-    } catch (e) {
-      print("⚠️ Could not retrieve FCM token: $e");
-    }
+      _state = SignupState.loading;
+      notifyListeners();
 
-    try {
-      final response = await _repository.registerUser(
-        firstName: state.firstName,
-        lastName: state.lastName,
-        email: state.email,
-        password: state.password,
-        rememberMe: state.rememberMe,
-        fcmToken: fcmToken,
+      final response = await _signupRepository.registerUser(
+        firstName: _firstName,
+        lastName: _lastName,
+        email: _email,
+        password: _password,
+        rememberMe: _rememberMe,
       );
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-        print("✅ Signup successful: ${responseData["message"]}");
-
-        state = state.copyWith(
-          success: true,
-          isLoading: false,
-          email: responseData["email"],
-        );
-
-        if (state.rememberMe) {
-          Future.microtask(() async {
-            await _secureStorage.write(key: 'email', value: state.email);
-            await _secureStorage.write(key: 'password', value: state.password);
-            print('🔐 Credentials saved securely in the background!');
-          });
-        }
-
-        print(
-          "✅ State updated: success=${state.success}, email=${state.email}",
-        );
-        return "✅ Signup successful!";
+        _state = SignupState.otpSent;
+        nextPage(); // Move to OTP verification page
       } else {
-        print('❌ Signup failed. Server responded with: ${response.body}');
-        state = state.copyWith(isLoading: false);
-        return '❌ Signup failed. Server responded with: ${response.body}';
+        _state = SignupState.error;
+        _errorMessage = 'Failed to register. Please try again.';
       }
     } catch (e) {
-      state = state.copyWith(isLoading: false);
-      print('❌ Signup failed due to network error: $e');
-      return '❌ Signup failed due to network error: $e';
+      _state = SignupState.error;
+      _errorMessage = 'An error occurred. Please check your connection.';
     }
+
+    notifyListeners();
   }
 
-  Future<void> loadSavedCredentials() async {
-    String? email = await _secureStorage.read(key: 'email');
-    String? password = await _secureStorage.read(key: 'password');
+  Future<void> verifyOtp(BuildContext context) async {
+    try {
+      _state = SignupState.loading;
+      notifyListeners();
 
-    if (email != null && password != null) {
-      state = state.copyWith(
-        email: email,
-        password: password,
-        rememberMe: true,
+      final response = await _signupRepository.verifyEmailOTP(
+        email: _email,
+        otp: _otp,
       );
-      print('🔄 Loaded saved credentials');
+
+      if (response.statusCode == 200) {
+        _state = SignupState.success;
+        notifyListeners();
+
+        // Navigate to home screen after successful signup
+        GoRouter.of(context).go('/');
+      } else {
+        _state = SignupState.error;
+        _errorMessage = 'Invalid OTP. Please try again.';
+      }
+    } catch (e) {
+      _state = SignupState.error;
+      _errorMessage = 'An error occurred. Please check your connection.';
     }
+
+    notifyListeners();
   }
 
-  Future<void> clearSavedCredentials() async {
-    await _secureStorage.delete(key: 'email');
-    await _secureStorage.delete(key: 'password');
-
-    state = state.copyWith(email: '', password: '', rememberMe: false);
-    print('🗑️ Secure storage cleared');
+  void resetError() {
+    _state = SignupState.initial;
+    _errorMessage = '';
+    notifyListeners();
   }
 }
-
-final signupProvider = NotifierProvider<SignupViewModel, SignupState>(
-  SignupViewModel.new,
-);

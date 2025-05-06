@@ -344,6 +344,18 @@ class CommentsApi {
                 isLikedValue = true;
               }
             }
+
+             // Extract tagged users for this comment
+              List<TaggedUser> taggedUsers = [];
+              if (commentJson.containsKey('taggedUsers') && commentJson['taggedUsers'] is List) {
+                try {
+                  taggedUsers = (commentJson['taggedUsers'] as List)
+                      .map((user) => TaggedUser.fromJson(user))
+                      .toList();
+                } catch (e) {
+                  debugPrint('❌ Error parsing tagged users in comment: $e');
+                }
+              }
             
             return CommentModel(
               id: commentJson['commentId'] ?? commentJson['_id'] ?? '',
@@ -356,6 +368,7 @@ class CommentsApi {
               likes: commentJson['likeCount'] ?? 0,
               isLiked: isLikedValue,
               designation: commentJson['headline'] ?? commentJson['designation'],
+              taggedUsers: taggedUsers,
             );
           }).toList();
         } else {
@@ -508,6 +521,7 @@ class CommentsApi {
             time: 'Just now',
             isLiked: false,
             designation: commentJson['headline'] ?? headline,
+            taggedUsers: taggedUsers ?? [],
           );
         } else {
           debugPrint('❌ Failed to add comment: ${response.statusCode}, ${response.body}');

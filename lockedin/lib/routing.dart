@@ -8,7 +8,7 @@ import 'package:lockedin/features/auth/view/edit_email_view.dart';
 import 'package:lockedin/features/auth/view/forget%20Password/forgot_password_page.dart';
 import 'package:lockedin/features/auth/view/login_page.dart';
 import 'package:lockedin/features/auth/view/main_page.dart';
-import 'package:lockedin/features/auth/view/signup/sign_up_view.dart';
+import 'package:lockedin/features/auth/view/signup/signup_screen.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
 import 'package:lockedin/features/chat/view/chat_conversation_page.dart';
 import 'package:lockedin/features/chat/view/chat_list_page.dart';
@@ -111,7 +111,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: "/sign-up",
         name: "sign-up",
-        builder: (context, state) => SignUpView(),
+        builder: (context, state) => SignupScreen(),
       ),
       GoRoute(
         path: "/add-section",
@@ -230,9 +230,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final postId = state.pathParameters['postId']!;
           return RepostPage(postId: postId);
-        }
-        ),
-      
+        },
+      ),
 
       GoRoute(
         path: '/admin-dashboard',
@@ -282,7 +281,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/subscription',
         name: 'subscription',
         builder: (context, state) => PremiumSubscriptionPage(),
-        ),
+      ),
 
       GoRoute(
         path: '/saved-posts',

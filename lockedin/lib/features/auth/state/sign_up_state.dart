@@ -9,6 +9,7 @@ class SignupState {
   final bool rememberMe;
   final bool isLoading;
   final bool success;
+  final bool emailVerified; // Added for OTP verification
 
   const SignupState({
     this.firstName = '',
@@ -18,6 +19,7 @@ class SignupState {
     this.rememberMe = false,
     this.isLoading = false,
     this.success = false,
+    this.emailVerified = false, // Default to false
   });
 
   SignupState copyWith({
@@ -28,6 +30,7 @@ class SignupState {
     bool? rememberMe,
     bool? isLoading,
     bool? success,
+    bool? emailVerified,
   }) {
     return SignupState(
       firstName: firstName ?? this.firstName,
@@ -37,6 +40,7 @@ class SignupState {
       rememberMe: rememberMe ?? this.rememberMe,
       isLoading: isLoading ?? this.isLoading,
       success: success ?? this.success,
+      emailVerified: emailVerified ?? this.emailVerified,
     );
   }
 }

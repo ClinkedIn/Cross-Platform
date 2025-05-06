@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:lockedin/features/home_page/model/taggeduser_model.dart';
 
 class CommentModel {
   final String id;
@@ -11,6 +12,7 @@ class CommentModel {
   final int likes;
   final bool isLiked;
   final String? designation;
+  final List<TaggedUser> taggedUsers;
 
   CommentModel({
     required this.id,
@@ -23,9 +25,10 @@ class CommentModel {
     this.likes = 0,
     this.isLiked = false,
     this.designation,
+    this.taggedUsers = const [],
   });
 
-  // Add copyWith method for easy modification
+  // Fixed: Added taggedUsers to copyWith method
   CommentModel copyWith({
     String? id,
     String? userId,
@@ -37,6 +40,7 @@ class CommentModel {
     int? likes,
     bool? isLiked,
     String? designation,
+    List<TaggedUser>? taggedUsers,
   }) {
     return CommentModel(
       id: id ?? this.id,
@@ -49,10 +53,11 @@ class CommentModel {
       likes: likes ?? this.likes,
       isLiked: isLiked ?? this.isLiked,
       designation: designation ?? this.designation,
+      taggedUsers: taggedUsers ?? this.taggedUsers,
     );
   }
 
-  // Convert model to map for Firestore
+  // Fixed: Added taggedUsers to toJson method
   Map<String, dynamic> toJson() {
     return {
       'userId': userId,
@@ -65,12 +70,21 @@ class CommentModel {
       'isLiked': isLiked,
       'designation': designation,
       'createdAt': FieldValue.serverTimestamp(),
+      'taggedUsers': taggedUsers.map((user) => user.toJson()).toList(),
     };
   }
 
-  // Create model from Firestore document
+  // Fixed: Added taggedUsers to fromFirestore factory
   factory CommentModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    
+    // Parse taggedUsers if available
+    List<TaggedUser> taggedUsersList = [];
+    if (data['taggedUsers'] != null && data['taggedUsers'] is List) {
+      taggedUsersList = List<TaggedUser>.from(
+        (data['taggedUsers'] as List).map((user) => TaggedUser.fromJson(user))
+      );
+    }
     
     return CommentModel(
       id: doc.id,
@@ -83,13 +97,22 @@ class CommentModel {
       likes: data['likes'] ?? 0,
       isLiked: data['isLiked'] ?? false,
       designation: data['designation'],
+      taggedUsers: taggedUsersList,
     );
   }
 
-  // FromJson method for compatibility
+  // Fixed: Added taggedUsers to fromJson factory
   factory CommentModel.fromJson(Map<String, dynamic> json) {
+    // Parse taggedUsers if available
+    List<TaggedUser> taggedUsersList = [];
+    if (json['taggedUsers'] != null && json['taggedUsers'] is List) {
+      taggedUsersList = List<TaggedUser>.from(
+        (json['taggedUsers'] as List).map((user) => TaggedUser.fromJson(user))
+      );
+    }
+    
     return CommentModel(
-      id: json['id'] ?? '',
+      id: json['id'] ?? json['_id'] ?? '',
       userId: json['userId'] ?? '',
       username: json['username'] ?? '',
       profileImageUrl: json['profileImageUrl'] ?? '',
@@ -99,6 +122,7 @@ class CommentModel {
       likes: json['likes'] ?? 0,
       isLiked: json['isLiked'] ?? false,
       designation: json['designation'],
+      taggedUsers: taggedUsersList,
     );
   }
 }

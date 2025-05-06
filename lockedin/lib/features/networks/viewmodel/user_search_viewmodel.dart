@@ -95,8 +95,9 @@ class UserSearchViewModel extends StateNotifier<UserSearchState> {
   Future<void> loadMoreResults() async {
     if (state.isLoading) return;
     
-    final currentPage = state.pagination['page'] as int;
-    final totalPages = state.pagination['pages'] as int;
+    // Safe access with null checking and defaults
+    final currentPage = state.pagination['page'] as int? ?? 1;
+    final totalPages = state.pagination['pages'] as int? ?? 1;
     
     if (currentPage >= totalPages) return;
     

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 import 'package:sizer/sizer.dart';
+import 'package:provider/provider.dart';
+import '../viewmodel/message_view_model.dart';
 
 class Connection extends StatelessWidget {
   final ImageProvider profileImage;
@@ -8,7 +9,8 @@ class Connection extends StatelessWidget {
   final String lastName;
   final String lastJobTitle;
   final VoidCallback onNameTap;
-  final VoidCallback? onRemove; // Added callback for removal action
+  final VoidCallback? onRemove;
+  final String userId; // Add userId to identify the connection
 
   const Connection({
     required this.profileImage,
@@ -16,11 +18,10 @@ class Connection extends StatelessWidget {
     required this.lastName,
     required this.lastJobTitle,
     required this.onNameTap,
+    required this.userId, // Make userId required
     this.onRemove,
     super.key,
   });
-
-  get profilePicture => null;
 
   // Show confirmation dialog for removal
   void _showRemoveConfirmation(BuildContext context) {
@@ -52,8 +53,51 @@ class Connection extends StatelessWidget {
     );
   }
 
+  // Show message request status dialog
+  void _showMessageSentConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Message Request Sent'),
+          content: Text(
+            'Your message request has been sent to ${firstName} ${lastName}.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Show error dialog when message request fails
+  void _showErrorDialog(BuildContext context, String errorMessage) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(errorMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Get access to the MessageRequestViewModel
+    final messageRequestViewModel = Provider.of<MessageRequestViewModel>(context, listen: false);
+
     return Row(
       children: [
         CircleAvatar(
@@ -87,21 +131,44 @@ class Connection extends StatelessWidget {
               _showRemoveConfirmation(context);
             }
           },
-          itemBuilder:
-              (context) => [
-                PopupMenuItem<String>(
-                  value: 'remove',
-                  child: Row(
-                    children: [
-                      Icon(Icons.person_remove, color: Colors.red[500]),
-                      SizedBox(width: 8),
-                      Text('Remove connection'),
-                    ],
-                  ),
-                ),
-              ],
+          itemBuilder: (context) => [
+            PopupMenuItem<String>(
+              value: 'remove',
+              child: Row(
+                children: [
+                  Icon(Icons.person_remove, color: Colors.red[500]),
+                  SizedBox(width: 8),
+                  Text('Remove connection'),
+                ],
+              ),
+            ),
+          ],
         ),
-        IconButton(onPressed: () {}, icon: Icon(Icons.send)),
+        // Updated message button with proper handling
+        IconButton(
+          onPressed: () async {
+            try {
+              // Show loading indicator
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Sending message request...'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+              
+              // Send the message request
+              await messageRequestViewModel.sendRequest(userId);
+              
+              // Show success dialog
+              _showMessageSentConfirmation(context);
+            } catch (e) {
+              // Show error dialog
+              _showErrorDialog(context, 'Failed to send message request: $e');
+            }
+          }, 
+          icon: Icon(Icons.send),
+          tooltip: 'Send message request',
+        ),
       ],
     );
   }

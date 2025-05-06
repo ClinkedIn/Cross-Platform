@@ -44,6 +44,7 @@ dependencies:
   webview_flutter: ^4.4.2
   fl_chart: ^0.64.0
   photo_view: ^0.15.0
+  share_plus: ^7.2.1
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -108,6 +109,7 @@ flutter:
     - assets/images/default_cover_photo.jpeg
     - assets/images/default_profile_photo.png
     - assets/images/aman_logo.jpg
+    - assets/images/google.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

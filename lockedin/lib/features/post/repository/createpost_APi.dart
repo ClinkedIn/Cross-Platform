@@ -40,6 +40,7 @@ class CreatepostApi {
               additionalFields['taggedUsers'] = jsonEncode(
                 taggedUsers.map((user) => user.toJson()).toList()
               );
+
             }
           }
       
