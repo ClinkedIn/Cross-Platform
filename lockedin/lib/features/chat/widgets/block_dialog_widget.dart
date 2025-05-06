@@ -27,39 +27,42 @@ class BlockDialogWidget extends ConsumerWidget {
           child: Text('Cancel'),
         ),
         TextButton(
-          onPressed: () {
+          onPressed: () async {
+            // Update the UI state immediately before API call
+            // This provides instant feedback to the user
+            final viewModel = ref.read(chatConversationProvider(chatId).notifier);
+            
+            // Optimistically update the state
+            viewModel.setBlockedState(!isBlocked);
+            
             // Close the dialog first
             Navigator.pop(context);
             
-            // Get the view model
-            final viewModel = ref.read(chatConversationProvider(chatId).notifier);
+            // Call the API to toggle block user
+            final result = await viewModel.toggleBlockUser();
             
-            // Call the toggle block method
-            viewModel.toggleBlockUser().then((result) {
-              if (result['success'] == true) {
-                // Trigger a rebuild of the UI
-              
-                // Show success message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isBlocked
-                          ? 'User has been unblocked'
-                          : 'User has been blocked',
-                    ),
-                    backgroundColor: isBlocked ? Colors.green : Colors.red,
+            if (result['success'] == true) {
+              // Show success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isBlocked
+                        ? 'User has been unblocked'
+                        : 'User has been blocked',
                   ),
-                );
-              } else {
-                // Show error message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error: ${result['error']}'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            });
+                  backgroundColor: isBlocked ? Colors.green : Colors.red,
+                ),
+              );
+            } else {
+              // Show error message and revert UI state
+              viewModel.setBlockedState(isBlocked); // Revert to original state
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error: ${result['error']}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
           },
           child: Text(
             isBlocked ? 'Unblock' : 'Block',

@@ -58,6 +58,14 @@ class FirebaseChatServices {
               profilePicture: participants[senderId]?['profilePicture'],
             );
             
+            // Extract readBy list - who has read this message
+            List<String> readBy = [];
+            if (data['readBy'] != null) {
+              if (data['readBy'] is List) {
+                readBy = List<String>.from(data['readBy']);
+              }
+            }
+            
             // Handle attachments with additional logging
             List<String> attachments = [];
             AttachmentType attachmentType = AttachmentType.none;
@@ -132,9 +140,9 @@ class FirebaseChatServices {
               messageText: data['text'] ?? '',
               createdAt: createdAt,
               updatedAt: updatedAt,
-              // Extract first URL from attachments array rather than passing the whole array
               messageAttachment: attachments,
               attachmentType: attachmentType,
+              readBy: readBy, // Include readBy information
             );
           }).toList();
           
@@ -228,6 +236,147 @@ class FirebaseChatServices {
         .set({'isTyping': isTyping}, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Error updating typing status: $e');
+    }
+  }
+
+  // Method to mark messages as read by the current user
+  Future<void> markMessagesAsRead(String chatId) async {
+    try {
+      final currentUserId = _authService.currentUser?.id;
+      if (currentUserId == null) return;
+      
+      // Get all unread messages in this conversation
+      final messagesSnapshot = await _firestore
+        .collection('conversations')
+        .doc(chatId)
+        .collection('messages')
+        .where('readBy', whereNotIn: [currentUserId])
+        .get();
+      
+      // Create a batch to perform multiple updates
+      final batch = _firestore.batch();
+      
+      for (final doc in messagesSnapshot.docs) {
+        // Add current user to readBy array for each message
+        batch.update(doc.reference, {
+          'readBy': FieldValue.arrayUnion([currentUserId]),
+        });
+      }
+      
+      // Commit the batch
+      await batch.commit();
+      
+      // Also update the conversation document to remove current user from unreadBy
+      await _firestore
+        .collection('conversations')
+        .doc(chatId)
+        .update({
+          'unreadBy': FieldValue.arrayRemove([currentUserId])
+        });
+        
+      debugPrint('Marked ${messagesSnapshot.docs.length} messages as read');
+    } catch (e) {
+      debugPrint('Error marking messages as read: $e');
+    }
+  }
+
+  //Check for if there is a previous conversation with the same participants
+   Future<String?> findExistingChatId(String otherUserId) async {
+    final String? currentUserId = _authService.currentUser?.id;
+    if (currentUserId == null) return null;
+    
+    try {
+      // Query conversations where both users are participants
+      final querySnapshot = await _firestore
+          .collection('conversations')
+          .where('participantIds', arrayContains: currentUserId)
+          .get();
+      
+      // Check each conversation to see if the other user is also a participant
+      for (final doc in querySnapshot.docs) {
+        final List<dynamic> participantIds = doc.data()['participantIds'] ?? [];
+        
+        // If the conversation includes both users, return its ID
+        if (participantIds.contains(otherUserId)) {
+          return doc.id;
+        }
+      }
+      
+      // Also check if the conversation might be stored with participants as a map
+      final mapQuerySnapshot = await _firestore
+           .collection('conversations')
+           .where('participants.$currentUserId', isNull: false)
+           .get();
+          
+      for (final doc in mapQuerySnapshot.docs) {
+         final participants = doc.data()['participants'];
+         if (participants is Map && participants.containsKey(otherUserId)) {
+           return doc.id;
+         }
+      }
+      
+      // No existing chat found
+      return null;
+    } catch (e) {
+      debugPrint('Error finding existing chat: $e');
+      return null;
+    }
+  }
+
+  // Create a new conversation
+  Future<String?> createNewChat(String otherUserId) async {
+    final String? currentUserId = _authService.currentUser?.id;
+    if (currentUserId == null) return null;
+    
+    try {
+      // Create chat document with both participants
+      final conversationRef = _firestore.collection('conversations').doc();
+      
+      // Get user data for both participants to store in the conversation
+      final currentUserDoc = await _firestore.collection('users').doc(currentUserId).get();
+      final otherUserDoc = await _firestore.collection('users').doc(otherUserId).get();
+      
+      // Extract full names for the conversation data
+      final currentUserFullName = "${currentUserDoc.data()?['firstName'] ?? ''} ${currentUserDoc.data()?['lastName'] ?? ''}".trim();
+      final otherUserFullName = "${otherUserDoc.data()?['firstName'] ?? ''} ${otherUserDoc.data()?['lastName'] ?? ''}".trim();
+      
+      // Create conversation document matching the database structure
+      await conversationRef.set({
+        'participants': [currentUserId, otherUserId],
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastMessage': null,
+        'lastMessageText': null,
+        'lastMessageTimestamp': null,
+        'lastSenderId': null,
+        'lastUpdatedAt': FieldValue.serverTimestamp(),
+        'unreadBy': [],
+        'forceUnread': {
+          currentUserId: false,
+          otherUserId: false
+        },
+        'fullName': {
+          currentUserId: currentUserFullName,
+          otherUserId: otherUserFullName
+        },
+        'profilePicture': {
+          currentUserId: currentUserDoc.data()?['profilePicture'],
+          otherUserId: otherUserDoc.data()?['profilePicture']
+        },
+        'readCount': {
+          currentUserId: 0,
+          otherUserId: 0
+        },
+        'typing': {
+          currentUserId: false,
+          otherUserId: false
+        }
+      });
+      
+      debugPrint('Created new chat conversation with ID: ${conversationRef.id}');
+      return conversationRef.id;
+    } catch (e) {
+      debugPrint('Error creating new chat: $e');
+      return null;
     }
   }
 

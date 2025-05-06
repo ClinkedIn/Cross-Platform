@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+
 import 'package:intl/intl.dart';
 import 'package:lockedin/features/chat/viewModel/chat_conversation_viewmodel.dart';
 import 'package:lockedin/features/chat/model/chat_model.dart';
 import 'package:lockedin/features/chat/model/chat_message_model.dart';
 import 'package:lockedin/features/chat/widgets/attachment_widget.dart';
+import 'package:lockedin/features/chat/widgets/chat_app_bar.dart';
 import 'package:lockedin/features/chat/widgets/chat_bubble_widget.dart';
 import 'package:lockedin/features/chat/widgets/chat_input_field_widget.dart';
-import 'package:lockedin/features/chat/widgets/block_button_widget.dart';
 import 'package:lockedin/features/chat/widgets/image_preview_widget.dart';
 import 'package:lockedin/features/chat/widgets/document_preview_widget.dart';
 import 'package:lockedin/shared/theme/app_theme.dart';
@@ -74,17 +74,26 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     final isDarkMode = ref.watch(themeProvider) == AppTheme.darkTheme;
     final chatState = ref.watch(chatConversationProvider(widget.chat.id));
 
+    // Get the other participant's profile picture
+    String profilePicture = '';
+    if (widget.chat.participants.isNotEmpty) {
+      // Find the other participant (not the current user)
+      final currentUserId = ref.read(chatConversationProvider(widget.chat.id).notifier).currentUserId;
+      final otherParticipant = widget.chat.participants.firstWhere(
+        (p) => p.id != currentUserId,
+        orElse: () => widget.chat.participants.first,
+      );
+      
+      // Get profile picture URL (use a default if not available)
+      profilePicture = otherParticipant.profilePicture ?? 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(widget.chat.name)}';
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.chat.name),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => context.pop(), // Navigate back to chat list
-        ),
-        actions: [
-          // Block/unblock button
-          BlockButtonWidget(chatId: widget.chat.id),
-        ],
+      appBar: ChatAppBar(
+        name: widget.chat.name,
+        imageUrl: profilePicture,
+        isDarkMode: isDarkMode,
+        chatId: widget.chat.id, // Pass the chat ID for the block button
       ),
       body: Column(
         children: [      
@@ -97,6 +106,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
           // Conditionally show chat input based on block status
           Builder(
             builder: (context) {
+              // Get the block status directly from the watched state
               final isBlocked = chatState.isBlocked;
               
               if (isBlocked) {
@@ -161,6 +171,26 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(child: Text('Error loading messages'));
+        }
+        
+        // Mark messages as read only when there are new unread messages
+        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // Get current user ID to check which messages are for us
+            final currentUserId = ref.read(chatConversationProvider(widget.chat.id).notifier).currentUserId;
+            
+            // Find messages that aren't marked as read by the current user
+            final unreadMessages = snapshot.data!.where(
+              (msg) => !msg.readBy.contains(currentUserId) && 
+                       msg.sender.id != currentUserId
+            ).toList();
+            
+            // Only call markMessagesAsRead if we have unread messages
+            if (unreadMessages.isNotEmpty) {
+              ref.read(chatConversationProvider(widget.chat.id).notifier)
+                .markMessagesAsRead();
+            }
+          });
         }
         
         // Use data from stream if available, otherwise fall back to state
@@ -247,8 +277,20 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
   Widget _buildMessageBubble(ChatMessage message) {
     final currentUserId = ref.read(chatConversationProvider(widget.chat.id).notifier).currentUserId;
     
-    // Normal mode: check if the message sender is the current user
+    // Check if the message sender is the current user
     final isMe = currentUserId.isNotEmpty && message.sender.id == currentUserId;
+    
+    // Only check read status for messages sent by the current user
+    bool isReadByReceiver = false;
+    if (isMe) {
+      // Get the receiver ID (anyone who's not the current user)
+      final receiverId = ref.read(chatConversationProvider(widget.chat.id).notifier).getReceiverUserId();
+      
+      // Check if receiver has read this message
+      if (receiverId != null) {
+        isReadByReceiver = message.readBy.contains(receiverId);
+      }
+    }
     
     // Default to empty string for messageText if null
     final messageText = message.messageText;
@@ -263,9 +305,10 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
       isMe: isMe,
       time: DateFormat('hh:mm a').format(message.createdAt),
       senderImageUrl: isMe ? null : message.sender.profilePicture,
-      isRead: true,
-      attachmentUrl: attachmentUrl,  // Use the extracted URL
-      attachmentType: message.attachmentType, 
+      // Pass whether the message has been read by the receiver
+      isRead: isReadByReceiver,
+      attachmentUrl: attachmentUrl,
+      attachmentType: message.attachmentType,
     );
   }
 

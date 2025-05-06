@@ -9,6 +9,7 @@ class ChatMessage {
   final DateTime createdAt;
   final DateTime updatedAt;
   final AttachmentType attachmentType;
+  final List<String> readBy; // List of user IDs who have read this message
 
   ChatMessage({
     required this.id,
@@ -18,6 +19,7 @@ class ChatMessage {
     required this.updatedAt,
     this.messageAttachment = const [],
     this.attachmentType = AttachmentType.none,
+    this.readBy = const [], // Default to empty list
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,9 @@ class ChatMessage {
           ? List<String>.from(json['messageAttachment'])
           : [],
       attachmentType: _determineAttachmentType(json['messageAttachment']),
+      readBy: json['readBy'] != null
+          ? List<String>.from(json['readBy'])
+          : [],
     );
   }
 
@@ -104,6 +109,14 @@ class ChatMessage {
         attachmentType = AttachmentType.gif;
       }
     }
+
+    // Extract readBy list from data
+    List<String> readBy = [];
+    if (data['readBy'] != null) {
+      if (data['readBy'] is List) {
+        readBy = List<String>.from(data['readBy']);
+      }
+    }
     
     return ChatMessage(
       id: id,
@@ -113,6 +126,7 @@ class ChatMessage {
       updatedAt: updatedAt,
       messageAttachment: attachments,
       attachmentType: attachmentType,
+      readBy: readBy,
     );
   }
 
@@ -134,6 +148,7 @@ class ChatMessage {
       'messageAttachment': messageAttachment,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'readBy': readBy,
     };
   }
 
@@ -141,6 +156,11 @@ class ChatMessage {
     // This will need to be updated based on your authentication system
     // to check if the message sender is the current user
     return false;
+  }
+  
+  // Check if a specific user has read this message
+  bool isReadBy(String userId) {
+    return readBy.contains(userId);
   }
 }
 

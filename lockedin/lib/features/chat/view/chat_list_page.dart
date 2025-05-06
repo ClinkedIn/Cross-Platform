@@ -111,11 +111,8 @@ class ChatListScreen extends ConsumerWidget {
                       style: TextStyle(fontSize: 12, color: Colors.grey));
                 }
                 
-                final user = snapshot.data;
-                return Text(
-                  user != null ? "Signed in as: ${user.email} ${user.id}" : "User info not available",
-                  style: TextStyle(fontSize: 12, color: Colors.grey)
-                );
+                return Text('No chats yet.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey));
               },
             ),
           ],

@@ -70,7 +70,7 @@ class ChatConversationRepository {
       
       // Log response for debugging
       debugPrint('POST Response Code: ${response.statusCode}');
-      debugPrint('POST Response Body: ${response.body}');
+      debugPrint('POST Response Body of messaging: ${response.body}');
       
       // Check status code for success
       if (response.statusCode != 200 && response.statusCode != 201) {
@@ -388,6 +388,11 @@ class ChatConversationRepository {
     } catch (e) {
       debugPrint("Error marking chat as unread for recipient: $e");
     }
+  }
+
+  // Mark messages as read
+  Future<void> markMessagesAsRead(String chatId) async {
+    await _firebaseService.markMessagesAsRead(chatId);
   }
 
 }
