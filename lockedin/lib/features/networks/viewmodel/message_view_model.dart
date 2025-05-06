@@ -51,20 +51,14 @@ class MessageRequestViewModel extends ChangeNotifier {
 
   // Updated method to match the new service method signature
   Future<void> sendRequest(
-    String recipientUserId,
-    String message, {
-    String? targetUserId,
-  }) async {
+    String targetUserId,
+  ) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final success = await _service.sendMessageRequest(
-        recipientUserId,
-        message,
-        targetUserId: targetUserId,
-      );
+      final success = await _service.sendMessageRequest(targetUserId);
       if (success) {
         // Optionally refresh the list after sending
         await loadMessageRequests();

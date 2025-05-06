@@ -287,29 +287,17 @@ class MessageRequestService {
     }
   }
 
-  Future<bool> sendMessageRequest(
-    String recipientUserId,
-    String message, {
-    String? targetUserId,
-  }) async {
+  Future<bool> sendMessageRequest(String targetUserId) async {
     try {
       if (kDebugMode) {
-        print('Sending message request to user ID: $recipientUserId');
+        print('Sending message request to user ID: $targetUserId');
       }
 
       // Create the request body with the correct structure
-      final Map<String, dynamic> requestBody = {
-        "recipientUserId": recipientUserId,
-        "message": message,
-      };
-
-      // Add targetUserId if provided
-      if (targetUserId != null) {
-        requestBody["targetUserId"] = targetUserId;
-      }
+      final Map<String, dynamic> requestBody = {"targetUserId": targetUserId};
 
       final response = await RequestService.post(
-        "/user/message-requests",
+        "user/message-request",
         body: requestBody,
       );
 
@@ -318,7 +306,7 @@ class MessageRequestService {
         print('Response body: ${response.body}');
       }
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (response.statusCode == 200) {
         return true;
       } else {
         throw Exception(
