@@ -53,6 +53,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     );
 
     if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Created post successfully")),
+      );
       Navigator.pop(context, true);
     } else {
       final error = viewModel.errorMessage ?? 'Failed to create post.';

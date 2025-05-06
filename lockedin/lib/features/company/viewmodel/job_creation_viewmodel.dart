@@ -65,6 +65,9 @@ class JobCreationViewModel {
         content: Text(success ? 'Job created' : 'Failed to create job'),
       );
       ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      if (success) {
+      Navigator.of(context).pop(); // <-- Add this line
+      }
     });
   }
 }
