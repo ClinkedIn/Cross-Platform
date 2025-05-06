@@ -1,11 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lockedin/core/services/auth_service.dart';
-import '../model/post_model.dart';
-import '../repository/posts/post_repository.dart';
-import '../repository/posts/post_api.dart';
+import 'package:lockedin/features/home_page/model/post_model.dart';
+import 'package:lockedin/features/home_page/repository/posts/post_repository.dart';
+import 'package:lockedin/features/home_page/repository/posts/post_api.dart';
 import 'package:flutter/foundation.dart';
-import '../state/home_state.dart';
-import '../model/taggeduser_model.dart';
+import 'package:lockedin/features/home_page/state/home_state.dart';
+import 'package:lockedin/features/home_page/model/taggeduser_model.dart';
 
 /// Provider for the HomeViewModel
 final homeViewModelProvider = StateNotifierProvider<HomeViewModel, HomeState>((
@@ -25,74 +24,101 @@ class HomeViewModel extends StateNotifier<HomeState> {
     fetchHomeFeed();
   }
 
-  /// Fetch posts for the home feed
-  Future<void> fetchHomeFeed() async {
+  /// Fetch posts for the home feed with specified page number
+  Future<void> fetchHomeFeed({int? page}) async {
     try {
-      // Set loading state
-      state = state.copyWith(isLoading: true, error: null);
+      // Get the page to fetch - use provided page or current page from state
+      final pageToFetch = page ?? state.currentPage;
 
-      // Fetch posts from repository (now with pagination)
+      // Set loading state
+      if (pageToFetch == 1) {
+        state = state.copyWith(isLoading: true, error: null);
+      } else {
+        state = state.copyWith(isLoadingMore: true, error: null);
+      }
+
+      // Fetch posts from repository
       final result = await repository.fetchHomeFeed(
-        page: 1,
+        page: pageToFetch,
         limit: state.limit,
       );
-      final List<PostModel> posts = result['posts'];
+
+      final List<PostModel> newPosts = result['posts'];
       final Map<String, dynamic> pagination = result['pagination'];
 
-      // Update state with fetched posts and pagination info
+      // If it's the first page or posts array is empty, replace all posts
+      // Otherwise, append the new posts to existing ones
+      final List<PostModel> updatedPosts;
+      if (pageToFetch == 1 || state.posts.isEmpty) {
+        updatedPosts = newPosts;
+      } else {
+        updatedPosts = [...state.posts, ...newPosts];
+      }
+
+      // Update state
       state = state.copyWith(
-        posts: posts,
+        posts: updatedPosts,
         isLoading: false,
-        currentPage: pagination['page'] ?? 1,
+        isLoadingMore: false,
+        currentPage: pagination['page'] ?? pageToFetch,
         totalPages: pagination['pages'] ?? 1,
         totalPosts: pagination['total'] ?? 0,
         hasNextPage: pagination['hasNextPage'] ?? false,
         hasPrevPage: pagination['hasPrevPage'] ?? false,
       );
+
+      debugPrint(
+        '📊 Fetched page $pageToFetch: ${newPosts.length} posts, total: ${updatedPosts.length}',
+      );
     } catch (e) {
       // Handle errors
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        isLoadingMore: false,
+        error: e.toString(),
+      );
+      debugPrint('❌ Error fetching posts: $e');
     }
   }
 
   /// Refresh feed data (reset to page 1)
   Future<void> refreshFeed() async {
-    try {
-      state = state.copyWith(isLoading: true, error: null, currentPage: 1);
-
-      // Fetch first page of posts
-      final result = await repository.fetchHomeFeed(
-        page: 1,
-        limit: state.limit,
-      );
-      final List<PostModel> posts = result['posts'];
-      final Map<String, dynamic> pagination = result['pagination'];
-
-      state = state.copyWith(
-        posts: posts,
-        isLoading: false,
-        currentPage: pagination['page'] ?? 1,
-        totalPages: pagination['pages'] ?? 1,
-        totalPosts: pagination['total'] ?? 0,
-        hasNextPage: pagination['hasNextPage'] ?? false,
-        hasPrevPage: pagination['hasPrevPage'] ?? false,
-      );
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
+    await fetchHomeFeed(page: 1);
   }
 
   /// Load more posts (next page)
+  // Add this field to HomeViewModel
+  bool _isLoadingMoreInternal = false;
+
+  // Update the loadMorePosts method to prevent duplicates
   Future<void> loadMorePosts() async {
-    // Don't load more if already loading or no more pages
+    // First check: state-based loading check
     if (state.isLoadingMore || !state.hasNextPage) {
+      debugPrint('⚠️ Skipping load: already loading or no more pages');
       return;
     }
 
-    state = state.copyWith(isLoadingMore: true);
+    // Second check: internal loading check to prevent race conditions
+    if (_isLoadingMoreInternal) {
+      debugPrint('⚠️ Skipping load: internal loading flag set');
+      return;
+    }
+
+    _isLoadingMoreInternal = true;
 
     try {
+      // Keep track of existing post IDs to filter out duplicates
+      final Set<String> existingPostIds =
+          state.posts.map((post) => post.id).toSet();
+      debugPrint('🔍 Current posts: ${existingPostIds.length}');
+
       final nextPage = state.currentPage + 1;
+      debugPrint('📃 Loading page $nextPage');
+
+      // Set loading state
+      state = state.copyWith(isLoadingMore: true);
+
+      // Fetch the next page of posts
       final result = await repository.fetchHomeFeed(
         page: nextPage,
         limit: state.limit,
@@ -101,9 +127,24 @@ class HomeViewModel extends StateNotifier<HomeState> {
       final List<PostModel> newPosts = result['posts'];
       final Map<String, dynamic> pagination = result['pagination'];
 
-      // Combine existing posts with new posts
-      final updatedPosts = [...state.posts, ...newPosts];
+      // Filter out duplicates
+      final List<PostModel> uniqueNewPosts =
+          newPosts.where((post) {
+            final bool isUnique = !existingPostIds.contains(post.id);
+            if (!isUnique) {
+              debugPrint('🔄 Found duplicate post: ${post.id}');
+            }
+            return isUnique;
+          }).toList();
 
+      debugPrint(
+        '✅ Found ${uniqueNewPosts.length} unique posts out of ${newPosts.length} total',
+      );
+
+      // Combine existing posts with unique new posts
+      final updatedPosts = [...state.posts, ...uniqueNewPosts];
+
+      // Update state with new posts and pagination information
       state = state.copyWith(
         posts: updatedPosts,
         isLoadingMore: false,
@@ -111,10 +152,23 @@ class HomeViewModel extends StateNotifier<HomeState> {
         totalPages: pagination['pages'] ?? state.totalPages,
         totalPosts: pagination['total'] ?? state.totalPosts,
         hasNextPage: pagination['hasNextPage'] ?? false,
-        hasPrevPage: pagination['hasPrevPage'] ?? false,
+        hasPrevPage: pagination['hasPrevPage'] ?? true,
       );
+
+      // Handle the case where all posts were duplicates but more pages exist
+      if (uniqueNewPosts.isEmpty && pagination['hasNextPage'] == true) {
+        debugPrint(
+          '⚠️ No unique posts found, but more pages exist. Loading next page...',
+        );
+        // Wait a moment to prevent UI jank
+        await Future.delayed(Duration(milliseconds: 300));
+        loadMorePosts(); // Recursively try the next page
+      }
     } catch (e) {
+      debugPrint('❌ Error loading more posts: $e');
       state = state.copyWith(isLoadingMore: false, error: e.toString());
+    } finally {
+      _isLoadingMoreInternal = false;
     }
   }
 

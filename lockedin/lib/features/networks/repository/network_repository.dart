@@ -266,8 +266,8 @@ class MessageRequestService {
       final response = await RequestService.get("/user/message-requests");
 
       if (kDebugMode) {
-        print('Response status: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('Response statftdyguhus: ${response.statusCode}');
+        print('Response bouguyyhuhdy: ${response.body}');
       }
 
       if (response.statusCode == 200) {
@@ -297,13 +297,13 @@ class MessageRequestService {
       final Map<String, dynamic> requestBody = {"targetUserId": targetUserId};
 
       final response = await RequestService.post(
-        "user/message-request",
-        body: requestBody,
+        "/user/message-requests/$targetUserId",
+        body: {},
       );
 
       if (kDebugMode) {
-        print('Response status: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('Response bouguyyhuhdy: ${response.statusCode}');
+        print('Response bouguyyhuhdy: ${response.body}');
       }
 
       if (response.statusCode == 200) {

@@ -223,6 +223,7 @@ class RequestService {
       }
 
       final String url = '$_baseUrl$endpoint';
+      ;
       final Uri uri = Uri.parse(url);
       final headers = await _getHeaders(additionalHeaders: additionalHeaders);
 
@@ -309,7 +310,7 @@ class RequestService {
       endpoint = '/$endpoint';
     }
 
-    final String url = '$_baseUrl$endpoint';
+    final String url = 'https://lockedin-cufe.me$endpoint';
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
 
     try {
