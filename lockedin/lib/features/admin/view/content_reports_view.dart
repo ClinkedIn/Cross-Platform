@@ -111,9 +111,14 @@ class ReportPage extends StatelessWidget {
                                   children: [
                                     CircleAvatar(
                                       radius: 20,
-                                      backgroundImage: NetworkImage(
-                                        reporter.profilePicture,
-                                      ),
+                                      backgroundImage:
+                                          reporter.profilePicture != ""
+                                              ? NetworkImage(
+                                                reporter.profilePicture,
+                                              )
+                                              : const AssetImage(
+                                                'assets/images/default_profile_photo.png',
+                                              ),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(

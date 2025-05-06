@@ -6,6 +6,7 @@ class Report {
   Report({required this.report, this.reportedPost, this.reportedUser});
 
   factory Report.fromJson(Map<String, dynamic> json) {
+    print('Report JSON: $json');
     return Report(
       report: ReportDetail.fromJson(json['report']),
       reportedPost:
@@ -33,7 +34,7 @@ class ReportDetail {
       id: json['_id'],
       user: json['userId'] != null ? User.fromJson(json['userId']) : null,
       status: json['status'],
-      reason: json['policy'],
+      reason: json['policy'], // Maps to 'policy' field in JSON
     );
   }
 }
@@ -80,8 +81,8 @@ class ReportedUser {
 
 class User {
   final String id;
-  final String firstName;
-  final String lastName;
+  final String? firstName;
+  final String? lastName;
   final String email;
   final String profilePicture;
 
@@ -99,7 +100,7 @@ class User {
       firstName: json['firstName'],
       lastName: json['lastName'],
       email: json['email'],
-      profilePicture: json['profilePicture'],
+      profilePicture: json['profilePicture'] ?? '',
     );
   }
 }

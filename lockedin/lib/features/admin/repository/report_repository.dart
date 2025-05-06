@@ -3,17 +3,19 @@ import 'package:lockedin/core/services/request_services.dart';
 import 'package:lockedin/features/admin/models/report_model.dart';
 
 class ReportRepository {
-  final String baseUrl = 'https://your-api-url.com';
-
   Future<List<Report>> fetchReports() async {
-    final response = await RequestService.get('admin/reports');
+    final response = await RequestService.get('/admin/reports');
     print('Respongixdewkcdwse: ${response.body}');
     print('Status Code: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      final List reportsJson = data['data'];
-      return reportsJson.map((e) => Report.fromJson(e)).toList();
+      final decodedJson = jsonDecode(response.body);
+      List<Report> reports = List<Report>.from(
+        decodedJson['data'].map((item) => Report.fromJson(item)),
+      );
+      print('Decoded JSON: $decodedJson');
+      return reports;
     } else {
       throw Exception("Failed to load reports");
     }
@@ -25,7 +27,7 @@ class ReportRepository {
     String reason,
   ) async {
     final response = await RequestService.patch(
-      'admin/reports/$id',
+      '/admin/reports/$id',
       body: {'action': action, 'reason': reason},
     );
     if (response.statusCode != 200) {
