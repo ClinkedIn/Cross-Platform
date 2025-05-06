@@ -150,6 +150,7 @@ class _JobCreationViewState extends State<JobCreationView> {
                         },
                         decoration: InputDecoration(labelText: 'Question'),
                       ),
+                      SizedBox(height: 2.h),
                       TextField(
                         controller: map['idealAnswer'],
                         decoration: InputDecoration(labelText: 'Ideal Answer'),

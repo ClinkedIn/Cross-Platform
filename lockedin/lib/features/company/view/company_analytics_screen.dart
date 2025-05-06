@@ -48,10 +48,11 @@ class _CompanyAnalyticsScreenState extends State<CompanyAnalyticsScreen> {
 
     try {
       final response = await RequestService.get(endpoint);
+      print('Analytics response for $start to $end: ${response.body}');
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final visitors = data['analytics']['summary']['totalVisitors'];
-        final followersCount = data['analytics']['summary']['totalFollowers'];
+        final visitors = data['analytics']['visitors'].length;
+        final followersCount = data['analytics']['followers'].length;
 
         setState(() {
           totalVisitors = visitors;
@@ -242,8 +243,10 @@ class _CompanyAnalyticsScreenState extends State<CompanyAnalyticsScreen> {
                 style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
               ),
               subtitle: Text(
-                "${bio ?? 'No bio'}, ${industry ?? 'No industry'}",
+                "$bio",
                 style: TextStyle(fontSize: 14.sp, color: Colors.black),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
               trailing: Text(
                 DateFormat.yMMMd().format(DateTime.parse(followedAt)),
@@ -289,8 +292,8 @@ class _CompanyAnalyticsScreenState extends State<CompanyAnalyticsScreen> {
                 startDate = picked.start;
                 endDate = picked.end;
               });
-              await fetchCompanyAnalytics();
             }
+            await fetchCompanyAnalytics();
           },
           child: const Text("Update"),
         ),

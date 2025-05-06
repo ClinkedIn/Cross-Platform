@@ -32,11 +32,11 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(job?.description ?? 'Job Details'),
+        title: Text(job?.jobType ?? 'Job Details'),
       ),
       body: job == null
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
+          : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,7 +51,9 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
                     ),
                   ),
                   SizedBox(height: 1.h),
-                  ...applications.map((app) => Card(
+                  ...applications
+                      .where((app) => app.status != 'accepted' && app.status != 'rejected')
+                      .map((app) => Card(
                         child: ListTile(
                           title: Text(
                             '${app.applicant['firstName']} ${app.applicant['lastName']}',

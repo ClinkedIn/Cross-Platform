@@ -255,7 +255,7 @@ class _CompanyProfileViewState extends ConsumerState<CompanyProfileView> {
                   ),
                   SizedBox(height: 1.h),
                   TextButton(
-                    onPressed: () {
+                    onPressed: (company.id == null || company.id!.isEmpty) ? null : () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
