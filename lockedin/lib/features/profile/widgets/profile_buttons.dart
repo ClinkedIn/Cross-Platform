@@ -39,7 +39,9 @@ class ProfileButtons extends StatelessWidget {
           SizedBox(
             width: double.infinity, // Ensures full width
             child: OutlinedButton(
-              onPressed: () {},
+              onPressed: () {
+                context.push("/subscription");
+              },
               child: Text("Enhance Profile"),
             ),
           ),

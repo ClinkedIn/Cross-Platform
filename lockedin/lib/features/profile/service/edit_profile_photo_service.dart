@@ -10,7 +10,7 @@ class ProfilePhotoService {
         file: photoFile,
       );
       print(
-        "Response status code: ${response.statusCode}, body: ${response.body} type of file: ${photoFile.uri}",
+        "Response status couhoef3ede: ${response.statusCode}, boedefrfrdy: ${response.body} type of file: ${photoFile.uri}",
       );
       return response;
     } catch (e) {

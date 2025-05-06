@@ -182,16 +182,18 @@ class LoginPage extends ConsumerWidget {
               SizedBox(height: 3.h),
               Column(
                 children: [
-                  AppButtonStyles.socialLoginButton(
-                    text: "Sign in with Apple",
-                    icon: Icons.apple,
-                    onPressed: () {},
-                  ),
+                  // AppButtonStyles.socialLoginButton(
+                  //   text: "Sign in with Apple",
+                  //   icon: Icons.apple,
+                  //   onPressed: () {},
+                  // ),
                   const SizedBox(height: 12),
                   AppButtonStyles.socialLoginButton(
                     text: "Sign in with Google",
-                    icon: Icons.g_mobiledata,
-                    onPressed: () {
+                    icon: Image(image:AssetImage('assets/images/google.png'),width: 5.w,height: 5.h),
+                    onPressed: () async {
+                          // Call the sign-in method from the view model
+                          await
                       ref
                           .read(loginViewModelProvider.notifier)
                           .signInWithGoogle();

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lockedin/features/profile/model/profile_item_model.dart';
 
@@ -73,7 +74,7 @@ class ProfileItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Image.network(item.logoUrl, width: 50, height: 50, fit: BoxFit.cover),
+          buildImageWidget(item.logoUrl, 50, 50),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,4 +103,68 @@ class ProfileItem extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget buildImageWidget(String? imageUrl, double width, double height) {
+  // If null or empty, use default asset
+  if (imageUrl == null || imageUrl.isEmpty) {
+    return Image.asset(
+      'assets/images/experience.jpg',
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+    );
+  }
+
+  // If it's a network URL (starts with http or https)
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return Image.network(
+      imageUrl,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Image.asset(
+          'assets/images/experience.jpg',
+          width: width,
+          height: height,
+          fit: BoxFit.cover,
+        );
+      },
+    );
+  }
+
+  // If it's a file path (starts with file:// or /)
+  if (imageUrl.startsWith('file://') || imageUrl.startsWith('/')) {
+    return Image.file(
+      File(imageUrl.replaceFirst('file://', '')),
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Image.asset(
+          'assets/images/experience.jpg',
+          width: width,
+          height: height,
+          fit: BoxFit.cover,
+        );
+      },
+    );
+  }
+
+  // If it's just a filename, assume it's an asset
+  return Image.asset(
+    imageUrl,
+    width: width,
+    height: height,
+    fit: BoxFit.cover,
+    errorBuilder: (context, error, stackTrace) {
+      return Image.asset(
+        'assets/images/experience.jpg',
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+      );
+    },
+  );
 }

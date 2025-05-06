@@ -23,7 +23,7 @@ class TaggedUser {
   // Create from JSON
   factory TaggedUser.fromJson(Map<String, dynamic> json) {
     return TaggedUser(
-      userId: json['_id'] ?? json['userId'] ?? '',
+      userId: json['userId'] ?? json['_id'] ?? '',
       userType: json['userType'] ?? 'User',
       firstName: json['firstName'] ?? '',
       lastName: json['lastName'] ?? '',

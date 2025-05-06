@@ -84,17 +84,23 @@ class UserSearchResultsOverlay extends ConsumerWidget {
                             itemCount: searchState.searchResults.length,
                             itemBuilder: (context, index) {
                               final user = searchState.searchResults[index];
-                              
-                              // If we're near the end and there are more results to load
-                              if (index == searchState.searchResults.length - 3) {
-                                final currentPage = searchState.pagination['page'] as int;
-                                final totalPages = searchState.pagination['pages'] as int;
+                                                          
+                             // If we're near the end and there are more results to load
+                            if (index == searchState.searchResults.length - 3) {
+                              try {
+                                // Safe access to pagination with error handling
+                                final currentPage = searchState.pagination?['page'] as int? ?? 1;
+                                final totalPages = searchState.pagination?['pages'] as int? ?? 1;
                                 
                                 if (currentPage < totalPages) {
                                   // Load more results
                                   Future.microtask(() => ref.read(userSearchViewModelProvider.notifier).loadMoreResults());
                                 }
+                              } catch (e) {
+                                debugPrint('Error in pagination check: $e');
+                                // Don't attempt to load more if there's an error
                               }
+                            }
                               
                               return InkWell(
                                 onTap: () => onUserSelected(user),

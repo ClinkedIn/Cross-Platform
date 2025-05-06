@@ -435,7 +435,6 @@ class RequestService {
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(loginBody),
-
       );
 
       debugPrint('LOGIN Response Status: ${response.statusCode}');
@@ -458,6 +457,68 @@ class RequestService {
     } catch (e) {
       debugPrint('Login request failed: $e');
       throw Exception('Login request failed: $e');
+    }
+  }
+
+  static Future<http.Response> signup({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String password,
+    required bool rememberMe,
+    String? fcmToken,
+  }) async {
+    // Ensure the endpoint has a leading slash
+    String signupEndpoint = Constants.signupEndpoint;
+    if (!signupEndpoint.startsWith('/')) {
+      signupEndpoint = '/$signupEndpoint';
+    }
+
+    final String url = '$_baseUrl$signupEndpoint';
+    debugPrint('SIGNUP Request: $url');
+
+    try {
+      final Map<String, dynamic> signupBody = {
+        'firstName': firstName,
+        'lastName': lastName,
+        'email': email,
+        'password': password,
+        'remember_me': rememberMe,
+        'recaptchaResponseToken': 'recaptchaResponseToken',
+      };
+
+      // Add FCM token if available
+      if (fcmToken != null) {
+        signupBody['fcmToken'] = fcmToken;
+        debugPrint('Adding FCM token to signup request');
+      }
+
+      final response = await _client.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(signupBody),
+      );
+
+      debugPrint('SIGNUP Response Status: ${response.statusCode}');
+      debugPrint('SIGNUP Response Headers: ${response.headers}');
+
+      if (response.body.length < 1000) {
+        debugPrint('SIGNUP Response Body: ${response.body}');
+      }
+
+      // Always try to extract and store cookies, even on failed signups
+      final cookies = _extractCookiesFromResponse(response);
+      debugPrint('🍪 Extracted cookies: $cookies');
+
+      if (cookies.isNotEmpty) {
+        await TokenService.saveCookie(cookies);
+        debugPrint('🍪 Saved cookies to secure storage');
+      }
+
+      return response;
+    } catch (e) {
+      debugPrint('Signup request failed: $e');
+      throw Exception('Signup request failed: $e');
     }
   }
 
@@ -511,5 +572,4 @@ class RequestService {
         body.contains('<html>') ||
         (body.isNotEmpty && !body.startsWith('{') && !body.startsWith('['));
   }
-    
 }

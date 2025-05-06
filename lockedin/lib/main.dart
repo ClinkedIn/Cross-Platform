@@ -73,7 +73,6 @@ Future<void> _initializeFCM() async {
         print("🍎 APNs Token: $apnsToken");
 
         if (apnsToken != null) {
-          // Now it's safe to get the FCM token
           token = await messaging.getToken();
         } else {
           print('⚠️ APNs token is null, FCM token retrieval may fail');

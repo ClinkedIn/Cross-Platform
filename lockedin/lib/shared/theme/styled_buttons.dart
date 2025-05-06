@@ -59,22 +59,41 @@ class AppButtonStyles {
     );
   }
 
-  static Widget socialLoginButton({
-    required String text,
-    required IconData icon,
-    required VoidCallback onPressed,
-  }) {
-    return OutlinedButton.icon(
-      style: OutlinedButton.styleFrom(
-        minimumSize: Size(double.infinity, 6.h),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+static Widget socialLoginButton({
+  required String text,
+  required VoidCallback onPressed,
+  required Widget icon,
+}) {
+  return OutlinedButton(
+    style: OutlinedButton.styleFrom(
+      minimumSize: Size(double.infinity, 6.h), // Use responsive height
+      side: BorderSide(color: AppColors.primary), // Changed to blue using your theme color
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.sp),
       ),
-      onPressed: onPressed,
-      icon: Icon(icon, size: 6.w, color: AppColors.primary),
-      label: Text(
-        text,
-        style: AppTextStyles.buttonText.copyWith(color: AppColors.primary),
-      ),
-    );
-  }
+      padding: EdgeInsets.symmetric(vertical: 1.5.h, horizontal: 5.w), // Add padding
+      backgroundColor: Colors.white, // Ensure consistent background
+      foregroundColor: Colors.black87, // Text color
+    ),
+    onPressed: onPressed,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 24, // Fixed width for consistency
+          height: 24, // Fixed height for consistency
+          child: icon,
+        ),
+        SizedBox(width: 3.w), // Use responsive spacing
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 }

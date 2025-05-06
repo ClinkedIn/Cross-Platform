@@ -146,7 +146,7 @@ class _ConnectSectionState extends State<ConnectSection> {
                               suggestion.profilePicture != ''
                                   ? NetworkImage(suggestion.profilePicture)
                                   : AssetImage(
-                                        'assets/images/default_cover_photo.jpeg',
+                                        'assets/images/default_profile_photo.png',
                                       )
                                       as ImageProvider,
                           name:

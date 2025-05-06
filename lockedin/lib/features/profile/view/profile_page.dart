@@ -124,17 +124,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               ),
                             ],
                           ),
+                          if (user.headline != null)
+                            Text(
+                              user.headline!,
+                              style: theme.textTheme.bodyLarge,
+                            ),
                           Text(
-                            user.headline ?? "",
-                            style: theme.textTheme.bodyLarge,
-                          ),
-                          Text(
-                            user.location ?? "unknown location",
+                            user.location ?? "Unknown location",
                             style: theme.textTheme.bodyLarge,
                           ),
                           SizedBox(height: 10),
                           Text(
-                            "${user.connectionList.length}+ connections",
+                            "${user.connectionList.length} connections",
                             style: TextStyle(
                               color: AppColors.secondary,
                               fontWeight: FontWeight.bold,
@@ -147,22 +148,26 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ProfileButtons(),
                     SizedBox(height: 10),
                     Divider(),
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("About", style: theme.textTheme.headlineSmall),
-                          SizedBox(height: 5),
-                          Text(
-                            user.about!.description!,
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
 
-                    Divider(),
+                    // About section with null check
+                    if (user.about?.description != null)
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("About", style: theme.textTheme.headlineSmall),
+                            SizedBox(height: 5),
+                            Text(
+                              user.about!.description!,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    if (user.about?.description != null) Divider(),
+
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
@@ -182,45 +187,84 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               style: theme.textTheme.bodyLarge,
                             ),
                           ),
-                          ListTile(
-                            leading: Icon(
-                              Icons.question_answer,
-                              color: theme.iconTheme.color,
+
+                          // Check if workExperience exists and is not empty
+                          if (user.workExperience.isNotEmpty)
+                            ListTile(
+                              leading: Icon(
+                                Icons.question_answer,
+                                color: theme.iconTheme.color,
+                              ),
+                              title: Text(
+                                "Are you still working at ${user.workExperience[0].companyName}?",
+                                style: theme.textTheme.bodyLarge,
+                              ),
                             ),
-                            title: Text(
-                              "Are you still working at ${user.workExperience[0].companyName}?",
-                              style: theme.textTheme.bodyLarge,
-                            ),
-                          ),
                         ],
                       ),
                     ),
                     Divider(),
-                    ProfileDataComponent(
-                      sectionTitle: "Experience",
-                      addRoute: '/add-position',
-                      editRoute: '/edit-experience',
-                      dataProvider: ref.watch(experienceProvider),
-                      itemConverter:
-                          (item) =>
-                              ProfileConverters.experienceToProfileItem(item),
+
+                    // Only show these components if the providers have data
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final experienceData = ref.watch(experienceProvider);
+                        return experienceData.when(
+                          data:
+                              (data) =>
+                                  data.isNotEmpty
+                                      ? ProfileDataComponent(
+                                        sectionTitle: "Experience",
+                                        addRoute: '/add-position',
+                                        editRoute: '/edit-experience',
+                                        dataProvider: experienceData,
+                                        itemConverter:
+                                            (item) =>
+                                                ProfileConverters.experienceToProfileItem(
+                                                  item,
+                                                ),
+                                      )
+                                      : SizedBox.shrink(),
+                          loading:
+                              () => Center(child: CircularProgressIndicator()),
+                          error: (_, __) => SizedBox.shrink(),
+                        );
+                      },
                     ),
-                    ProfileDataComponent(
-                      sectionTitle: "Education",
-                      addRoute: '/add-education',
-                      editRoute: '/edit-education',
-                      dataProvider: ref.watch(educationProvider),
-                      itemConverter:
-                          (item) =>
-                              ProfileConverters.educationToProfileItem(item),
+
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final educationData = ref.watch(educationProvider);
+                        return educationData.when(
+                          data:
+                              (data) =>
+                                  data.isNotEmpty
+                                      ? ProfileDataComponent(
+                                        sectionTitle: "Education",
+                                        addRoute: '/add-education',
+                                        editRoute: '/edit-education',
+                                        dataProvider: educationData,
+                                        itemConverter:
+                                            (item) =>
+                                                ProfileConverters.educationToProfileItem(
+                                                  item,
+                                                ),
+                                      )
+                                      : SizedBox.shrink(),
+                          loading:
+                              () => Center(child: CircularProgressIndicator()),
+                          error: (_, __) => SizedBox.shrink(),
+                        );
+                      },
                     ),
+
                     SizedBox(height: 20),
                   ],
                 ),
               ),
             ),
-        loading: () => const Text("Loading..."),
-        error: (error, _) => const Text("Error"),
+        loading: () => Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text("An error occurred: $error")),
       ),
     );
   }
