@@ -133,40 +133,51 @@ class _PostPageState extends ConsumerState<PostPage> {
                   ),
                 ),
               )
-              : FilledButton(
-                onPressed:
-                    data.canSubmit
-                        ? () {
-                          ref
+              : // Replace the current "Post" button with this:
+                FilledButton(
+                  onPressed: data.canSubmit
+                      ? () async {
+                          // Submit the post
+                          await ref
                               .read(postViewModelProvider.notifier)
                               .submitPost(
                                 content: textController.text,
-                                attachments:
-                                    data.attachments ??
-                                    [], // Provide an empty list if null
+                                attachments: data.attachments ?? [],
                                 visibility: data.visibility,
                               );
-                          context.go(
-                            '/home',
-                          ); // Navigate to home page after posting
+                          
+                          // Reset all state
+                          ref.read(postViewModelProvider.notifier).resetState();
+                          
+                          // Clear the text controller
+                          textController.clear();
+                          
+                          // Reset video player if active
+                          if (_videoController != null) {
+                            _videoController!.dispose();
+                            _videoController = null;
+                            _isVideoInitialized = false;
+                          }
+                          
+                          // Navigate to home page
+                          context.go('/home');
                         }
-                        : null,
-                style: FilledButton.styleFrom(
-                  backgroundColor:
-                      data.canSubmit
-                          ? AppColors.primary
-                          : AppColors.gray.withOpacity(0.5),
-                  padding: EdgeInsets.symmetric(horizontal: 5.w),
-                ),
-                child: Text(
-                  'Post',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16.sp,
+                      : null,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: data.canSubmit
+                        ? AppColors.primary
+                        : AppColors.gray.withOpacity(0.5),
+                    padding: EdgeInsets.symmetric(horizontal: 5.w),
+                  ),
+                  child: Text(
+                    'Post',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.sp,
+                    ),
                   ),
                 ),
-              ),
         ],
         elevation: 1,
       ),

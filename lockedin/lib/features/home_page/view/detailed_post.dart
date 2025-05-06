@@ -10,6 +10,9 @@ import '../state/comment_state.dart';
 import '../model/comment_model.dart';
 import '../viewModel/post_detail_viewmodel.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:lockedin/features/home_page/view/post_sharing_service.dart';
 
 class PostDetailView extends ConsumerWidget {
   final String postId;
@@ -251,31 +254,141 @@ for (final user in taggedUsers) {
                       postDetailState.commentFocusNode.requestFocus();
                     },
                     onShare: () async {
-                      // Navigate to create repost view
-                      context.push('/create-repost', extra: commentsState.post);
-                    },
-                    onRepost: () async {
-                      try {
-                        await viewModel.repostPost();
-                        
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                commentsState.post!.isRepost
-                                    ? 'Repost removed'
-                                    : 'Post reposted successfully',
+                      // Generate a shareable link for the post
+                      final String postLink = PostSharingService.generatePostLink(commentsState.post!.id);
+                      
+                      // Show a bottom sheet with sharing options
+                      showModalBottomSheet(
+                        context: context,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                        ),
+                        builder: (context) => Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16.0),
+                              child: Text(
+                                'Share Post',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
                               ),
                             ),
-                          );
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: $e')),
-                          );
-                        }
-                      }
+                            Divider(height: 1),
+                            // Option 1: Share via native share sheet
+                            ListTile(
+                              leading: Icon(Icons.share, color: AppColors.primary),
+                              title: Text('Share to apps'),
+                              subtitle: Text('Share via other apps on your device'),
+                              onTap: () async {
+                                Navigator.pop(context); // Close bottom sheet first
+                                
+                                // Use the service implementation instead of inline implementation
+                                await PostSharingService.sharePost(
+                                  postId: commentsState.post!.id,
+                                  postContent: commentsState.post!.content,
+                                  context: context,
+                                );
+                              },
+                            ),
+                            // Option 2: Copy link to clipboard
+                            ListTile(
+                              leading: Icon(Icons.link, color: AppColors.primary),
+                              title: Text('Copy link'),
+                              subtitle: Text('Copy post link to clipboard'),
+                              onTap: () async {
+                                Navigator.pop(context); // Close bottom sheet
+                                
+                                try {
+                                  await Clipboard.setData(ClipboardData(text: postLink));
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Link copied to clipboard'))
+                                    );
+                                  }
+                                } catch (e) {
+                                  debugPrint('Error copying link: $e');
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Failed to copy link'))
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                            SizedBox(height: 16),
+                          ],
+                        ),
+                      );
+                    },
+                    onRepost: () async {
+                      // Show a bottom sheet with two repost options, matching the post_list.dart implementation
+                      showModalBottomSheet(
+                        context: context,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                        ),
+                        builder: (context) => Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16.0),
+                              child: Text(
+                                'Repost Options',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            Divider(height: 1),
+                            // Option 1: Quick Repost
+                            ListTile(
+                              leading: Icon(Icons.repeat, color: AppColors.primary),
+                              title: Text('Quick Repost'),
+                              subtitle: Text('Repost without adding your own content'),
+                              onTap: () async {
+                                Navigator.pop(context); // Close the bottom sheet
+                                try {
+                                  await viewModel.repostPost();
+                                  
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          commentsState.post!.isRepost
+                                              ? 'Repost removed'
+                                              : 'Post reposted successfully',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error: $e'))
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                            // Option 2: Repost with Content
+                            ListTile(
+                              leading: Icon(Icons.mode_edit_outline, color: AppColors.primary),
+                              title: Text('Repost with Comment'),
+                              subtitle: Text('Add your own thoughts when reposting'),
+                              onTap: () {
+                                Navigator.pop(context); // Close the bottom sheet
+                                // Navigate to create-repost page
+                                context.push('/create-repost', extra: commentsState.post);
+                              },
+                            ),
+                            SizedBox(height: 16),
+                          ],
+                        ),
+                      );
                     },
                     onFollow: () {
                       print("Following ${commentsState.post!.username}");
@@ -453,7 +566,6 @@ for (final user in taggedUsers) {
                     } : null,
                   ),
                 ),
-
                 // Divider
                 SliverToBoxAdapter(
                   child: Divider(thickness: 0.5.h, height: 1.h),

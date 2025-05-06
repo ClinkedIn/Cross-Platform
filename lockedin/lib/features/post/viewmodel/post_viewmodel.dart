@@ -35,53 +35,58 @@ class PostViewModel extends StateNotifier<PostState> {
     state = state.copyWith(content: content);
      _checkForMentions(content, controller);
   }
-
-      // Method to handle mention detection
-        void _checkForMentions(String text, TextEditingController controller) {
-          final selection = controller.selection;
-          
-          if (selection.baseOffset != selection.extentOffset) {
-            // If there's a selection, don't try to find mentions
-            state = state.copyWith(showMentionSuggestions: false);
-            return;
-          }
-          
-          final currentPosition = selection.baseOffset;
-          
-          // Find the last @ before the cursor
-          int lastAtIndex = -1;
-          for (int i = currentPosition - 1; i >= 0; i--) {
-            if (text[i] == '@') {
-              lastAtIndex = i;
-              break;
-            } else if (text[i] == ' ' || text[i] == '\n') {
-              // Stop at spaces or newlines
-              break;
-            }
-          }
-          
-          if (lastAtIndex >= 0) {
-            // Extract query text between @ and cursor
-            final query = text.substring(lastAtIndex + 1, currentPosition);
-
-              if (query.isNotEmpty) {
-              state = state.copyWith(
-                mentionStartIndex: lastAtIndex,
-                mentionQuery: query,
-                showMentionSuggestions: true,
-              );
-              
-              // Debounce search to avoid too many API calls
-              if (_debounce?.isActive ?? false) _debounce?.cancel();
-              _debounce = Timer(const Duration(milliseconds: 500), () {
-                searchUsers(query);
-              });
-              return;
-            }
-          }
-        
+  
+  /// Reset the post state to initial values
+  void resetState() {
+    state = PostState.initial();
+    debugPrint('🔄 Post state reset to initial values');
+  }
+  // Method to handle mention detection
+    void _checkForMentions(String text, TextEditingController controller) {
+      final selection = controller.selection;
+      
+      if (selection.baseOffset != selection.extentOffset) {
+        // If there's a selection, don't try to find mentions
         state = state.copyWith(showMentionSuggestions: false);
+        return;
       }
+      
+      final currentPosition = selection.baseOffset;
+      
+      // Find the last @ before the cursor
+      int lastAtIndex = -1;
+      for (int i = currentPosition - 1; i >= 0; i--) {
+        if (text[i] == '@') {
+          lastAtIndex = i;
+          break;
+        } else if (text[i] == ' ' || text[i] == '\n') {
+          // Stop at spaces or newlines
+          break;
+        }
+      }
+      
+      if (lastAtIndex >= 0) {
+        // Extract query text between @ and cursor
+        final query = text.substring(lastAtIndex + 1, currentPosition);
+
+          if (query.isNotEmpty) {
+          state = state.copyWith(
+            mentionStartIndex: lastAtIndex,
+            mentionQuery: query,
+            showMentionSuggestions: true,
+          );
+          
+          // Debounce search to avoid too many API calls
+          if (_debounce?.isActive ?? false) _debounce?.cancel();
+          _debounce = Timer(const Duration(milliseconds: 500), () {
+            searchUsers(query);
+          });
+          return;
+        }
+      }
+    
+    state = state.copyWith(showMentionSuggestions: false);
+  }
 
     /// Search for users to tag
       Future<void> searchUsers(String query) async {
@@ -198,8 +203,15 @@ class PostViewModel extends StateNotifier<PostState> {
     }
 
   /// Remove the selected image
-  void removeImage() {
-    state = state.copyWith(attachments: null);
+  void removeAttachment() {
+    // Use an empty list instead of null to ensure proper state update
+    state = state.copyWith(
+      attachments: <File>[],  // Empty list instead of null
+      fileType: null,
+    );
+    
+    // Force UI to refresh by notifying listeners
+    debugPrint('🗑️ Attachment removed');
   }
 
   /// Submit the post
@@ -262,9 +274,5 @@ class PostViewModel extends StateNotifier<PostState> {
         state = state.copyWith(error: 'Failed to select document');
         return null;
       }
-    }
-    /// Remove the selected document
-    void removeAttachment() {
-      state = state.copyWith(attachments: null, fileType: null);
     }
 }
