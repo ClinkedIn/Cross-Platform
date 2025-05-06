@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lockedin/features/auth/services/user_credentials_provider.dart';
 import 'package:lockedin/features/company/repository/company_repository.dart';
 import 'package:lockedin/features/jobs/model/job_model.dart';
@@ -20,7 +21,6 @@ class JobDetailsPage extends ConsumerStatefulWidget {
 
 class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
   String? companyName;
-  JobModel? job;
 
   @override
   void initState() {
@@ -29,24 +29,20 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
       final viewModel = ref.read(JobViewModel.provider);
       await viewModel.fetchJobById(widget.jobId);
 
-      final fetchedJob = viewModel.selectedJob;
-      if (fetchedJob != null) {
-        if ((fetchedJob.company?.isEmpty ?? true) &&
-            (fetchedJob.companyId?.isNotEmpty ?? false)) {
+      final job = viewModel.selectedJob;
+      if (job != null) {
+        if ((job.company?.isEmpty ?? true) &&
+            (job.companyId?.isNotEmpty ?? false)) {
           final companyRepo = CompanyRepository();
-          final company = await companyRepo.getCompanyById(
-            fetchedJob.companyId!,
-          );
+          final company = await companyRepo.getCompanyById(job.companyId!);
           if (company != null) {
             setState(() {
-              job = fetchedJob;
               companyName = company.name;
             });
           }
         } else {
           setState(() {
-            job = fetchedJob;
-            companyName = fetchedJob.company ?? 'Unknown Company';
+            companyName = job.company ?? 'Unknown Company';
           });
         }
       }
@@ -59,11 +55,29 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
     final jobViewModel = ref.watch(JobViewModel.provider);
     final userCredentialsAsync = ref.watch(userCredentialsProvider);
 
-    if (job == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    final job = jobViewModel.jobs.firstWhere(
+      (job) => job.id == widget.jobId,
+      orElse:
+          () => JobModel(
+            id: widget.jobId,
+            title: 'Unknown Job',
+            company: 'Unknown Company',
+            companyId: '',
+            location: 'Unknown Location',
+            description: '',
+            experienceLevel: 'Unknown',
+            salaryRange: 'N/A',
+            isRemote: false,
+            workplaceType: 'Unknown',
+            screeningQuestions: [],
+            applicants: [],
+            accepted: [],
+            rejected: [],
+            applicationStatus: 'Not Applied',
+          ),
+    );
 
-    final status = job!.applicationStatus ?? 'Not Applied';
+    final status = job.applicationStatus ?? 'Not Applied';
 
     return userCredentialsAsync.when(
       loading:
@@ -78,7 +92,7 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
           appBar: AppBar(
             backgroundColor:
                 theme.appBarTheme.backgroundColor ?? AppColors.primary,
-            title: Text(job!.title, style: theme.appBarTheme.titleTextStyle),
+            title: Text(job.title, style: theme.appBarTheme.titleTextStyle),
             iconTheme: theme.appBarTheme.iconTheme,
           ),
           body: Padding(
@@ -87,29 +101,29 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  job!.title,
+                  job.title,
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 SizedBox(height: 1.h),
                 Text(
-                  '${job!.company} • ${job!.location}',
+                  '${job.company} • ${job.location}',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
                   ),
                 ),
                 SizedBox(height: 1.h),
-                if (job!.industry != null)
+                if (job.industry != null)
                   Text(
-                    'Industry: ${job!.industry}',
+                    'Industry: ${job.industry}',
                     style: theme.textTheme.bodyLarge,
                   ),
                 Text(
-                  'Workplace Type: ${job!.workplaceType}',
+                  'Workplace Type: ${job.workplaceType}',
                   style: theme.textTheme.bodyLarge,
                 ),
-                if (job!.isRemote)
+                if (job.isRemote)
                   Padding(
                     padding: EdgeInsets.only(top: 0.5.h),
                     child: Text(
@@ -121,7 +135,7 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                     ),
                   ),
                 Text(
-                  'Experience Level: ${job!.experienceLevel}',
+                  'Experience Level: ${job.experienceLevel}',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -168,9 +182,9 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                                     builder:
                                         (_) => ContactInfoPage(
                                           screeningQuestions:
-                                              job!.screeningQuestions,
+                                              job.screeningQuestions,
                                           userId: userId,
-                                          jobId: job!.id,
+                                          jobId: job.id,
                                         ),
                                   ),
                                 );
@@ -183,18 +197,16 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
 
                                   try {
                                     await jobViewModel.applyToJob(
-                                      jobId: job!.id,
+                                      jobId: job.id,
                                       contactEmail: contactEmail,
                                       contactPhone: contactPhone,
                                       answers: answers,
                                     );
 
-                                    await storeApplicationStatus(job!.id, true);
-                                    await jobViewModel.fetchJobById(job!.id);
-
-                                    setState(() {
-                                      job = jobViewModel.selectedJob;
-                                    });
+                                    await storeApplicationStatus(job.id, true);
+                                    await jobViewModel.fetchJobById(
+                                      job.id,
+                                    ); // refresh job model
 
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
@@ -225,7 +237,7 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                 Expanded(
                   child: SingleChildScrollView(
                     child: Text(
-                      job!.description,
+                      job.description,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontSize: 14.sp,
                       ),

@@ -28,10 +28,11 @@ class JobRepository {
     final uri = Uri(path: _searchJobsEndpoint, queryParameters: queryParams);
 
     final response = await RequestService.get(uri.toString());
+    print('Fetching cfererref from: ${response.statusCode}');
     print('Fetching jobsdkeh from: ${response.body}');
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      print('Fetched job data: ${jsonEncode(data)}');
+      print('Fjdnclnwdcetched job data: ${jsonEncode(data['jobs'])}');
       final List jobs = data['jobs'];
       return jobs.map((job) => JobModel.fromJson(job)).toList();
     } else {

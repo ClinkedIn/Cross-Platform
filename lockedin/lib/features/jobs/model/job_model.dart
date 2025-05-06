@@ -14,7 +14,7 @@ class JobModel {
   final String? logoUrl;
   final String? industry;
   final List<Map<String, dynamic>> screeningQuestions;
-  final List<Map<String, dynamic>> applicants;
+  final List<String> applicants;
   final List<String> accepted;
   final List<String> rejected;
   String applicationStatus;
@@ -40,6 +40,7 @@ class JobModel {
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
+    print('Parsing etgf data: $json');
     final screeningQuestions = json['screeningQuestions'] as List? ?? [];
 
     List<Map<String, dynamic>> _mapList(dynamic list) {
@@ -86,7 +87,7 @@ class JobModel {
       logoUrl: company?['logo'],
       industry: json['industry'],
       screeningQuestions: _mapList(json['screeningQuestions']),
-      applicants: _mapList(json['applicants']),
+      applicants: json['applicants'] ?? [],
       accepted: _stringList(json['accepted']),
       rejected: _stringList(json['rejected']),
       applicationStatus: 'Not Applied',
@@ -94,7 +95,7 @@ class JobModel {
   }
 
   bool hasApplied(String userId) {
-    return applicants.any((applicant) => applicant['userId'] == userId);
+    return applicants.any((applicant) => applicant == userId);
   }
 
   String get companyName => company;
