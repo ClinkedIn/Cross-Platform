@@ -625,6 +625,11 @@ class ChatConversationNotifier extends StateNotifier<ChatConversationState> {
     }
   }
 
+  // Set blocked state immediately for responsive UI
+  void setBlockedState(bool blocked) {
+    state = state.copyWith(isBlocked: blocked);
+  }
+
   // Call this when user starts typing
   void setUserTyping(bool isTyping) {
     // No need to check state, just update Firebase directly
