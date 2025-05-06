@@ -1,24 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lockedin/features/auth/services/user_credentials_provider.dart';
 import 'package:lockedin/features/company/repository/company_repository.dart';
 import 'package:lockedin/features/jobs/model/job_model.dart';
 import 'package:lockedin/features/jobs/view/contact_info.dart';
 import 'package:lockedin/features/jobs/viewmodel/job_view_model.dart';
 import 'package:lockedin/shared/theme/colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
-
-final _secureStorage = FlutterSecureStorage();
-
-Future<void> storeApplicationStatus(String jobId, bool hasApplied) async {
-  await _secureStorage.write(key: jobId, value: hasApplied ? 'true' : 'false');
-}
-
-Future<bool> getApplicationStatus(String jobId) async {
-  final status = await _secureStorage.read(key: jobId);
-  return status == 'true';
-}
 
 class JobDetailsPage extends ConsumerStatefulWidget {
   final String jobId;
@@ -31,7 +20,7 @@ class JobDetailsPage extends ConsumerStatefulWidget {
 
 class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
   String? companyName;
-  String status = 'Not Applied'; // Default status
+  JobModel? job;
 
   @override
   void initState() {
@@ -39,30 +28,27 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final viewModel = ref.read(JobViewModel.provider);
       await viewModel.fetchJobById(widget.jobId);
-      final job = viewModel.selectedJob;
 
-      if (job != null) {
-        // Check if company is empty and companyId is not empty
-        if ((job.company?.isEmpty ?? true) &&
-            (job.companyId?.isNotEmpty ?? false)) {
+      final fetchedJob = viewModel.selectedJob;
+      if (fetchedJob != null) {
+        if ((fetchedJob.company?.isEmpty ?? true) &&
+            (fetchedJob.companyId?.isNotEmpty ?? false)) {
           final companyRepo = CompanyRepository();
-          final company = await companyRepo.getCompanyById(job.companyId!);
+          final company = await companyRepo.getCompanyById(
+            fetchedJob.companyId!,
+          );
           if (company != null) {
             setState(() {
+              job = fetchedJob;
               companyName = company.name;
             });
           }
         } else {
           setState(() {
-            companyName = job.company ?? 'Unknown Company';
+            job = fetchedJob;
+            companyName = fetchedJob.company ?? 'Unknown Company';
           });
         }
-
-        // Check if the user has already applied
-        final hasApplied = await getApplicationStatus(widget.jobId);
-        setState(() {
-          status = hasApplied ? 'Pending' : 'Not Applied';
-        });
       }
     });
   }
@@ -71,49 +57,28 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final jobViewModel = ref.watch(JobViewModel.provider);
-    final job = jobViewModel.selectedJob;
     final userCredentialsAsync = ref.watch(userCredentialsProvider);
 
     if (job == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final status = job!.applicationStatus ?? 'Not Applied';
+
     return userCredentialsAsync.when(
       loading:
           () =>
               const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (err, stack) => Scaffold(body: Center(child: Text('Error: $err'))),
+      error: (err, _) => Scaffold(body: Center(child: Text('Error: $err'))),
       data: (credentials) {
         final userId = credentials['email'] ?? '';
-
-        final job = jobViewModel.jobs.firstWhere(
-          (job) => job.id == widget.jobId,
-          orElse:
-              () => JobModel(
-                id: widget.jobId,
-                title: 'Unknown Job',
-                company: 'Unknown Company',
-                companyId: '',
-                location: 'Unknown Location',
-                description: '',
-                experienceLevel: 'Unknown',
-                salaryRange: 'N/A',
-                isRemote: false,
-                workplaceType: 'Unknown',
-                screeningQuestions: [],
-                applicants: [],
-                accepted: [],
-                rejected: [],
-                applicationStatus: 'Not Applied',
-              ),
-        );
 
         return Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
           appBar: AppBar(
             backgroundColor:
                 theme.appBarTheme.backgroundColor ?? AppColors.primary,
-            title: Text(job.title, style: theme.appBarTheme.titleTextStyle),
+            title: Text(job!.title, style: theme.appBarTheme.titleTextStyle),
             iconTheme: theme.appBarTheme.iconTheme,
           ),
           body: Padding(
@@ -122,29 +87,29 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  job.title,
+                  job!.title,
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 SizedBox(height: 1.h),
                 Text(
-                  '${job.company} • ${job.location}',
+                  '${job!.company} • ${job!.location}',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
                   ),
                 ),
                 SizedBox(height: 1.h),
-                if (job.industry != null)
+                if (job!.industry != null)
                   Text(
-                    'Industry: ${job.industry}',
+                    'Industry: ${job!.industry}',
                     style: theme.textTheme.bodyLarge,
                   ),
                 Text(
-                  'Workplace Type: ${job.workplaceType}',
+                  'Workplace Type: ${job!.workplaceType}',
                   style: theme.textTheme.bodyLarge,
                 ),
-                if (job.isRemote)
+                if (job!.isRemote)
                   Padding(
                     padding: EdgeInsets.only(top: 0.5.h),
                     child: Text(
@@ -156,7 +121,7 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                     ),
                   ),
                 Text(
-                  'Experience Level: ${job.experienceLevel}',
+                  'Experience Level: ${job!.experienceLevel}',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -203,9 +168,9 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                                     builder:
                                         (_) => ContactInfoPage(
                                           screeningQuestions:
-                                              job.screeningQuestions,
+                                              job!.screeningQuestions,
                                           userId: userId,
-                                          jobId: job.id,
+                                          jobId: job!.id,
                                         ),
                                   ),
                                 );
@@ -218,19 +183,18 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
 
                                   try {
                                     await jobViewModel.applyToJob(
-                                      jobId: job.id,
+                                      jobId: job!.id,
                                       contactEmail: contactEmail,
                                       contactPhone: contactPhone,
                                       answers: answers,
                                     );
 
-                                    await storeApplicationStatus(
-                                      job.id,
-                                      true,
-                                    ); // Store the application status
+                                    await storeApplicationStatus(job!.id, true);
+                                    await jobViewModel.fetchJobById(job!.id);
 
-                                    // After applying, we need to fetch job again and update status
-                                    await jobViewModel.fetchJobById(job.id);
+                                    setState(() {
+                                      job = jobViewModel.selectedJob;
+                                    });
 
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
@@ -239,11 +203,6 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                                         ),
                                       ),
                                     );
-
-                                    setState(() {
-                                      status =
-                                          'Pending'; // Update the status immediately after applying
-                                    });
                                   } catch (e) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -266,7 +225,7 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
                 Expanded(
                   child: SingleChildScrollView(
                     child: Text(
-                      job.description,
+                      job!.description,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontSize: 14.sp,
                       ),
@@ -279,5 +238,10 @@ class _JobDetailsPageState extends ConsumerState<JobDetailsPage> {
         );
       },
     );
+  }
+
+  Future<void> storeApplicationStatus(String jobId, bool applied) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('applied_$jobId', applied);
   }
 }
