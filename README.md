@@ -91,8 +91,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/lockedin.git
-cd lockedin
+git clone https://github.com/tahaaa22/ClinkedIn/Cross-Platform.git
+cd Cross-Platform
 
 # Install dependencies
 flutter pub get
