@@ -1,5 +1,5 @@
 LockedIn - Professional Networking Platform
-<img alt="LockedIn Logo" src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png">
+<img alt="LockedIn Logo" src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" width=20 height=20>
 LockedIn is a cross-platform professional networking application built with Flutter that enables users to connect, share professional experiences, and discover job opportunities. The platform offers a comprehensive suite of features for career development and professional networking.
 
 ✨ Features
