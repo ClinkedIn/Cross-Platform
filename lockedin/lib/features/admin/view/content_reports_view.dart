@@ -75,7 +75,7 @@ class ReportPage extends StatelessWidget {
                         final status =
                             report.report.status?.toLowerCase() ?? 'pending';
                         final reason =
-                            report.report.reason ?? 'No reason provided';
+                            report.report.policy ?? 'No reason provided';
 
                         // Determine card color
                         Color cardColor;
@@ -114,7 +114,7 @@ class ReportPage extends StatelessWidget {
                                       backgroundImage:
                                           reporter.profilePicture != ""
                                               ? NetworkImage(
-                                                reporter.profilePicture,
+                                                reporter.profilePicture ?? '',
                                               )
                                               : const AssetImage(
                                                 'assets/images/default_profile_photo.png',

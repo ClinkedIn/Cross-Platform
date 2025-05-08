@@ -11,9 +11,7 @@ class ReportRepository {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final decodedJson = jsonDecode(response.body);
-      List<Report> reports = List<Report>.from(
-        decodedJson['data'].map((item) => Report.fromJson(item)),
-      );
+      List<Report> reports = parseReports(decodedJson);
       print('Decoded JSON: $decodedJson');
       return reports;
     } else {

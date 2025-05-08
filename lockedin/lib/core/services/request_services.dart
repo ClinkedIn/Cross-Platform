@@ -310,7 +310,7 @@ class RequestService {
       endpoint = '/$endpoint';
     }
 
-    final String url = 'https://lockedin-cufe.me$endpoint';
+    final String url = '$_baseUrl$endpoint';
     final headers = await _getHeaders(additionalHeaders: additionalHeaders);
 
     try {
