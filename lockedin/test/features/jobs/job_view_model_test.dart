@@ -25,9 +25,7 @@ void main() {
       screeningQuestions: [
         {'question': 'Why do you want this job?', 'idealAnswer': 'To learn'},
       ],
-      applicants: [
-        {'id': 'user1'},
-      ],
+      applicants: ["John Doe"],
       accepted: [],
       rejected: [],
       companyId: 'company1',

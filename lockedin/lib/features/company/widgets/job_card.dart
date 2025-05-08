@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lockedin/features/company/model/company_job_model.dart';
 import 'package:intl/intl.dart';
-import 'package:sizer/sizer.dart';
 
 class JobCard extends StatelessWidget {
   final CompanyJob job;
@@ -36,7 +35,7 @@ class JobCard extends StatelessWidget {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    job.description ?? '',
+                    job.description,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -53,11 +52,17 @@ class JobCard extends StatelessWidget {
               ],
             ),
             SizedBox(height: 12),
-            Text("Email to apply:", style: TextStyle(fontWeight: FontWeight.w500)),
+            Text(
+              "Email to apply:",
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
             Text(job.applicationEmail, style: TextStyle(color: Colors.blue)),
-            if (job.screeningQuestions != null && job.screeningQuestions.isNotEmpty) ...[
+            if (job.screeningQuestions.isNotEmpty) ...[
               SizedBox(height: 16),
-              Text("Screening Questions:", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+              Text(
+                "Screening Questions:",
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+              ),
               ...List.generate(job.screeningQuestions.length, (index) {
                 final question = job.screeningQuestions[index];
                 return Padding(
@@ -65,12 +70,22 @@ class JobCard extends StatelessWidget {
                   child: Row(
                     children: [
                       Icon(
-                        question['mustHave'] == true ? Icons.check_circle : Icons.radio_button_unchecked,
+                        question['mustHave'] == true
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
                         size: 18,
-                        color: question['mustHave'] == true ? Colors.green : Colors.grey,
+                        color:
+                            question['mustHave'] == true
+                                ? Colors.green
+                                : Colors.grey,
                       ),
                       SizedBox(width: 8),
-                      Expanded(child: Text(question['question'] ?? '', style: TextStyle(fontSize: 14))),
+                      Expanded(
+                        child: Text(
+                          question['question'] ?? '',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -78,20 +93,32 @@ class JobCard extends StatelessWidget {
             ],
             if (job.autoRejectMustHave == true) ...[
               SizedBox(height: 12),
-              Text("Auto reject is enabled", style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
+              Text(
+                "Auto reject is enabled",
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
-            if (job.rejectPreview != null && job.rejectPreview.toString().isNotEmpty) ...[
+            if (job.rejectPreview.toString().isNotEmpty) ...[
               SizedBox(height: 6),
-              Text("Rejection Message:", style: TextStyle(fontWeight: FontWeight.w500)),
-              Text(job.rejectPreview!, style: TextStyle(fontStyle: FontStyle.italic)),
+              Text(
+                "Rejection Message:",
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              Text(
+                job.rejectPreview,
+                style: TextStyle(fontStyle: FontStyle.italic),
+              ),
             ],
             Divider(height: 24, thickness: 1.2),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Applicants: ${job.applicants?.length ?? 0}"),
-                Text("Accepted: ${job.accepted?.length ?? 0}"),
-                Text("Rejected: ${job.rejected?.length ?? 0}"),
+                Text("Applicants: ${job.applicants.length}"),
+                Text("Accepted: ${job.accepted.length}"),
+                Text("Rejected: ${job.rejected.length}"),
               ],
             ),
             SizedBox(height: 12),
