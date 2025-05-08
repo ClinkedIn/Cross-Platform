@@ -24,6 +24,7 @@ import 'package:lockedin/features/networks/view/network_page.dart';
 import 'package:lockedin/features/networks/view/newsletters_page.dart';
 import 'package:lockedin/features/networks/view/pages_page.dart';
 import 'package:lockedin/features/notifications/view/notifications_page.dart';
+import 'package:lockedin/features/payment/view/premium_view.dart';
 import 'package:lockedin/features/post/view/post_page.dart';
 import 'package:lockedin/features/profile/state/profile_components_state.dart';
 import 'package:lockedin/features/profile/utils/picture_loader.dart';
@@ -275,6 +276,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final postId = state.pathParameters['postId']!;
           return PostLikesPage(postId: postId);
         },
+      ),
+
+      GoRoute(
+        path: '/premium',
+        name: 'premium',
+        builder: (context, state) => const PremiumView(),
       ),
 
       GoRoute(

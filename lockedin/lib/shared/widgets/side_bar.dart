@@ -173,90 +173,86 @@ class SidebarDrawer extends ConsumerWidget {
 
                 SizedBox(height: 12),
                 Divider(color: Colors.grey.shade700),
-
-                /// Premium Promo
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Container(
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Color(0xFF8B5700),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Stack(
-                      children: [
-                        if (user.isPremium == false)
-                          Positioned(
-                            top: 0,
-                            left: 0,
-                            child: Icon(
-                              Icons.workspace_premium,
-                              color: Colors.amber,
-                              size: 20,
+              /// Premium Section
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: user.isPremium ? Color(0xFF0A66C2) : Color(0xFF8B5700),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Stack(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.workspace_premium,
+                                color: Colors.amber,
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                user.isPremium ? "Premium Active" : "Try Premium",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            user.isPremium 
+                              ? "Get the most out of your premium membership."
+                              : "Premium members get 4x more profile views on average.",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
                             ),
                           ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "4x",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: () {
+                              context.pop(); // Close the drawer first
+                              if(user.isPremium) {
+                                context.push('/premium'); // Navigate to premium benefits page
+                              } else {
+                                context.push('/subscription'); // Navigate to subscription page
+                              }
+                            },
+                            icon: Icon(
+                              Icons.workspace_premium,
+                              color: Colors.amber,
+                              size: 18,
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              "Premium members get 4x more profile views on average.",
+                            label: Text(
+                              user.isPremium 
+                                ? "View Benefits" 
+                                : "Try Premium for EGP0",
                               style: TextStyle(
                                 color: Colors.white,
+                                fontWeight: FontWeight.w600,
                                 fontSize: 14,
                               ),
                             ),
-                            SizedBox(height: 8),
-                            TextButton.icon(
-                              onPressed: () {
-                                context.pop(); // Close the drawer first
-                                context.push(
-                                  '/subscription',
-                                ); // Navigate to subscription page
-                              },
-                              icon: Icon(
-                                Icons.workspace_premium,
-                                color: Colors.amber,
-                                size: 18,
-                              ),
-                              label: Text(
-                                "Try Premium for EGP0",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                alignment: Alignment.centerLeft,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              alignment: Alignment.centerLeft,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
-                          ],
-                        ),
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: Icon(
-                            Icons.close,
-                            color: Colors.white,
-                            size: 20,
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
+              ),
 
                 Spacer(),
 
